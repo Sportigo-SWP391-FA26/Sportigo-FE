@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { AppleLogo, ArrowRight, EnvelopeSimple, Eye, EyeSlash, GoogleLogo, LockKey } from '@phosphor-icons/react'
+import { ArrowRight, EnvelopeSimple, Eye, EyeSlash, GoogleLogo, LockKey } from '@phosphor-icons/react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../../../components/brand/BrandLogo'
@@ -26,7 +26,7 @@ export function LoginPage() {
         <button className="auth-submit" type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Đang đăng nhập…' : 'Đăng nhập vào hệ thống'}<ArrowRight /></button>
       </form>
       <div className="auth-divider"><span>HOẶC TIẾP TỤC VỚI</span></div>
-      <div className="auth-social"><button type="button"><GoogleLogo weight="bold" />Google</button><button type="button"><AppleLogo weight="fill" />Apple ID</button></div>
+      <div className="auth-social auth-social--single"><button type="button"><GoogleLogo weight="bold" />Tiếp tục với Google</button></div>
       <div className="auth-offer"><div><b>ĐẶC QUYỀN HỘI VIÊN MỚI</b><p>Trải nghiệm <strong>07 ngày miễn phí</strong> kèm 1 buổi cùng HLV cá nhân.</p></div><Link to="/register">Đăng ký ngay <ArrowRight /></Link></div>
     </AuthShell>
   )
