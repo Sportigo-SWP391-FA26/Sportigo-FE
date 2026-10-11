@@ -70,7 +70,7 @@ export function LandingPage() {
         <header className="landing-nav">
           <BrandLogo className="landing-logo" />
           <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Hạng thẻ</a><a href="#coaches">Huấn luyện viên</a></nav>
-          <div className="landing-nav__actions"><a href="tel:19006868"><Phone />1900 6868</a><Link to="/login">Đăng nhập</Link></div>
+          <div className="landing-nav__actions"><a className="landing-nav__phone" href="tel:19006868"><Phone />1900 6868</a><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
         </header>
         <div className="landing-hero__body"><div className="landing-hero__copy">
           <span className="landing-location"><MapPin /> Sportigo Athletic Club · TP.HCM</span>

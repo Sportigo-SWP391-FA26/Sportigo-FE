@@ -5,6 +5,9 @@ import { RegisterPage } from '../features/auth/pages/RegisterPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { LandingPage } from '../features/landing/pages/LandingPage';
+import { MemberLayout } from '../layouts/MemberLayout';
+import { MemberHomePage } from '../features/member/pages/MemberHomePage';
+import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -16,6 +19,16 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: ':section', element: <ComingSoonPage /> },
+    ],
+  },
+  {
+    path: '/member',
+    element: <MemberLayout />,
+    children: [
+      { index: true, element: <Navigate to="home" replace /> },
+      { path: 'home', element: <MemberHomePage /> },
+      { path: 'classes', element: <ClassSchedulePage /> },
       { path: ':section', element: <ComingSoonPage /> },
     ],
   },
