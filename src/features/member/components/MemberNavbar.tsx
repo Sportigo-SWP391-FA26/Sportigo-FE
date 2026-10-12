@@ -1,7 +1,8 @@
-import { Bell, List, X } from '@phosphor-icons/react';
+import { Bell, List, SignOut, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../../../components/brand/BrandLogo';
+import { logout } from '../../auth/api';
 import { memberProfile } from '../mockData';
 
 const items = [
@@ -16,7 +17,9 @@ const items = [
 export function MemberNavbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const overlaysHero = pathname === '/member/home' && !scrolled;
 
   useEffect(() => {
@@ -25,6 +28,15 @@ export function MemberNavbar() {
     window.addEventListener('scroll', update, { passive: true });
     return () => window.removeEventListener('scroll', update);
   }, []);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
+  };
 
   return (
     <header className={`member-nav ${overlaysHero ? 'member-nav--overlay' : ''}`}>
@@ -44,6 +56,10 @@ export function MemberNavbar() {
           <button aria-label="Thông báo" className="member-nav__bell"><Bell /><i /></button>
           <img src={memberProfile.avatar} alt="" />
           <span>{memberProfile.name}</span>
+          <button className="member-nav__logout" type="button" onClick={handleLogout} disabled={isLoggingOut} aria-label="Đăng xuất">
+            <SignOut />
+            <span>{isLoggingOut ? 'Đang thoát…' : 'Đăng xuất'}</span>
+          </button>
         </div>
       </div>
     </header>

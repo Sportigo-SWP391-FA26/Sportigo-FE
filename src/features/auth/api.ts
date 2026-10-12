@@ -38,6 +38,9 @@ export async function resendVerification(email: string) {
 }
 
 export async function logout() {
-  await apiClient.post('/auth/logout');
-  localStorage.removeItem('accessToken');
+  try {
+    await apiClient.post('/auth/logout');
+  } finally {
+    localStorage.removeItem('accessToken');
+  }
 }
