@@ -9,7 +9,8 @@ const items = [
   ['Lịch lớp', '/member/classes'],
   ['Khóa 1–1', '/member/private-courses'],
   ['Lịch của tôi', '/member/my-schedule'],
-  ['Tiến độ', '/member/progress'],
+  ['Kế hoạch tập luyện', '/member/training-plan'],
+  ['Kết quả & Tiến độ', '/member/progress'],
   ['Thanh toán', '/member/payments'],
 ] as const;
 

@@ -9,6 +9,8 @@ import { LandingPage } from '../features/landing/pages/LandingPage';
 import { MemberLayout } from '../layouts/MemberLayout';
 import { MemberHomePage } from '../features/member/pages/MemberHomePage';
 import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
+import { RequireRole } from '../components/auth/RequireRole';
+import { MemberTrainingPlanPage } from '../features/training/pages/MemberTrainingPlanPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -31,6 +33,10 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="home" replace /> },
       { path: 'home', element: <MemberHomePage /> },
       { path: 'classes', element: <ClassSchedulePage /> },
+      {
+        element: <RequireRole roles={['MEMBER']} />,
+        children: [{ path: 'training-plan', element: <MemberTrainingPlanPage /> }],
+      },
       { path: ':section', element: <ComingSoonPage /> },
     ],
   },

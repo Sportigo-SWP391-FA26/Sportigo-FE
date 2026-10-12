@@ -42,14 +42,17 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
-button,
-input {
-  font: inherit;
+/* Đặt trong @layer base để utility Tailwind (text-sm, outline-*...) ghi đè được; giao diện mặc định không đổi */
+@layer base {
+  button,
+  input {
+    font: inherit;
+  }
+  :focus-visible { outline: 3px solid rgb(56 189 248 / 70%); outline-offset: 3px; }
 }
 
 html { scroll-behavior: smooth; }
 ::selection { color: #fff; background: #2563eb; }
-:focus-visible { outline: 3px solid rgb(56 189 248 / 70%); outline-offset: 3px; }
 .brand-logo img { display: block; }
 .landing-page { color: #121b2e; overflow: hidden; }
 .landing-hero { min-height: 780px; position: relative; color: #fff; background-size: cover; background-position: center; }

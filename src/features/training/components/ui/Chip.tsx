@@ -24,7 +24,7 @@ export function Chip({ tone = 'neutral', dot = false, title, className = '', chi
   return (
     <span
       title={title}
-      className={`inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs leading-none font-bold ${classes.chip} ${className}`}
+      className={`inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs leading-[1.45] font-bold ${classes.chip} ${className}`}
     >
       {dot && <span className={`size-1.5 shrink-0 rounded-full ${classes.dot}`} aria-hidden="true" />}
       <span className="truncate">{children}</span>
