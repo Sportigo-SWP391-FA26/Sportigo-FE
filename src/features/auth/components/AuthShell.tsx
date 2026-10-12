@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Barbell, Clock, Globe, Phone, SealCheck, UsersThree } from '@phosphor-icons/react'
-import { BrandLogo } from '../../../components/brand/BrandLogo'
 
 type AuthShellProps = { children: ReactNode; variant: 'login' | 'register' }
 const slides = [
@@ -22,7 +21,6 @@ export function AuthShell({ children, variant }: AuthShellProps) {
         <div className="auth-visual__card">
           <div className="auth-slides" aria-hidden="true">{slides.map((slide, index) => <div className={`auth-slide ${index === activeSlide ? 'is-active' : ''}`} style={{ backgroundImage: `url(${slide.image})` }} key={slide.label} />)}</div>
           <div className="auth-visual__shade" />
-          {variant === 'register' && <BrandLogo className="auth-visual__logo" />}
           <div className="auth-visual__copy">
             <div className="auth-visual__statement">
               <h2>Không chỉ tập luyện.<br /><span>Sống trọn nhịp thể thao.</span></h2>
