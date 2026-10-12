@@ -9,8 +9,9 @@ const items = [
   ['Lịch lớp', '/member/classes'],
   ['Khóa 1–1', '/member/private-courses'],
   ['Lịch của tôi', '/member/my-schedule'],
-  ['Kế hoạch tập luyện', '/member/training-plan'],
-  ['Kết quả & Tiến độ', '/member/progress'],
+  // Nhãn ngắn để navbar 7 mục không tràn ở màn 1170–1280px; tiêu đề trang dùng tên đầy đủ
+  ['Kế hoạch', '/member/training-plan'],
+  ['Tiến độ', '/member/progress'],
   ['Thanh toán', '/member/payments'],
 ] as const;
 
