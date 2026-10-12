@@ -1,15 +1,9 @@
-import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import { describe, expect, test } from 'vitest';
 import { parseApiError } from './errors';
 import { formatDate, formatDateTime, monthRange, startOfCenterDay, weekRange } from './format';
 import { currentPlanWeek, groupPlanItems } from './planStructure';
+import { axiosError } from './testing/axiosError';
 import type { WorkoutPlanItem } from './types';
-
-function axiosError(status: number, data: unknown) {
-  const config = { headers: new AxiosHeaders() };
-  const response = { status, data, statusText: '', headers: {}, config } as AxiosResponse;
-  return new AxiosError('Request failed', 'ERR_BAD_REQUEST', config, {}, response);
-}
 
 const item = (weekNumber: number, sessionNumber: number, itemOrder: number): WorkoutPlanItem => ({
   id: weekNumber * 100 + sessionNumber * 10 + itemOrder,
