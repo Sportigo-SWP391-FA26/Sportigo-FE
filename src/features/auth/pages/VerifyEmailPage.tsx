@@ -50,6 +50,7 @@ export function VerifyEmailPage() {
             {resend.isPending ? 'Đang gửi…' : 'Gửi lại email xác minh'}
           </button>}
           {resend.isSuccess && <p className="auth-alert auth-alert--success" role="status">{resend.data.message}</p>}
+          {resend.isError && <p className="auth-alert" role="alert">Chưa thể gửi email xác minh. Vui lòng thử lại sau.</p>}
           <Link to="/login">Quay lại đăng nhập</Link>
         </div>
       )}
