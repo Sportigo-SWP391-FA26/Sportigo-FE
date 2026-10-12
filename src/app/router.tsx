@@ -18,6 +18,8 @@ import { SessionAttendancePage } from '../features/training/pages/SessionAttenda
 import { WorkoutPlansPage } from '../features/training/pages/WorkoutPlansPage';
 import { WorkoutPlanDetailPage } from '../features/training/pages/WorkoutPlanDetailPage';
 import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansPage';
+import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
+import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -63,6 +65,8 @@ export const router = createBrowserRouter([
           { path: 'workout-plans', element: <WorkoutPlansPage /> },
           { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },
           { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
+          { path: 'assessments', element: <AssessmentsPage /> },
+          { path: 'assessments/new', element: <NewAssessmentPage /> },
         ],
       },
     ],
