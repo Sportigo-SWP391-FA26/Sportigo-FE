@@ -68,7 +68,7 @@ const statTones = {
 
 export function StatTile({ label, value, hint, icon, tone = 'primary' }: StatTileProps) {
   return (
-    <div className={`${cardClass} flex items-start gap-3.5 p-4 sm:p-5`}>
+    <div className={`${cardClass} flex flex-col items-start gap-3 p-4 sm:flex-row sm:gap-3.5 sm:p-5`}>
       <span className={`grid size-11 shrink-0 place-items-center rounded-2xl text-xl ${statTones[tone]}`} aria-hidden="true">
         {icon}
       </span>

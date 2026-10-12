@@ -11,6 +11,7 @@ import { MemberHomePage } from '../features/member/pages/MemberHomePage';
 import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
 import { RequireRole } from '../components/auth/RequireRole';
 import { MemberTrainingPlanPage } from '../features/training/pages/MemberTrainingPlanPage';
+import { MemberProgressPage } from '../features/training/pages/MemberProgressPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -35,7 +36,10 @@ export const router = createBrowserRouter([
       { path: 'classes', element: <ClassSchedulePage /> },
       {
         element: <RequireRole roles={['MEMBER']} />,
-        children: [{ path: 'training-plan', element: <MemberTrainingPlanPage /> }],
+        children: [
+          { path: 'training-plan', element: <MemberTrainingPlanPage /> },
+          { path: 'progress', element: <MemberProgressPage /> },
+        ],
       },
       { path: ':section', element: <ComingSoonPage /> },
     ],
