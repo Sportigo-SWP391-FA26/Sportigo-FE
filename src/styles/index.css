@@ -1,6 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+/* Tokens "Kinetic Daylight" (DESIGN.md) dùng làm utility Tailwind: bg-primary, text-ink, rounded-card... */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #2563eb;
+  --color-primary-deep: #004ac6;
+  --color-accent-sky: #38bdf8;
+  --color-accent-lime: #84cc16;
+  --color-accent-energy: #f97316;
+  --color-ink: #121b2e;
+  --color-muted: #64748b;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-line: #e2e8f0;
+  --color-danger: #dc2626;
+  --radius-control: 8px;
+  --radius-card: 20px;
+  --shadow-card: 0 1px 2px rgb(18 27 46 / 4%), 0 14px 32px -18px rgb(37 99 235 / 28%);
+  --shadow-raised: 0 18px 44px -16px rgb(37 99 235 / 34%);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 :root {
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
   color: #0f172a;
