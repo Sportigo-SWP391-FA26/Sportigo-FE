@@ -12,6 +12,8 @@ import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
 import { RequireRole } from '../components/auth/RequireRole';
 import { MemberTrainingPlanPage } from '../features/training/pages/MemberTrainingPlanPage';
 import { MemberProgressPage } from '../features/training/pages/MemberProgressPage';
+import { CoachLayout } from '../layouts/CoachLayout';
+import { AttendanceHistoryPage } from '../features/training/pages/AttendanceHistoryPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -42,6 +44,29 @@ export const router = createBrowserRouter([
         ],
       },
       { path: ':section', element: <ComingSoonPage /> },
+    ],
+  },
+  {
+    path: '/coach',
+    element: <RequireRole roles={['COACH']} />,
+    children: [
+      {
+        element: <CoachLayout />,
+        children: [
+          { index: true, element: <Navigate to="attendance" replace /> },
+          { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/manager',
+    element: <RequireRole roles={['CENTER_MANAGER']} />,
+    children: [
+      {
+        element: <AppLayout />,
+        children: [{ path: 'attendance', element: <AttendanceHistoryPage scope="manager" /> }],
+      },
     ],
   },
   { path: '/dashboard', element: <Navigate to="/app/dashboard" replace /> },
