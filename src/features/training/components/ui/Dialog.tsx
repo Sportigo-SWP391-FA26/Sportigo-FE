@@ -10,10 +10,17 @@ type DialogProps = {
   description?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  size?: 'md' | 'lg';
+  /** sm: hộp xác nhận nổi giữa màn hình; md/lg: form, toàn màn hình trên điện thoại */
+  size?: 'sm' | 'md' | 'lg';
 };
 
 // Dùng <dialog> gốc của trình duyệt: có focus trap, phím Esc và nền mờ sẵn.
+const sizeClasses = {
+  sm: 'm-auto h-fit max-h-[90dvh] w-[calc(100%-2rem)] max-w-md rounded-card shadow-raised',
+  md: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(90dvh,860px)] sm:max-w-lg sm:rounded-card sm:shadow-raised',
+  lg: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(90dvh,860px)] sm:max-w-2xl sm:rounded-card sm:shadow-raised',
+};
+
 export function Dialog({ open, onClose, title, description, children, footer, size = 'md' }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -36,7 +43,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
       ref={ref}
       aria-labelledby={titleId}
       onClose={onClose}
-      className={`m-0 h-dvh max-h-none w-full max-w-none bg-surface p-0 text-ink backdrop:bg-ink/45 open:flex open:flex-col sm:m-auto sm:h-auto sm:max-h-[min(90dvh,860px)] sm:rounded-card sm:shadow-raised ${size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg'}`}
+      className={`bg-surface p-0 text-ink backdrop:bg-ink/45 open:flex open:flex-col ${sizeClasses[size]}`}
     >
       {open && (
         <>
@@ -70,6 +77,7 @@ type ConfirmDialogProps = {
   confirmLabel: string;
   tone?: 'primary' | 'danger';
   loading?: boolean;
+  confirmDisabled?: boolean;
   error?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
@@ -82,6 +90,7 @@ export function ConfirmDialog({
   confirmLabel,
   tone = 'primary',
   loading,
+  confirmDisabled,
   error,
   onConfirm,
   onCancel,
@@ -91,12 +100,13 @@ export function ConfirmDialog({
       open={open}
       onClose={onCancel}
       title={title}
+      size="sm"
       footer={
         <>
           <Button variant="secondary" onClick={onCancel} disabled={loading}>
             Hủy
           </Button>
-          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
+          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={loading} disabled={confirmDisabled}>
             {confirmLabel}
           </Button>
         </>

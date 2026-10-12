@@ -1,5 +1,6 @@
 import type {
   AttendanceStatus,
+  EditablePlanStatus,
   EnrollmentStatus,
   PlanAssignmentStatus,
   PlanLevel,
@@ -38,6 +39,11 @@ export const planStatusTones: Record<PlanStatus, Tone> = {
   INACTIVE: 'warning',
   ARCHIVED: 'neutral',
 };
+
+/** Các trạng thái có thể chuyển tới từ trạng thái hiện tại (backend cho phép DRAFT/ACTIVE/INACTIVE) */
+export function nextStatuses(current: PlanStatus): EditablePlanStatus[] {
+  return (['ACTIVE', 'DRAFT', 'INACTIVE'] as const).filter((status) => status !== current);
+}
 
 export const planLevels: PlanLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 

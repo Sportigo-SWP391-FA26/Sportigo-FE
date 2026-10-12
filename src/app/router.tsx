@@ -15,6 +15,7 @@ import { MemberProgressPage } from '../features/training/pages/MemberProgressPag
 import { CoachLayout } from '../layouts/CoachLayout';
 import { AttendanceHistoryPage } from '../features/training/pages/AttendanceHistoryPage';
 import { SessionAttendancePage } from '../features/training/pages/SessionAttendancePage';
+import { WorkoutPlansPage } from '../features/training/pages/WorkoutPlansPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="attendance" replace /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
           { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
+          { path: 'workout-plans', element: <WorkoutPlansPage /> },
         ],
       },
     ],
