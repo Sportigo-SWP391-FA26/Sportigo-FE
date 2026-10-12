@@ -1,7 +1,8 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowsClockwise, NotePencil, Plus, Trash } from '@phosphor-icons/react';
+import { ArrowDown, ArrowLeft, ArrowUp, ArrowsClockwise, NotePencil, Plus, Trash, UserPlus } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
+import { AssignToEnrollmentDialog } from '../components/AssignPlanDialogs';
 import { PlanItemFormDialog, type PlanItemDraft } from '../components/PlanItemFormDialog';
 import { PlanItemList } from '../components/PlanItemList';
 import { PlanStatusDialog } from '../components/PlanStatusDialog';
@@ -62,6 +63,7 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
 
   const [editingPlan, setEditingPlan] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [itemTarget, setItemTarget] = useState<{ item: WorkoutPlanItem } | { draft: PlanItemDraft } | null>(null);
   const [deleting, setDeleting] = useState<WorkoutPlanItem | null>(null);
 
@@ -127,6 +129,11 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
             <Button variant="secondary" icon={<ArrowsClockwise aria-hidden="true" />} onClick={() => setStatusOpen(true)}>
               Đổi trạng thái
             </Button>
+            {plan.status === 'ACTIVE' && (
+              <Button icon={<UserPlus aria-hidden="true" />} onClick={() => setAssignOpen(true)}>
+                Gán cho khóa 1-1
+              </Button>
+            )}
           </div>
         </div>
         {plan.status !== 'ACTIVE' && (
@@ -251,6 +258,7 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
 
       <WorkoutPlanFormDialog open={editingPlan} plan={plan} onClose={() => setEditingPlan(false)} />
       <PlanStatusDialog plan={statusOpen ? plan : null} onClose={() => setStatusOpen(false)} />
+      <AssignToEnrollmentDialog open={assignOpen} plan={plan} onClose={() => setAssignOpen(false)} />
       <PlanItemFormDialog planId={plan.id} durationWeeks={plan.durationWeeks} target={itemTarget} onClose={() => setItemTarget(null)} />
       <DeleteItemDialog planId={plan.id} item={deleting} blocked={lastItemOfActive} onClose={() => setDeleting(null)} />
     </div>
