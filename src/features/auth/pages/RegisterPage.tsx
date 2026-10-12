@@ -13,7 +13,10 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const form = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) })
-  const mutation = useMutation({ mutationFn: registerMember, onSuccess: () => navigate('/login') })
+  const mutation = useMutation({
+    mutationFn: registerMember,
+    onSuccess: (result) => navigate('/verify-email?email=' + encodeURIComponent(result.email)),
+  })
   return (
     <AuthShell variant="register">
       <div className="auth-heading"><BrandLogo className="auth-form-logo" /><h1>Đăng ký thành viên <span>Sport</span><em>igo</em></h1></div>
