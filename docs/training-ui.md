@@ -127,6 +127,40 @@ Các ý tưởng trong ảnh mẫu Dashboard **chưa làm** vì backend chưa c�
 
 ## 8. Kiểm thử tự động
 
+### Kiểm thử end-to-end (người dùng cuối)
+
+`tests/training.spec.ts` gồm 37 kịch bản Playwright đi qua giao diện thật với backend thật, đặt tên theo FR/BR và cột "Test / Demo Scenario" của backlog:
+
+| Nhóm | Nội dung |
+|---|---|
+| A | Đăng nhập bằng form; chưa đăng nhập bị chuyển về `/login`; sai role bị chuyển về trang của role (FR-04, BR-06) |
+| B | Member: giáo án theo Tuần → Buổi (chỉ đọc), số liệu chuyên cần khớp API, biểu đồ và chế độ xem bảng, lọc lịch sử, chỉ thấy dữ liệu của mình (FR-53, FR-48) |
+| C | Coach điểm danh: đủ 4 trạng thái, ghi lặp không tạo bản ghi trùng, buổi chưa bắt đầu chỉ được xem, cảnh báo rời trang, dùng trên điện thoại (FR-47, BR-42, BR-43) |
+| D | Lịch sử điểm danh của Coach và Manager, lọc theo lớp/học viên/trạng thái (FR-48) |
+| E–F | Giáo án: tìm kiếm/lọc, chặn kích hoạt khi chưa có mục, thêm/sửa/sắp thứ tự/xóa mục, trùng thứ tự; gán cho khóa 1-1 (FR-49 → FR-51, BR-44, BR-45) |
+| G | Đánh giá tiến độ: danh sách, lọc, ghi đánh giá và từ chối sai ngữ cảnh (FR-52, BR-46) |
+| I | Mất kết nối có nút Thử lại; hết phiên thì yêu cầu đăng nhập lại |
+| H | Không cuộn ngang ở 390 / 768 / 1366 px trên 11 màn hình |
+
+Cách chạy:
+
+1. Backend: `npm run db:seed` rồi `npm run dev`. Frontend: `npm run dev -- --host 127.0.0.1`.
+2. `npx playwright test tests/training.spec.ts --workers=1`
+   - Máy chưa cài Chromium của Playwright: chạy `npx playwright install chromium`, hoặc dùng Edge có sẵn bằng `PW_CHANNEL=msedge` (PowerShell: `$env:PW_CHANNEL='msedge'`).
+   - Không bật backend thì toàn bộ test tự bỏ qua.
+3. Xem báo cáo: `npx playwright show-report`.
+
+Lưu ý:
+
+- **Hai kịch bản chờ API:** E2 (tạo giáo án) và G2 (form đánh giá) hiện kiểm tra thông báo "chưa sẵn sàng". G3 và G4 **giả lập riêng** `GET /api/coaches/me/trainees` bằng ID thật của seed; việc ghi đánh giá vẫn gọi backend thật.
+- **Dữ liệu do test tạo ra trong DB local:**
+  - Giáo án `[E2E] Giáo án kiểm thử`, gán cho khóa 1-1 demo. Giáo án này được tái sử dụng, không tạo thêm ở các lần chạy sau.
+  - Mỗi lần chạy thêm một đánh giá có nhận xét bắt đầu bằng "Kiểm thử E2E" cho Member 2.
+  - Điểm danh buổi đang diễn ra được đặt lại thành Có mặt / Muộn.
+- **Phải dùng `localhost`:** test mở `http://localhost:5173` vì CORS của backend chỉ cho phép `localhost`. `baseURL` mặc định trong `playwright.config.ts` là `127.0.0.1`, nên các test khác có gọi API cũng cần lưu ý điều này.
+
+### Kiểm thử đơn vị
+
 `npm test` chạy Vitest + Testing Library. Các test của module:
 
 - `dataLayer.test.ts`: ngày giờ theo giờ VN, nhóm Tuần → Buổi, tuần hiện tại, đọc lỗi API.
