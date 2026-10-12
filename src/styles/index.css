@@ -481,6 +481,8 @@ html { scroll-behavior: smooth; }
 .member-nav__account > img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .member-nav__bell { position: relative; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; color: #172033; background: transparent; display: grid; place-items: center; font-size: 21px; cursor: pointer; }
 .member-nav__bell:hover { background: #f1f5f9; }.member-nav__bell i { position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border: 2px solid #fff; border-radius: 50%; background: #ef4444; }
+.member-nav__logout { min-height: 40px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 10px; color: inherit; background: transparent; display: flex; align-items: center; gap: 7px; font: inherit; cursor: pointer; }
+.member-nav__logout:hover { background: #f1f5f9; }.member-nav__logout:disabled { cursor: wait; opacity: .65; }.member-nav__logout svg { font-size: 18px; }
 .member-nav__toggle { display: none; }
 
 .member-greeting { position: relative; min-height: 120px; overflow: hidden; }
@@ -533,6 +535,7 @@ html { scroll-behavior: smooth; }
 .member-nav--overlay .member-nav__links a.active { position: relative; color: #fff; background: transparent; }
 .member-nav--overlay .member-nav__links a.active::after { content: ''; position: absolute; right: 15px; bottom: 3px; left: 15px; height: 2px; background: #38bdf8; }
 .member-nav--overlay .member-nav__bell { color: #fff; }.member-nav--overlay .member-nav__toggle { color: #fff; background: rgb(255 255 255 / 14%); }
+.member-nav--overlay .member-nav__logout { border-color: rgb(255 255 255 / 28%); }.member-nav--overlay .member-nav__logout:hover { background: rgb(255 255 255 / 12%); }
 .member-home--landing { overflow: hidden; background: #f8fafc; }
 .member-home-hero { position: relative; min-height: 680px; color: #fff; isolation: isolate; background: #071426; }
 .member-home-hero__image { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 48%; }
