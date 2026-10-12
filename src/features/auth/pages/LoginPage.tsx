@@ -13,7 +13,10 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema) })
-  const mutation = useMutation({ mutationFn: login, onSuccess: () => navigate('/dashboard') })
+  const mutation = useMutation({
+    mutationFn: login,
+    onSuccess: ({ user }) => navigate(user.role === 'MEMBER' ? '/member/home' : '/dashboard'),
+  })
   return (
     <AuthShell variant="login">
       <div className="auth-heading"><BrandLogo className="auth-form-logo" /><h1>Chào mừng trở lại với <span>Sport</span><em>igo</em></h1></div>
