@@ -91,7 +91,7 @@ function PlanForm({ plan, onClose, onCreated }: Omit<Props, 'open'>) {
         PLAN_SPORT_LOCKED: 'sportId',
         DURATION_TOO_SHORT: 'durationWeeks',
       });
-      if (!applied || apiError.kind !== 'validation') setFormError(apiError.message);
+      if (!applied) setFormError(apiError.message);
     }
   };
 

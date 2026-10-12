@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { intensityOptions, planLevels } from './labels';
+import { planLevels } from './labels';
 import { todayInCenter } from './format';
 
 // Giới hạn khớp validate của backend (workout-plan.schema.ts, workout-plan-item.schema.ts, progress-assessment.schema.ts)
@@ -40,7 +40,8 @@ export const planItemFormSchema = z.object({
   durationMinutes: optionalNumber('Thời lượng', 1, 600),
   sets: optionalNumber('Số hiệp', 1, 100),
   repetitions: optionalNumber('Số lần', 1, 1000),
-  intensity: z.union([z.enum(intensityOptions.map((option) => option.value) as [string, ...string[]]), z.literal('')]),
+  // Backend nhận chuỗi tự do (tối đa 40 ký tự); giao diện gợi ý LOW/MEDIUM/HIGH
+  intensity: z.string().trim().max(40, 'Cường độ tối đa 40 ký tự'),
   note: z.string().trim().max(1000, 'Ghi chú tối đa 1000 ký tự'),
 });
 

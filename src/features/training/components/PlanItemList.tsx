@@ -20,13 +20,16 @@ export function PlanItemList({ items, compact = false, renderActions }: PlanItem
             <div className="flex min-w-0 flex-1 gap-3">
               <span
                 className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-extrabold text-primary-deep"
-                aria-label={`Thứ tự ${item.itemOrder}`}
+                aria-hidden="true"
               >
                 {item.itemOrder}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <h4 className="text-sm font-bold text-ink">{item.title}</h4>
+                  <h4 className="text-sm font-bold text-ink">
+                    <span className="sr-only">{item.itemOrder}. </span>
+                    {item.title}
+                  </h4>
                   {item.intensity && (
                     <Chip tone={intensityTone(item.intensity)} dot>
                       {intensityLabel(item.intensity)}
