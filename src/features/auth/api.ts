@@ -9,6 +9,7 @@ type LoginResponse = {
 type RegisterResponse = {
   message: string;
   email: string;
+  emailSent: boolean;
   verificationUrl?: string;
 };
 
