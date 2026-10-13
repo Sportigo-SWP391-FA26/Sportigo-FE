@@ -274,7 +274,7 @@ function HistoryTable({ items, scope, onFilterClass, onFilterMember }: RowProps)
         </thead>
         <tbody className="divide-y divide-line">
           {items.map((item) => (
-            <tr key={item.id} className="align-top hover:bg-canvas/70">
+            <tr key={item.id} className="align-middle hover:bg-canvas/70">
               <td className="px-4 py-3 whitespace-nowrap">
                 <SessionTime item={item} scope={scope} />
               </td>

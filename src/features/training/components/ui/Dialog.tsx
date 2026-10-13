@@ -47,16 +47,17 @@ export function Dialog({ open, onClose, title, description, children, footer, si
     >
       {open && (
         <>
-          <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
-            <div className="min-w-0">
-              <h2 id={titleId} className="text-lg font-extrabold tracking-[-.015em]">
+          <header className="border-b border-line px-5 py-4">
+            {/* Nút X căn giữa theo dòng tiêu đề; -my-2 để nút 44px không làm header cao thêm */}
+            <div className="flex items-center justify-between gap-3">
+              <h2 id={titleId} className="min-w-0 text-lg font-extrabold tracking-[-.015em]">
                 {title}
               </h2>
-              {description && <div className="mt-1 text-[13px] leading-relaxed text-muted">{description}</div>}
+              <button type="button" className={`${iconButtonClass} -my-2 -mr-2`} onClick={onClose} aria-label="Đóng">
+                <X aria-hidden="true" />
+              </button>
             </div>
-            <button type="button" className={`${iconButtonClass} -mr-2`} onClick={onClose} aria-label="Đóng">
-              <X aria-hidden="true" />
-            </button>
+            {description && <div className="mt-1 text-[13px] leading-relaxed text-muted">{description}</div>}
           </header>
           <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
           {footer && (

@@ -224,15 +224,15 @@ function PlanTable({ items, onEdit, onChangeStatus }: ListProps) {
             <th scope="col" className="px-4 py-3">Giáo án</th>
             <th scope="col" className="px-4 py-3">Môn</th>
             <th scope="col" className="px-4 py-3">Cấp độ</th>
-            <th scope="col" className="px-4 py-3 text-right">Số tuần</th>
-            <th scope="col" className="px-4 py-3 text-right">Số mục</th>
+            <th scope="col" className="px-4 py-3 text-center">Số tuần</th>
+            <th scope="col" className="px-4 py-3 text-center">Số mục</th>
             <th scope="col" className="px-4 py-3">Trạng thái</th>
             <th scope="col" className="px-4 py-3"><span className="sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
           {items.map((plan) => (
-            <tr key={plan.id} className="align-top hover:bg-canvas/70">
+            <tr key={plan.id} className="align-middle hover:bg-canvas/70">
               <td className="max-w-80 px-4 py-3">
                 <Link to={`/coach/workout-plans/${plan.id}`} className="font-bold text-primary-deep hover:underline">
                   {plan.name}
@@ -244,8 +244,8 @@ function PlanTable({ items, onEdit, onChangeStatus }: ListProps) {
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{plan.sport.name}</td>
               <td className="px-4 py-3 whitespace-nowrap">{levelLabel(plan.level)}</td>
-              <td className="px-4 py-3 text-right tabular-nums">{plan.durationWeeks ?? '—'}</td>
-              <td className="px-4 py-3 text-right tabular-nums">{plan.itemCount}</td>
+              <td className="px-4 py-3 text-center tabular-nums">{plan.durationWeeks ?? '—'}</td>
+              <td className="px-4 py-3 text-center tabular-nums">{plan.itemCount}</td>
               <td className="px-4 py-3">
                 <Chip tone={planStatusTones[plan.status]} dot>
                   {planStatusLabels[plan.status]}
