@@ -79,7 +79,13 @@ export function WorkoutPlansPage() {
       <PageHeader
         eyebrow="Giáo án"
         title="Giáo án dùng chung"
-        description="Giáo án theo môn, dùng chung cho mọi Coach. Chỉ giáo án Đang dùng mới gán được cho khóa 1-1."
+        description={
+          <>
+            Giáo án theo môn, dùng chung cho mọi Coach.
+            <br />
+            Chỉ giáo án Đang dùng mới gán được cho khóa 1-1.
+          </>
+        }
         actions={
           <Button icon={<Plus weight="bold" aria-hidden="true" />} onClick={() => setFormPlan('new')}>
             Tạo giáo án

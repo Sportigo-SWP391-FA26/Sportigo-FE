@@ -23,16 +23,15 @@ type PageHeaderProps = {
 
 export function PageHeader({ eyebrow, title, description, actions, back }: PageHeaderProps) {
   return (
-    <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {back}
-        {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h1 className="mt-3 text-[28px] leading-tight font-extrabold tracking-[-.025em] text-ink sm:text-[34px]">
-          {title}
-        </h1>
+    <header className="mb-6 sm:mb-8">
+      {back}
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+      {/* Nút thao tác căn giữa theo dòng tiêu đề; trên điện thoại nằm dưới mô tả */}
+      <div className="mt-3 grid gap-x-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <h1 className="text-[28px] leading-tight font-extrabold tracking-[-.025em] text-ink sm:text-[34px]">{title}</h1>
+        {actions && <div className="order-last mt-4 flex flex-wrap gap-2 sm:order-none sm:mt-0">{actions}</div>}
         {description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
     </header>
   );
 }

@@ -30,7 +30,15 @@ export function WorkoutPlanFormDialog({ open, onClose, plan, onCreated }: Props)
       open={open}
       onClose={onClose}
       title={plan ? 'Sửa thông tin giáo án' : 'Tạo giáo án'}
-      description={plan ? undefined : 'Giáo án mới ở trạng thái Nháp. Thêm mục rồi kích hoạt để gán cho khóa 1-1.'}
+      description={
+        plan ? undefined : (
+          <>
+            Giáo án mới ở trạng thái Nháp.
+            <br />
+            Thêm mục rồi kích hoạt để gán cho khóa 1-1.
+          </>
+        )
+      }
     >
       <PlanForm plan={plan} onClose={onClose} onCreated={onCreated} />
     </Dialog>
