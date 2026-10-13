@@ -27,10 +27,11 @@ export function PageHeader({ eyebrow, title, description, actions, back }: PageH
       {back}
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       {/* Nút thao tác căn giữa theo dòng tiêu đề; trên điện thoại nằm dưới mô tả */}
-      <div className="mt-3 grid gap-x-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className={`mt-3 grid gap-x-6 ${actions ? 'sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center' : ''}`}>
         <h1 className="text-[28px] leading-tight font-extrabold tracking-[-.025em] text-ink sm:text-[34px]">{title}</h1>
         {actions && <div className="order-last mt-4 flex flex-wrap gap-2 sm:order-none sm:mt-0">{actions}</div>}
-        {description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>}
+        {/* col-span-full: mô tả luôn nằm dưới tiêu đề, không bị đẩy sang cột của nút */}
+        {description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-pretty text-muted sm:col-span-full">{description}</p>}
       </div>
     </header>
   );

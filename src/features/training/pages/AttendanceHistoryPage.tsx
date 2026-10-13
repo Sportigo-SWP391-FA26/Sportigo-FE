@@ -15,9 +15,15 @@ export function AttendanceHistoryPage({ scope }: { scope: 'coach' | 'manager' })
         eyebrow="Điểm danh"
         title={scope === 'coach' ? 'Điểm danh' : 'Lịch sử điểm danh'}
         description={
-          scope === 'coach'
-            ? 'Điểm danh các buổi lớp bạn phụ trách và tra cứu lịch sử. Bấm vào thời gian buổi học để mở lại màn điểm danh.'
-            : 'Tra cứu điểm danh của toàn trung tâm theo thời gian, trạng thái, lớp và học viên.'
+          scope === 'coach' ? (
+            <>
+              Điểm danh các buổi lớp bạn phụ trách và tra cứu lịch sử.
+              <br />
+              Bấm vào thời gian buổi học để mở lại màn điểm danh.
+            </>
+          ) : (
+            'Tra cứu điểm danh của toàn trung tâm theo thời gian, trạng thái, lớp và học viên.'
+          )
         }
       />
       {scope === 'coach' && <CoachSessionsToday />}
