@@ -9,6 +9,10 @@ import { LandingPage } from '../features/landing/pages/LandingPage';
 import { MemberLayout } from '../layouts/MemberLayout';
 import { MemberHomePage } from '../features/member/pages/MemberHomePage';
 import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
+import { MemberPaymentsPage } from '../features/finance/pages/MemberPaymentsPage';
+import { PaymentResultPage } from '../features/finance/pages/PaymentResultPage';
+import { CashierPage } from '../features/finance/pages/CashierPage';
+import { ManagerFinancePage } from '../features/finance/pages/ManagerFinancePage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -21,6 +25,11 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'cashier', element: <CashierPage /> },
+      { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
+      { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
+      { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
+      { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
       { path: ':section', element: <ComingSoonPage /> },
     ],
   },
@@ -31,6 +40,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="home" replace /> },
       { path: 'home', element: <MemberHomePage /> },
       { path: 'classes', element: <ClassSchedulePage /> },
+      { path: 'payments', element: <MemberPaymentsPage /> },
+      { path: 'payments/result', element: <PaymentResultPage /> },
       { path: ':section', element: <ComingSoonPage /> },
     ],
   },
