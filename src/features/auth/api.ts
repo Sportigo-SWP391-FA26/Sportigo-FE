@@ -10,7 +10,6 @@ type RegisterResponse = {
   message: string;
   email: string;
   emailSent: boolean;
-  verificationUrl?: string;
 };
 
 export async function login(input: LoginInput) {
@@ -27,8 +26,8 @@ export async function registerMember(input: RegisterInput) {
   return response.data
 }
 
-export async function verifyEmail(token: string) {
-  const response = await apiClient.post<{ message: string }>('/auth/verify-email', { token });
+export async function verifyEmail(email: string, code: string) {
+  const response = await apiClient.post<{ message: string }>('/auth/verify-email', { email, code });
   return response.data;
 }
 
