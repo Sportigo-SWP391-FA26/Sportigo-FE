@@ -23,4 +23,8 @@ export const financeApi = {
   revenue: () => apiClient.get<Revenue>('/reports/revenue').then((r) => r.data),
   audit: () => apiClient.get<AuditPage>('/audit-logs').then((r) => r.data),
   verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; responseCode?: string; reference?: string }>(`/payments/vnpay/return?${query}`).then((r) => r.data),
+  invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),
+  revenueExcel: () => apiClient.get<Blob>('/reports/revenue/export', { responseType: 'blob' }).then((r) => r.data),
 };
+
+export function saveBlob(blob: Blob, filename: string) { const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=filename; link.click(); URL.revokeObjectURL(url); }

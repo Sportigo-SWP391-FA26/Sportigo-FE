@@ -11,12 +11,12 @@ test('member can view wallet and payment history', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Thanh toán & ví Sportigo' })).toBeVisible();
   await expect(page.getByText('250.000 ₫')).toBeVisible();
   await expect(page.getByText('SO-7')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Tải hóa đơn' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tải hóa đơn' })).toBeVisible();
 });
 
 test('manager can view net revenue', async ({ page }) => {
   await page.goto('/app/revenue');
   await expect(page.getByRole('heading', { name: 'Báo cáo doanh thu' })).toBeVisible();
   await expect(page.getByText('900.000 ₫')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Xuất Excel' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xuất Excel' })).toBeVisible();
 });
