@@ -14,5 +14,6 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Khuyến mãi', path: '/app/promotions' },
   { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
   { label: 'Báo cáo Doanh thu', path: '/app/revenue' },
+  { label: 'Báo cáo Vận hành', path: '/app/operations-report' },
   { label: 'Audit Log', path: '/app/audit-logs' },
 ];

@@ -4,6 +4,14 @@ test.beforeEach(async ({ page }) => {
   await page.route('http://localhost:3000/api/members/me/wallet**', (route) => route.fulfill({ json: { balance: 250000, transactions: [], total: 0 } }));
   await page.route('http://localhost:3000/api/payments**', (route) => route.fulfill({ json: { items: [{ id: 8, reference: 'WAL-8', amount: '150000', channel: 'WALLET', status: 'SUCCESS', createdAt: new Date().toISOString(), order: { id: 7, orderNumber: 'SO-7', invoice: { id: 3, invoiceNumber: 'INV-3' } }, paymentMethod: { name: 'Ví Sportigo' } }] } }));
   await page.route('http://localhost:3000/api/reports/revenue**', (route) => route.fulfill({ json: { gross: 1000000, refunds: 100000, net: 900000, transactions: 4, byChannel: { ONLINE: 900000 } } }));
+  await page.route('http://localhost:3000/api/reports/classes**', (route) => route.fulfill({ json: [{ id: 1, name: 'Swimming Endurance', capacity: 20, confirmed: 15, waitlist: 2, occupancyRate: .75, attendanceRate: .9 }] }));
+});
+
+test('manager can view class operations report', async ({ page }) => {
+  await page.goto('/app/operations-report');
+  await expect(page.getByRole('heading', { name: 'Báo cáo vận hành lớp' })).toBeVisible();
+  await expect(page.getByText('Swimming Endurance')).toBeVisible();
+  await expect(page.getByText(/Lấp đầy 75%/)).toBeVisible();
 });
 
 test('member can view wallet and payment history', async ({ page }) => {

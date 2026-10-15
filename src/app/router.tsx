@@ -27,6 +27,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'cashier', element: <CashierPage /> },
       { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
+      { path: 'operations-report', element: <ManagerFinancePage view="classes" /> },
       { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
       { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
       { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },

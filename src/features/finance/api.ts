@@ -7,6 +7,7 @@ export type Promotion = { id: number; code: string; name: string; discountType: 
 export type RefundRequest = { id: number; requestedAmount: string; reason: string; status: string; requestedAt: string; member: { user: { displayName: string; email: string } }; payment: { reference: string; order: { orderNumber: string } } };
 export type Revenue = { gross: number; refunds: number; net: number; transactions: number; byChannel: Record<string, number> };
 export type AuditPage = { items: { id: number; action: string; entityType: string; entityId: string; createdAt: string; actor?: { displayName: string } }[]; total: number };
+export type ClassReportRow = { id: number; name: string; capacity: number; confirmed: number; waitlist: number; occupancyRate: number; attendanceRate: number };
 
 export const financeApi = {
   wallet: () => apiClient.get<Wallet>('/members/me/wallet').then((r) => r.data),
@@ -22,9 +23,11 @@ export const financeApi = {
   completeRefund: (id: number) => apiClient.post(`/refund-requests/${id}/complete`).then((r) => r.data),
   revenue: () => apiClient.get<Revenue>('/reports/revenue').then((r) => r.data),
   audit: () => apiClient.get<AuditPage>('/audit-logs').then((r) => r.data),
+  classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),
   verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; responseCode?: string; reference?: string }>(`/payments/vnpay/return?${query}`).then((r) => r.data),
   invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),
   revenueExcel: () => apiClient.get<Blob>('/reports/revenue/export', { responseType: 'blob' }).then((r) => r.data),
+  reportFile: (kind: 'revenue'|'classes', format: 'xlsx'|'pdf') => apiClient.get<Blob>(`/reports/${kind}/export`, { params: { format }, responseType: 'blob' }).then((r) => r.data),
 };
 
 export function saveBlob(blob: Blob, filename: string) { const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=filename; link.click(); URL.revokeObjectURL(url); }
