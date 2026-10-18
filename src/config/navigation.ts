@@ -9,6 +9,7 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Quản lý Nhân sự', path: '/app/staff' },
   { label: 'Quản lý Bộ môn', path: '/app/sports' },
   { label: 'Danh sách Lớp học', path: '/app/classes' },
+  { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
   { label: 'Quản lý Phòng tập', path: '/app/rooms' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
   { label: 'Khuyến mãi', path: '/app/promotions' },
@@ -16,4 +17,10 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Báo cáo Doanh thu', path: '/app/revenue' },
   { label: 'Báo cáo Vận hành', path: '/app/operations-report' },
   { label: 'Audit Log', path: '/app/audit-logs' },
+];
+
+export const coachNavigation: NavigationItem[] = [
+  { label: 'Điểm danh', path: '/coach/attendance' },
+  { label: 'Giáo án', path: '/coach/workout-plans' },
+  { label: 'Đánh giá tiến độ', path: '/coach/assessments' },
 ];
