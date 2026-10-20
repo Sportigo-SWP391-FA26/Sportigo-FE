@@ -8,6 +8,7 @@ import { BrandLogo } from '../../../components/brand/BrandLogo'
 import { AuthShell } from '../components/AuthShell'
 import { registerMember } from '../api'
 import { registerSchema, type RegisterInput } from '../schema'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -30,7 +31,7 @@ export function RegisterPage() {
         <button className="auth-submit" type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Đang tạo tài khoản…' : 'Hoàn tất đăng ký ngay'}</button>
       </form>
       <div className="auth-divider"><span>HOẶC ĐĂNG KÝ NHANH VỚI</span></div>
-      <div className="auth-social auth-social--single"><button className="auth-social__google" type="button"><img src="/images/brand/google-g.svg" alt="" aria-hidden="true" /><span className="google-wordmark" aria-label="Google"><i>G</i><i>o</i><i>o</i><i>g</i><i>l</i><i>e</i></span></button></div>
+      <div className="auth-social auth-social--single"><GoogleSignInButton /></div>
       <p className="auth-switch">Đã có tài khoản Sportigo? <Link to="/login">Đăng nhập ngay <ArrowRight /></Link></p>
       <div className="auth-offer auth-offer--wide"><div><b>ĐẶC QUYỀN HỘI VIÊN MỚI SPORTIGO <mark>QUÀ TẶNG 1.200K</mark></b><p>Nhận ngay <strong>thẻ tập thử 07 ngày miễn phí toàn bộ 4 bộ môn</strong> + 1 buổi đo chỉ số InBody 3D cùng HLV cá nhân.</p></div></div>
     </AuthShell>

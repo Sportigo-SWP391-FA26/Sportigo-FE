@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { LoginInput, RegisterInput } from './schema';
+import type { LoginInput, RegisterInput, ResetPasswordInput } from './schema';
 
 type LoginResponse = {
   accessToken: string;
@@ -42,4 +42,20 @@ export async function logout() {
   } finally {
     localStorage.removeItem('accessToken');
   }
+}
+
+export async function requestPasswordReset(email: string) {
+  const response = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
+  return response.data;
+}
+
+export async function resetPassword(email: string, input: ResetPasswordInput) {
+  const response = await apiClient.post<{ message: string }>('/auth/reset-password', { email, ...input });
+  return response.data;
+}
+
+export async function loginWithGoogle(credential: string) {
+  const response = await apiClient.post<LoginResponse>('/auth/google', { credential });
+  localStorage.setItem('accessToken', response.data.accessToken);
+  return response.data;
 }

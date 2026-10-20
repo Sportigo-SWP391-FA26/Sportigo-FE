@@ -3,6 +3,7 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegisterPage } from '../features/auth/pages/RegisterPage';
 import { VerifyEmailPage } from '../features/auth/pages/VerifyEmailPage';
+import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { LandingPage } from '../features/landing/pages/LandingPage';
@@ -24,25 +25,40 @@ import { WorkoutPlanDetailPage } from '../features/training/pages/WorkoutPlanDet
 import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansPage';
 import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
 import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
+import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
   {
     path: '/app',
-    element: <AppLayout />,
+    element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: <DashboardPage /> },
-      { path: 'cashier', element: <CashierPage /> },
-      { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
-      { path: 'operations-report', element: <ManagerFinancePage view="classes" /> },
-      { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
-      { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
-      { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
-      { path: ':section', element: <ComingSoonPage /> },
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <RoleHomeRedirect /> },
+          {
+            element: <RequireRole roles={['CENTER_MANAGER']} />,
+            children: [
+              { path: 'dashboard', element: <DashboardPage /> },
+              { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
+              { path: 'operations-report', element: <ManagerFinancePage view="classes" /> },
+              { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
+              { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
+              { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
+              { path: ':section', element: <ComingSoonPage /> },
+            ],
+          },
+          {
+            element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
+            children: [{ path: 'cashier', element: <CashierPage /> }],
+          },
+        ],
+      },
     ],
   },
   {

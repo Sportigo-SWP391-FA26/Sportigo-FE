@@ -23,5 +23,5 @@ export const roleHomePath: Record<AppRole, string> = {
   CENTER_MANAGER: '/app/dashboard',
   COACH: '/coach/attendance',
   MEMBER: '/member/home',
-  RECEPTIONIST: '/',
+  RECEPTIONIST: '/app/cashier',
 };

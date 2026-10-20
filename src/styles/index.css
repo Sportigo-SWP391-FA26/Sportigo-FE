@@ -55,12 +55,16 @@ html { scroll-behavior: smooth; }
 ::selection { color: #fff; background: #2563eb; }
 .brand-logo img { display: block; }
 .landing-page { color: #121b2e; overflow: hidden; }
-.landing-hero { min-height: 780px; position: relative; color: #fff; background-size: cover; background-position: center; }
+.landing-hero { min-height: 780px; position: relative; display: flow-root; color: #fff; background-size: cover; background-position: center; }
 .landing-hero__overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(3 15 32 / 88%), rgb(5 23 45 / 48%) 52%, rgb(5 23 45 / 38%)), linear-gradient(0deg, rgb(3 15 32 / 78%), transparent 45%); }
-.landing-nav { position: relative; z-index: 2; width: 100%; height: 88px; margin: 0; padding-inline: clamp(20px, 3vw, 56px); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgb(255 255 255 / 25%); }
+.landing-nav { position: fixed; inset: 0 0 auto; z-index: 50; width: 100%; height: 88px; margin: 0; padding-inline: clamp(20px, 3vw, 56px); display: flex; align-items: center; justify-content: space-between; color: #fff; border-bottom: 1px solid rgb(255 255 255 / 25%); background: transparent; transform: translateY(0); transition: transform .35s cubic-bezier(.16,1,.3,1), color .25s ease, background-color .35s ease, border-color .35s ease, box-shadow .35s ease; }
+.landing-nav--scrolled { color: #121b2e; border-color: rgb(15 23 42 / 9%); background: rgb(255 255 255 / 96%); box-shadow: 0 14px 40px rgb(15 23 42 / 10%); }
+.landing-nav--hidden { transform: translateY(-105%); box-shadow: none; }
 .landing-nav::before { content: none; }
-.landing-logo { width: 190px; height: 58px; padding: 8px 12px; border-radius: 12px; background: rgb(255 255 255 / 94%); }
+.landing-logo { width: 190px; height: 58px; padding: 0; background: transparent; }
 .landing-logo img, .footer-logo img { width: 100%; height: 100%; object-fit: contain; }
+.landing-logo img { filter: brightness(0) invert(1); transform: scale(1.04); transition: filter .45s ease, transform .45s cubic-bezier(.16,1,.3,1); }
+.landing-nav--scrolled .landing-logo img { filter: none; transform: scale(1); }
 .landing-nav nav, .landing-nav__actions { display: flex; align-items: center; gap: 28px; }
 .landing-nav a { color: inherit; text-decoration: none; font-size: 13px; font-weight: 700; }
 .landing-nav a:hover { color: #fbbf24; }
@@ -197,7 +201,12 @@ html { scroll-behavior: smooth; }
 .landing-hero__overlay { z-index: 0; background: linear-gradient(90deg, rgb(3 15 32 / 92%), rgb(5 23 45 / 54%) 58%, rgb(5 23 45 / 28%)), linear-gradient(0deg, rgb(3 15 32 / 84%), transparent 48%); }
 .landing-logo { width: 235px; height: 72px; padding: 0; border-radius: 0; background: transparent; filter: drop-shadow(0 4px 16px rgb(0 0 0 / 32%)); }
 .landing-logo img, .footer-logo img { object-fit: contain; }
-.landing-nav .landing-logo img { filter: brightness(0) invert(1); transition: filter .35s ease, opacity .35s ease; }
+.landing-nav .landing-logo img { filter: brightness(0) invert(1); transition: filter .45s cubic-bezier(.16,1,.3,1), opacity .35s ease, transform .45s cubic-bezier(.16,1,.3,1); }
+.landing-nav--scrolled .landing-logo img { filter: none; transform: scale(.94); }
+.landing-nav--scrolled .landing-nav__phone { color: #0f66d8 !important; }
+.landing-nav--scrolled .landing-nav__login { border-color: rgb(37 99 235 / 24%); }
+.landing-nav--scrolled a:hover { color: #1d4ed8; }
+@media (prefers-reduced-motion: reduce) { .landing-nav, .landing-nav .landing-logo img { transition-duration: .01ms; } }
 .landing-hero__body { display: block; margin-top: 92px; }
 .landing-hero__copy { max-width: 760px; }
 .hero-controls { display: flex; gap: 8px; margin-top: 48px; }
@@ -407,6 +416,10 @@ html { scroll-behavior: smooth; }
 .auth-social { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.auth-social button { height: 40px; border: 1px solid #e2e8f0; border-radius: 10px; color: #334155; background: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; transition: background .2s, border-color .2s, box-shadow .2s, transform .2s; }.auth-social button:hover { background: #f8fafc; border-color: #cbd5e1; }.auth-social button:active { transform: scale(.98); }.auth-social svg { font-size: 16px; }
 .auth-social__google { border-color: #dadce0 !important; color: #3c4043 !important; background: #fff !important; box-shadow: 0 1px 2px rgb(60 64 67 / 8%); }.auth-social__google > img { width: 18px; height: 18px; object-fit: contain; }.auth-social__google:hover { border-color: #c2c8d0 !important; background: #f8fbff !important; box-shadow: 0 2px 6px rgb(66 133 244 / 15%); }
 .google-wordmark { display: inline-flex; font-weight: 700; letter-spacing: -.02em; }.google-wordmark i { font-style: normal; }.google-wordmark i:nth-child(1),.google-wordmark i:nth-child(4) { color: #4285f4; }.google-wordmark i:nth-child(2),.google-wordmark i:nth-child(6) { color: #ea4335; }.google-wordmark i:nth-child(3) { color: #fbbc05; }.google-wordmark i:nth-child(5) { color: #34a853; }
+.google-sign-in { width: min(100%, 420px); margin-inline: auto; }
+.google-sign-in__button { min-height: 44px; display: flex; justify-content: center; overflow: hidden; border-radius: 8px; }
+.google-sign-in__button > div { width: 100% !important; }
+.auth-social-status { margin: 8px 0 0; color: #64748b; font-size: 13px; text-align: center; }
 .auth-social--single { grid-template-columns: 1fr; }
 .auth-offer { margin-top: 16px; padding: 13px 14px; border: 1px solid #dbeafe; border-radius: 14px; background: #eff6ff; display: flex; align-items: center; justify-content: space-between; gap: 14px; }.auth-offer b { color: #1d4ed8; font-size: 9px; letter-spacing: .06em; }.auth-offer p { margin: 3px 0 0; color: #475569; font-size: 10px; line-height: 1.45; }.auth-offer a { flex: 0 0 auto; padding: 9px 12px; border-radius: 10px; color: #fff; background: #2563eb; display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; text-decoration: none; }.auth-offer--wide { align-items: flex-start; background: linear-gradient(90deg,#eff6ff,#f0f9ff,#eef2ff); }.auth-offer mark { margin-left: 5px; padding: 2px 6px; border-radius: 99px; color: #1e40af; background: #dbeafe; font-size: 8px; }
 .auth-switch { margin: 13px 0 0; font-size: 10px; }.auth-switch a { display: inline-flex; align-items: center; gap: 3px; }
