@@ -26,6 +26,7 @@ import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansP
 import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
 import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
+import { ProfilePage } from '../features/profile/pages/ProfilePage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -55,7 +56,11 @@ export const router = createBrowserRouter([
           },
           {
             element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
-            children: [{ path: 'cashier', element: <CashierPage /> }],
+            children: [
+              { path: 'cashier', element: <CashierPage /> },
+              // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
+              { path: 'profile', element: <ProfilePage /> },
+            ],
           },
         ],
       },
@@ -75,6 +80,7 @@ export const router = createBrowserRouter([
         children: [
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
           { path: 'progress', element: <MemberProgressPage /> },
+          { path: 'profile', element: <ProfilePage /> },
         ],
       },
       { path: ':section', element: <ComingSoonPage /> },
@@ -95,6 +101,7 @@ export const router = createBrowserRouter([
           { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
           { path: 'assessments/new', element: <NewAssessmentPage /> },
+          { path: 'profile', element: <ProfilePage /> },
         ],
       },
     ],

@@ -528,6 +528,9 @@ html { scroll-behavior: smooth; }
 .member-nav__links a.active { color: #1d4ed8; background: #eff6ff; }
 .member-nav__account { margin-left: auto; display: flex; align-items: center; gap: 12px; color: #1e293b; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .member-nav__account > img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.member-nav__profile { display: flex; align-items: center; gap: 12px; border-radius: 999px; color: inherit; text-decoration: none; }
+.member-nav__profile:focus-visible { outline: 2px solid #1769e8; outline-offset: 3px; }
+.member-nav__avatar { display: grid; width: 40px; height: 40px; flex-shrink: 0; place-items: center; border-radius: 50%; background: #1769e8; color: #fff; font-size: 13px; font-weight: 800; }
 .member-nav__bell { position: relative; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; color: #172033; background: transparent; display: grid; place-items: center; font-size: 21px; cursor: pointer; }
 .member-nav__bell:hover { background: #f1f5f9; }.member-nav__bell i { position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border: 2px solid #fff; border-radius: 50%; background: #ef4444; }
 .member-nav__logout { min-height: 40px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 10px; color: inherit; background: transparent; display: flex; align-items: center; gap: 7px; font: inherit; cursor: pointer; }

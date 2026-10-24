@@ -1,4 +1,4 @@
-import { SignOut } from '@phosphor-icons/react';
+import { SignOut, UserCircle } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -8,9 +8,11 @@ import { logout } from '../../features/auth/api';
 type SidebarProps = {
   roleLabel: string;
   items: NavigationItem[];
+  /** Trang Hồ sơ theo layout: /coach/profile hoặc /app/profile */
+  profilePath: string;
 };
 
-export function Sidebar({ roleLabel, items }: SidebarProps) {
+export function Sidebar({ roleLabel, items, profilePath }: SidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -46,8 +48,20 @@ export function Sidebar({ roleLabel, items }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+      {/* note: mt-auto đẩy cụm Hồ sơ + Đăng xuất xuống đáy sidebar */}
+      <NavLink
+        to={profilePath}
+        className={({ isActive }) =>
+          `mt-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${
+            isActive ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+          }`
+        }
+      >
+        <UserCircle size={18} />
+        Hồ sơ của tôi
+      </NavLink>
       <button
-        className="mt-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60"
+        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60"
         type="button"
         onClick={handleLogout}
         disabled={isLoggingOut}

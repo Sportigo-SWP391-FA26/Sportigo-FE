@@ -1,9 +1,15 @@
 import { Bell, List, SignOut, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { getSessionRole } from '../../../components/auth/session';
 import { BrandLogo } from '../../../components/brand/BrandLogo';
 import { logout } from '../../auth/api';
-import { memberProfile } from '../mockData';
+import { useMyProfile } from '../../profile/hooks/useMyProfile';
+
+// Chữ cái đầu của 2 từ cuối, ví dụ "Nguyễn Trường Giang" → "TG"
+function initials(name: string) {
+  return name.trim().split(/\s+/).slice(-2).map((word) => word[0]?.toUpperCase() ?? '').join('');
+}
 
 const items = [
   ['Trang chủ', '/member/home'],
@@ -23,6 +29,9 @@ export function MemberNavbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const overlaysHero = pathname === '/member/home' && !scrolled;
+  // note: một số trang /member chưa yêu cầu đăng nhập; chỉ gọi /users/me khi có phiên Member để tránh 401 thừa
+  const profile = useMyProfile(getSessionRole() === 'MEMBER');
+  const displayName = profile.data?.displayName ?? 'Hội viên';
 
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 36);
@@ -56,8 +65,10 @@ export function MemberNavbar() {
         </nav>
         <div className="member-nav__account">
           <button aria-label="Thông báo" className="member-nav__bell"><Bell /><i /></button>
-          <img src={memberProfile.avatar} alt="" />
-          <span>{memberProfile.name}</span>
+          <Link to="/member/profile" className="member-nav__profile" aria-label={`Hồ sơ của ${displayName}`}>
+            <strong className="member-nav__avatar" aria-hidden="true">{initials(displayName)}</strong>
+            <span>{displayName}</span>
+          </Link>
           <button className="member-nav__logout" type="button" onClick={handleLogout} disabled={isLoggingOut} aria-label="Đăng xuất">
             <SignOut />
             <span>{isLoggingOut ? 'Đang thoát…' : 'Đăng xuất'}</span>
