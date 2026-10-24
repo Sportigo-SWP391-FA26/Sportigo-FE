@@ -1,9 +1,10 @@
-import { Bell, List, SignOut, X } from '@phosphor-icons/react';
+import { List, SignOut, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
 import { BrandLogo } from '../../../components/brand/BrandLogo';
 import { logout } from '../../auth/api';
+import { NotificationBell } from '../../notifications/components/NotificationBell';
 import { useMyProfile } from '../../profile/hooks/useMyProfile';
 
 // Chữ cái đầu của 2 từ cuối, ví dụ "Nguyễn Trường Giang" → "TG"
@@ -30,7 +31,8 @@ export function MemberNavbar() {
   const navigate = useNavigate();
   const overlaysHero = pathname === '/member/home' && !scrolled;
   // note: một số trang /member chưa yêu cầu đăng nhập; chỉ gọi /users/me khi có phiên Member để tránh 401 thừa
-  const profile = useMyProfile(getSessionRole() === 'MEMBER');
+  const isMember = getSessionRole() === 'MEMBER';
+  const profile = useMyProfile(isMember);
   const displayName = profile.data?.displayName ?? 'Hội viên';
 
   useEffect(() => {
@@ -64,7 +66,8 @@ export function MemberNavbar() {
           ))}
         </nav>
         <div className="member-nav__account">
-          <button aria-label="Thông báo" className="member-nav__bell"><Bell /><i /></button>
+          {/* note(FR-54): chuông thật thay cho nút tĩnh; chấm đỏ cũ đổi thành huy hiệu số chưa đọc */}
+          <NotificationBell enabled={isMember} buttonClassName="member-nav__bell" align="right" />
           <Link to="/member/profile" className="member-nav__profile" aria-label={`Hồ sơ của ${displayName}`}>
             <strong className="member-nav__avatar" aria-hidden="true">{initials(displayName)}</strong>
             <span>{displayName}</span>

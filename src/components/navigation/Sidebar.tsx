@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import type { NavigationItem } from '../../config/navigation';
 import { logout } from '../../features/auth/api';
+import { NotificationBell } from '../../features/notifications/components/NotificationBell';
 
 type SidebarProps = {
   roleLabel: string;
@@ -27,7 +28,14 @@ export function Sidebar({ roleLabel, items, profilePath }: SidebarProps) {
 
   return (
     <aside className="flex min-h-screen flex-col border-r border-slate-200 bg-white p-5">
-      <p className="text-lg font-bold text-blue-600">Sport Center</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-lg font-bold text-blue-600">Sport Center</p>
+        {/* note(FR-54): Sidebar dùng cho Manager, Receptionist, Coach nên chuông luôn bật */}
+        <NotificationBell
+          align="left"
+          buttonClassName="grid size-10 place-items-center rounded-full text-xl text-slate-600 hover:bg-slate-100"
+        />
+      </div>
       <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-slate-400">
         {roleLabel}
       </p>
