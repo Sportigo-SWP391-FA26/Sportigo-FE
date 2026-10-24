@@ -5,6 +5,7 @@ export type NavigationItem = {
 
 export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Dashboard', path: '/app/dashboard' },
+  { label: 'Quản lý Người dùng', path: '/app/users' },
   { label: 'Quản lý Hội viên', path: '/app/members' },
   { label: 'Quản lý Nhân sự', path: '/app/staff' },
   { label: 'Quản lý Bộ môn', path: '/app/sports' },
@@ -17,6 +18,12 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Báo cáo Doanh thu', path: '/app/revenue' },
   { label: 'Báo cáo Vận hành', path: '/app/operations-report' },
   { label: 'Audit Log', path: '/app/audit-logs' },
+];
+
+// FR-09: trước đây Receptionist dùng chung menu Manager nên thấy cả mục không có quyền
+export const receptionistNavigation: NavigationItem[] = [
+  { label: 'Tra cứu Hội viên', path: '/app/users' },
+  { label: 'Thu tiền tại quầy', path: '/app/cashier' },
 ];
 
 export const coachNavigation: NavigationItem[] = [

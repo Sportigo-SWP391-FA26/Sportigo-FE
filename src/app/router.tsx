@@ -27,6 +27,7 @@ import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
 import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
+import { UsersPage } from '../features/users/pages/UsersPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -60,6 +61,8 @@ export const router = createBrowserRouter([
               { path: 'cashier', element: <CashierPage /> },
               // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
               { path: 'profile', element: <ProfilePage /> },
+              // FR-09: Manager và Receptionist cùng dùng, backend tự giới hạn Receptionist chỉ thấy Member
+              { path: 'users', element: <UsersPage /> },
             ],
           },
         ],
