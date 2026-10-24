@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changeUserStatus, listUsers } from '../api';
-import type { ChangeStatusInput, UserListQuery } from '../types';
+import { changeUserStatus, createMember, listUsers } from '../api';
+import type { ChangeStatusInput, CreateMemberInput, UserListQuery } from '../types';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -23,6 +23,15 @@ export function useChangeUserStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, input }: { userId: number; input: ChangeStatusInput }) => changeUserStatus(userId, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.all }),
+  });
+}
+
+// FR-08: tạo xong thì làm mới danh sách để hội viên mới hiện ngay trong bảng
+export function useCreateMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateMemberInput) => createMember(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.all }),
   });
 }

@@ -27,6 +27,16 @@ export type UserListQuery = {
 // FR-06: body PATCH /api/users/:id/status
 export type ChangeStatusInput = { status: 'ACTIVE' | 'LOCKED'; reason: string };
 
+// FR-08: body POST /api/members (mã hội viên và mật khẩu do hệ thống tạo)
+export type CreateMemberInput = {
+  displayName: string;
+  email: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  emergencyContact?: string;
+};
+
 export type UserListPage = {
   items: UserSummary[];
   page: number;

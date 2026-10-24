@@ -1,4 +1,4 @@
-import { MagnifyingGlass, UsersThree } from '@phosphor-icons/react';
+import { MagnifyingGlass, UserPlus, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getSessionRole, type AppRole } from '../../../components/auth/session';
@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/
 import { inputClass } from '../../training/components/ui/styles';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
 import { Button } from '../../training/components/ui/Button';
+import { CreateMemberDialog } from '../components/CreateMemberDialog';
 import { UserStatusDialog } from '../components/UserStatusDialog';
 import { UserTable } from '../components/UserTable';
 import { useUserList } from '../hooks/useUsers';
@@ -31,6 +32,7 @@ export function UsersPage() {
   const [search, setSearch] = useState(params.get('q') ?? '');
   // FR-06: người đang được khóa/mở khóa (null = hộp thoại đóng)
   const [statusTarget, setStatusTarget] = useState<UserSummary | null>(null);
+  const [creating, setCreating] = useState(false);
   // note: chờ người dùng ngừng gõ 300ms mới gọi API, tránh gửi request theo từng phím
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
@@ -62,6 +64,12 @@ export function UsersPage() {
           isManager
             ? 'Tìm theo tên, email, số điện thoại hoặc mã; lọc theo vai trò và trạng thái.'
             : 'Tìm hội viên theo tên, email, số điện thoại hoặc mã hội viên.'
+        }
+        actions={
+          // FR-08: tạo hội viên tại quầy (Receptionist và Manager)
+          <Button icon={<UserPlus aria-hidden="true" />} onClick={() => setCreating(true)}>
+            Tạo hội viên
+          </Button>
         }
       />
 
@@ -145,6 +153,7 @@ export function UsersPage() {
       )}
 
       {isManager && <UserStatusDialog user={statusTarget} onClose={() => setStatusTarget(null)} />}
+      <CreateMemberDialog open={creating} onClose={() => setCreating(false)} />
     </div>
   );
 }
