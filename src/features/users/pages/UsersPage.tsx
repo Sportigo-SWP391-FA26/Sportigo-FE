@@ -7,7 +7,7 @@ import { Pagination } from '../../training/components/ui/Pagination';
 import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
 import { inputClass } from '../../training/components/ui/styles';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
-import { Button } from '../../training/components/ui/Button';
+import { Button, ButtonLink } from '../../training/components/ui/Button';
 import { CreateMemberDialog } from '../components/CreateMemberDialog';
 import { UserStatusDialog } from '../components/UserStatusDialog';
 import { UserTable } from '../components/UserTable';
@@ -125,22 +125,27 @@ export function UsersPage() {
         <div className={`transition-opacity ${users.isPlaceholderData ? 'opacity-60' : ''}`} aria-busy={users.isFetching}>
           <UserTable
             users={items}
-            renderActions={
-              isManager
-                ? (user) =>
-                    // note: backend không cho khóa Manager (kể cả chính mình) nên ẩn nút ở các dòng đó
-                    user.role === 'CENTER_MANAGER' ? null : (
-                      <Button
-                        size="sm"
-                        variant={user.status === 'LOCKED' ? 'secondary' : 'ghost'}
-                        onClick={() => setStatusTarget(user)}
-                        aria-label={`${user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'} ${user.displayName}`}
-                      >
-                        {user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
-                      </Button>
-                    )
-                : undefined
-            }
+            renderActions={(user) => (
+              <div className="flex justify-end gap-2">
+                {/* FR-10: hồ sơ tổng hợp chỉ có ở Member */}
+                {user.role === 'MEMBER' && (
+                  <ButtonLink to={`/app/members/${user.id}`} size="sm" variant="secondary" aria-label={`Hồ sơ ${user.displayName}`}>
+                    Hồ sơ
+                  </ButtonLink>
+                )}
+                {/* note: backend không cho khóa Manager (kể cả chính mình) nên ẩn nút ở các dòng đó */}
+                {isManager && user.role !== 'CENTER_MANAGER' && (
+                  <Button
+                    size="sm"
+                    variant={user.status === 'LOCKED' ? 'secondary' : 'ghost'}
+                    onClick={() => setStatusTarget(user)}
+                    aria-label={`${user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'} ${user.displayName}`}
+                  >
+                    {user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
+                  </Button>
+                )}
+              </div>
+            )}
           />
           <Pagination
             page={users.data.page}
