@@ -34,6 +34,7 @@ import { MemberSupportDetailPage } from '../features/support/pages/MemberSupport
 import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
 import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
 import { MemberDetailPage } from '../features/members/pages/MemberDetailPage';
+import { CoachMembersPage } from '../features/members/pages/CoachMembersPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -121,6 +122,9 @@ export const router = createBrowserRouter([
           { path: 'assessments', element: <AssessmentsPage /> },
           { path: 'assessments/new', element: <NewAssessmentPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          // FR-11: học viên của Coach + hồ sơ tổng hợp (FR-10, backend tự giới hạn theo Coach)
+          { path: 'members', element: <CoachMembersPage /> },
+          { path: 'members/:memberId', element: <MemberDetailPage backTo="/coach/members" backLabel="Học viên của tôi" /> },
         ],
       },
     ],

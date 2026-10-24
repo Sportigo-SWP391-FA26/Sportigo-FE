@@ -1,5 +1,23 @@
 type Person = { id: number; displayName: string };
 
+// FR-11: khớp GET /api/coaches/me/members (coach-members.service.ts → toCoachMember)
+export type CoachMember = {
+  id: number;
+  displayName: string;
+  memberCode: string | null;
+  gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  dateOfBirth: string | null;
+  classes: { id: number; name: string; sport: string; status: string }[];
+  privateCourses: { enrollmentId: number; name: string; sport: string; status: string; remainingSessions: number; expiryDate: string | null }[];
+  goals: {
+    workoutPlans: { id: number; name: string; level: string }[];
+    latestAssessment: { assessmentDate: string | null; score: number | null; recommendation: string | null; nextAssessmentDate: string | null } | null;
+  };
+};
+
+export type CoachMembersQuery = { q?: string; type?: 'CLASS' | 'PRIVATE'; page: number; pageSize: number };
+export type CoachMembersPage = { items: CoachMember[]; page: number; pageSize: number; total: number };
+
 export type AttendanceSummary = { present: number; late: number; absent: number; excused: number; total: number };
 
 // Khớp GET /api/members/:id (Sportigo-BE/src/modules/users/member-profile.service.ts)

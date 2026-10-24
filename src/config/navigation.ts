@@ -30,6 +30,8 @@ export const receptionistNavigation: NavigationItem[] = [
 ];
 
 export const coachNavigation: NavigationItem[] = [
+  // FR-11
+  { label: 'Học viên của tôi', path: '/coach/members' },
   { label: 'Điểm danh', path: '/coach/attendance' },
   { label: 'Giáo án', path: '/coach/workout-plans' },
   { label: 'Đánh giá tiến độ', path: '/coach/assessments' },
