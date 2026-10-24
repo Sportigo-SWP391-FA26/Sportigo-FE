@@ -36,6 +36,15 @@ export type UpdateProfileInput = Partial<{
   bio: string | null;
 }>;
 
+// Body và response PUT /api/users/me/password (FR-62)
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+export type ChangePasswordResponse = { message: string; accessToken: string };
+
 // Nhóm trường hiển thị trên form, suy ra từ bản ghi Member/Coach giống backend
 export type ProfileKind = 'member' | 'coach' | 'staff';
 

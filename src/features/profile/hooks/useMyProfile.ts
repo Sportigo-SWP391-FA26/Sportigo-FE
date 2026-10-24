@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { getMyProfile, updateMyProfile } from '../api';
-import type { UpdateProfileInput } from '../types';
+import { changePassword, getMyProfile, updateMyProfile } from '../api';
+import type { ChangePasswordInput, UpdateProfileInput } from '../types';
 
 export const profileKeys = {
   me: () => ['profile', 'me'] as const,
@@ -26,5 +26,12 @@ export function useUpdateMyProfile() {
       queryClient.setQueryData(profileKeys.me(), profile);
       return queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
+  });
+}
+
+// FR-62: không cần invalidate cache vì đổi mật khẩu không làm đổi dữ liệu hồ sơ
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (input: ChangePasswordInput) => changePassword(input),
   });
 }

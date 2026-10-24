@@ -67,6 +67,30 @@ export function toFormValues(profile: MyProfile): ProfileFormValues {
   return base;
 }
 
+// ---------- FR-62: đổi mật khẩu ----------
+
+// note: không trim mật khẩu vì khoảng trắng là một phần của mật khẩu; 8–72 khớp backend (bcrypt dùng tối đa 72 byte)
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+    newPassword: z.string().min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự').max(72, 'Mật khẩu mới tối đa 72 ký tự'),
+    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
+  })
+  .strict()
+  // note: chỉ so chuỗi khi đã nhập mật khẩu hiện tại; backend vẫn so với hash và trả SAME_AS_CURRENT_PASSWORD
+  .refine((data) => !data.currentPassword || data.newPassword !== data.currentPassword, {
+    message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+    path: ['newPassword'],
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Mật khẩu xác nhận không khớp',
+    path: ['confirmPassword'],
+  });
+
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+export const PASSWORD_FIELDS = ['currentPassword', 'newPassword', 'confirmPassword'] as const;
+
 // note: chỉ gửi trường đã đổi; chuỗi rỗng ở trường không bắt buộc → null để backend xóa giá trị
 export function toUpdateInput(values: ProfileFormValues, dirty: Partial<Record<keyof ProfileFormValues, unknown>>): UpdateProfileInput {
   const input: UpdateProfileInput = {};

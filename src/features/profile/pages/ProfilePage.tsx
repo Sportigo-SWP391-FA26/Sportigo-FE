@@ -3,6 +3,7 @@ import { Card, PageHeader } from '../../training/components/ui/Card';
 import { ErrorState, ListSkeleton } from '../../training/components/ui/States';
 import { Tabs } from '../../training/components/ui/Tabs';
 import { tabPanelProps } from '../../training/components/ui/styles';
+import { ChangePasswordForm } from '../components/ChangePasswordForm';
 import { ProfileForm } from '../components/ProfileForm';
 import { useMyProfile } from '../hooks/useMyProfile';
 
@@ -15,7 +16,7 @@ const tabs = [
 
 const TAB_PREFIX = 'profile';
 
-// FR-05 · /member/profile, /coach/profile, /app/profile: cùng một trang cho mọi layout
+// FR-05 + FR-62 · /member/profile, /coach/profile, /app/profile: cùng một trang cho mọi layout
 export function ProfilePage() {
   const [tab, setTab] = useState<ProfileTab>('info');
   const profile = useMyProfile();
@@ -39,8 +40,10 @@ export function ProfilePage() {
             </Card>
           )
         ) : (
-          // TODO(FR-62): ChangePasswordForm, chờ PUT /api/users/me/password cấp phiên mới (createSession từ auth)
-          <Card className="p-5 text-sm text-muted sm:p-6">Chức năng đổi mật khẩu sẽ có ở bản cập nhật tiếp theo.</Card>
+          // note: FR-62 không phụ thuộc dữ liệu hồ sơ nên hiện được ngay, kể cả khi GET /users/me đang tải hoặc lỗi
+          <Card className="p-5 sm:p-6">
+            <ChangePasswordForm />
+          </Card>
         )}
       </div>
     </div>
