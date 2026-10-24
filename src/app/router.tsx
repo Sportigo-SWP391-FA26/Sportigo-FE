@@ -28,6 +28,7 @@ import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage'
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { UsersPage } from '../features/users/pages/UsersPage';
+import { StaffPage } from '../features/staff/pages/StaffPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -52,6 +53,8 @@ export const router = createBrowserRouter([
               { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
               { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
               { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
+              // FR-07: chỉ Manager quản lý nhân sự
+              { path: 'staff', element: <StaffPage /> },
               { path: ':section', element: <ComingSoonPage /> },
             ],
           },
