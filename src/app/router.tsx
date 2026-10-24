@@ -29,6 +29,8 @@ import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { UsersPage } from '../features/users/pages/UsersPage';
 import { StaffPage } from '../features/staff/pages/StaffPage';
+import { MemberSupportPage } from '../features/support/pages/MemberSupportPage';
+import { MemberSupportDetailPage } from '../features/support/pages/MemberSupportDetailPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -87,6 +89,9 @@ export const router = createBrowserRouter([
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
           { path: 'progress', element: <MemberProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          // FR-55: yêu cầu hỗ trợ của Member
+          { path: 'support', element: <MemberSupportPage /> },
+          { path: 'support/:requestId', element: <MemberSupportDetailPage /> },
         ],
       },
       { path: ':section', element: <ComingSoonPage /> },

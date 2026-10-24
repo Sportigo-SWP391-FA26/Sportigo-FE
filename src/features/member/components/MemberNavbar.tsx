@@ -1,4 +1,4 @@
-import { List, SignOut, X } from '@phosphor-icons/react';
+import { Headset, List, SignOut, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
@@ -68,6 +68,10 @@ export function MemberNavbar() {
         <div className="member-nav__account">
           {/* note(FR-54): chuông thật thay cho nút tĩnh; chấm đỏ cũ đổi thành huy hiệu số chưa đọc */}
           <NotificationBell enabled={isMember} buttonClassName="member-nav__bell" align="right" />
+          {/* note(FR-55): để dạng nút icon cạnh chuông vì thanh menu 7 mục đã kín chỗ */}
+          <Link to="/member/support" className="member-nav__bell" aria-label="Hỗ trợ" title="Hỗ trợ">
+            <Headset aria-hidden="true" />
+          </Link>
           <Link to="/member/profile" className="member-nav__profile" aria-label={`Hồ sơ của ${displayName}`}>
             <strong className="member-nav__avatar" aria-hidden="true">{initials(displayName)}</strong>
             <span>{displayName}</span>
