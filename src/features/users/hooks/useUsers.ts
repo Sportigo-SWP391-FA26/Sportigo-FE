@@ -1,7 +1,7 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { listUsers } from '../api';
-import type { UserListQuery } from '../types';
+import { changeUserStatus, listUsers } from '../api';
+import type { ChangeStatusInput, UserListQuery } from '../types';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -15,5 +15,14 @@ export function useUserList(query: UserListQuery) {
     queryFn: () => listUsers(query),
     placeholderData: keepPreviousData,
     retry: retryServerErrors,
+  });
+}
+
+// FR-06: đổi trạng thái xong thì làm mới mọi danh sách người dùng đang cache
+export function useChangeUserStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, input }: { userId: number; input: ChangeStatusInput }) => changeUserStatus(userId, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.all }),
   });
 }

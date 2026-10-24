@@ -7,10 +7,12 @@ import { Pagination } from '../../training/components/ui/Pagination';
 import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
 import { inputClass } from '../../training/components/ui/styles';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
+import { Button } from '../../training/components/ui/Button';
+import { UserStatusDialog } from '../components/UserStatusDialog';
 import { UserTable } from '../components/UserTable';
 import { useUserList } from '../hooks/useUsers';
 import { roleOptions, statusOptions } from '../labels';
-import type { UserStatus } from '../types';
+import type { UserStatus, UserSummary } from '../types';
 
 const PAGE_SIZE = 20;
 
@@ -27,6 +29,8 @@ export function UsersPage() {
   const page = Math.max(1, Number(params.get('page')) || 1);
 
   const [search, setSearch] = useState(params.get('q') ?? '');
+  // FR-06: người đang được khóa/mở khóa (null = hộp thoại đóng)
+  const [statusTarget, setStatusTarget] = useState<UserSummary | null>(null);
   // note: chờ người dùng ngừng gõ 300ms mới gọi API, tránh gửi request theo từng phím
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
@@ -111,7 +115,25 @@ export function UsersPage() {
         />
       ) : (
         <div className={`transition-opacity ${users.isPlaceholderData ? 'opacity-60' : ''}`} aria-busy={users.isFetching}>
-          <UserTable users={items} />
+          <UserTable
+            users={items}
+            renderActions={
+              isManager
+                ? (user) =>
+                    // note: backend không cho khóa Manager (kể cả chính mình) nên ẩn nút ở các dòng đó
+                    user.role === 'CENTER_MANAGER' ? null : (
+                      <Button
+                        size="sm"
+                        variant={user.status === 'LOCKED' ? 'secondary' : 'ghost'}
+                        onClick={() => setStatusTarget(user)}
+                        aria-label={`${user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'} ${user.displayName}`}
+                      >
+                        {user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
+                      </Button>
+                    )
+                : undefined
+            }
+          />
           <Pagination
             page={users.data.page}
             pageSize={users.data.pageSize}
@@ -121,6 +143,8 @@ export function UsersPage() {
           />
         </div>
       )}
+
+      {isManager && <UserStatusDialog user={statusTarget} onClose={() => setStatusTarget(null)} />}
     </div>
   );
 }

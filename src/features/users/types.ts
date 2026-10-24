@@ -24,6 +24,9 @@ export type UserListQuery = {
   pageSize: number;
 };
 
+// FR-06: body PATCH /api/users/:id/status
+export type ChangeStatusInput = { status: 'ACTIVE' | 'LOCKED'; reason: string };
+
 export type UserListPage = {
   items: UserSummary[];
   page: number;
