@@ -33,3 +33,15 @@ export const statusOption = (value: SupportStatus) => statusOptions.find((option
 // note: cùng quy tắc với backend (FINISHED_STATUSES, MEMBER_CANCELLABLE)
 export const isFinished = (status: SupportStatus) => status === 'CLOSED' || status === 'CANCELLED';
 export const memberCanCancel = (status: SupportStatus) => status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS';
+
+// FR-56: nút chuyển trạng thái cho nhân viên, khớp TRANSITIONS trong support-staff.service.ts
+export const staffTransitions: Partial<Record<SupportStatus, { to: 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; label: string; primary?: boolean }[]>> = {
+  ASSIGNED: [{ to: 'IN_PROGRESS', label: 'Bắt đầu xử lý', primary: true }],
+  IN_PROGRESS: [{ to: 'RESOLVED', label: 'Đánh dấu đã giải quyết', primary: true }],
+  RESOLVED: [
+    { to: 'CLOSED', label: 'Đóng yêu cầu', primary: true },
+    { to: 'IN_PROGRESS', label: 'Mở lại' },
+  ],
+};
+
+export const canAssign = (status: SupportStatus) => status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS';

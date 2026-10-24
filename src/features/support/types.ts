@@ -33,6 +33,28 @@ export type SupportRequestDetail = SupportRequestSummary & {
 
 export type SupportListQuery = { status?: SupportStatus; page: number; pageSize: number };
 
+// FR-56: hàng đợi nhân viên có thêm bộ lọc
+export type SupportQueueQuery = SupportListQuery & { priority?: SupportPriority; mine?: boolean; q?: string };
+
+export type SupportAssignment = {
+  id: number;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  note: string | null;
+  assignedAt: string;
+  unassignedAt: string | null;
+  assignedTo: SupportPerson;
+  assignedBy: SupportPerson;
+};
+
+// FR-56: chi tiết cho nhân viên có thêm lịch sử phân công
+export type StaffSupportDetail = SupportRequestDetail & { history: SupportAssignment[] };
+
+export type UpdateSupportInput = {
+  assigneeId?: number;
+  status?: 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  note?: string;
+};
+
 export type SupportListPage = {
   items: SupportRequestSummary[];
   page: number;

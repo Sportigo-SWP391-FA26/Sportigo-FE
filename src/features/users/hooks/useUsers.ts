@@ -9,12 +9,14 @@ export const userKeys = {
 };
 
 // FR-09: giữ dữ liệu trang cũ khi đổi bộ lọc để bảng không bị nháy trắng
-export function useUserList(query: UserListQuery) {
+// note(FR-56): thêm enabled để trang hỗ trợ chỉ tải danh sách lễ tân khi là Manager
+export function useUserList(query: UserListQuery, enabled = true) {
   return useQuery({
     queryKey: userKeys.list(query),
     queryFn: () => listUsers(query),
     placeholderData: keepPreviousData,
     retry: retryServerErrors,
+    enabled,
   });
 }
 

@@ -15,6 +15,7 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
   { label: 'Khuyến mãi', path: '/app/promotions' },
   { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
+  { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
   { label: 'Báo cáo Doanh thu', path: '/app/revenue' },
   { label: 'Báo cáo Vận hành', path: '/app/operations-report' },
   { label: 'Audit Log', path: '/app/audit-logs' },
@@ -24,6 +25,8 @@ export const centerManagerNavigation: NavigationItem[] = [
 export const receptionistNavigation: NavigationItem[] = [
   { label: 'Tra cứu Hội viên', path: '/app/users' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
+  // FR-56
+  { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
 ];
 
 export const coachNavigation: NavigationItem[] = [

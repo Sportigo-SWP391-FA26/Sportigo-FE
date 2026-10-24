@@ -31,6 +31,8 @@ import { UsersPage } from '../features/users/pages/UsersPage';
 import { StaffPage } from '../features/staff/pages/StaffPage';
 import { MemberSupportPage } from '../features/support/pages/MemberSupportPage';
 import { MemberSupportDetailPage } from '../features/support/pages/MemberSupportDetailPage';
+import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
+import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -68,6 +70,9 @@ export const router = createBrowserRouter([
               { path: 'profile', element: <ProfilePage /> },
               // FR-09: Manager và Receptionist cùng dùng, backend tự giới hạn Receptionist chỉ thấy Member
               { path: 'users', element: <UsersPage /> },
+              // FR-56: hàng đợi hỗ trợ cho Receptionist và Manager
+              { path: 'support', element: <SupportQueuePage /> },
+              { path: 'support/:requestId', element: <StaffSupportDetailPage /> },
             ],
           },
         ],
