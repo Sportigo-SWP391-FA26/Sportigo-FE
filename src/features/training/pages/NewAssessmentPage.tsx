@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
 import { AssessmentForm } from '../components/AssessmentForm';
 import { PageHeader } from '../components/ui/Card';
-import { ErrorState, ListSkeleton } from '../components/ui/States';
+import { ErrorState, InlineAlert, ListSkeleton } from '../components/ui/States';
 import { useCoachTrainees } from '../hooks/usePendingApis';
 
 // FR-52 · /coach/assessments/new
@@ -31,17 +31,24 @@ export function NewAssessmentPage() {
           error={trainees.error}
           onRetry={() => trainees.refetch()}
           retrying={trainees.isRefetching}
-          pendingApi="GET /api/coaches/me/trainees"
+          pendingApi="GET /api/private-courses/enrollments"
         />
       ) : (
-        <AssessmentForm
-          trainees={trainees.data}
-          onCancel={() => navigate('/coach/assessments')}
-          onCreated={(assessment) => {
-            toast(`Đã lưu đánh giá cho ${assessment.member.displayName}.`);
-            navigate('/coach/assessments');
-          }}
-        />
+        <>
+          <div className="mb-4">
+            <InlineAlert tone="info">
+              Hiện chỉ chọn được học viên khóa 1-1. Ngữ cảnh lớp nhóm sẽ có khi backend bổ sung API danh sách học viên lớp nhóm của Coach.
+            </InlineAlert>
+          </div>
+          <AssessmentForm
+            trainees={trainees.data}
+            onCancel={() => navigate('/coach/assessments')}
+            onCreated={(assessment) => {
+              toast(`Đã lưu đánh giá cho ${assessment.member.displayName}.`);
+              navigate('/coach/assessments');
+            }}
+          />
+        </>
       )}
     </div>
   );

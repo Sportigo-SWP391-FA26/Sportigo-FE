@@ -6,11 +6,10 @@ import { Button } from '../components/ui/Button';
 import { Card, PageHeader } from '../components/ui/Card';
 import { Chip } from '../components/ui/Chip';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../components/ui/States';
-import { parseApiError } from '../errors';
 import { formatDateTime } from '../format';
 import { useCoachTrainees } from '../hooks/usePendingApis';
 import { useEnrollmentPlans } from '../hooks/usePlanAssignments';
-import { assignmentStatusLabels, enrollmentStatusLabels, levelLabel, planStatusLabels } from '../labels';
+import { assignmentStatusLabels, enrollmentStatusLabels, levelLabel, planStatusLabels, traineeName } from '../labels';
 import type { SportRef, TraineeContext } from '../types';
 
 // FR-51 · /coach/private-enrollments/:enrollmentId/plans
@@ -21,7 +20,7 @@ export function EnrollmentPlansPage() {
   const trainees = useCoachTrainees();
   const [assignOpen, setAssignOpen] = useState(false);
 
-  // Thông tin khóa 1-1 lấy từ BE-3 (chưa có); môn dự phòng lấy từ giáo án đã gán (backend bảo đảm cùng môn)
+  // Thông tin khóa 1-1 lấy từ danh sách khóa của Coach; môn dự phòng lấy từ giáo án đã gán (backend bảo đảm cùng môn)
   const trainee = trainees.data?.find((entry) =>
     entry.contexts.some((context) => context.type === 'PRIVATE_COURSE' && context.privateEnrollmentId === enrollmentId),
   );
@@ -30,7 +29,8 @@ export function EnrollmentPlansPage() {
       entry.type === 'PRIVATE_COURSE' && entry.privateEnrollmentId === enrollmentId,
   );
   const sport: SportRef | null = context?.sport ?? assignments.data?.[0]?.workoutPlan.sport ?? null;
-  const summaryPending = trainees.isError && parseApiError(trainees.error).kind === 'not-ready';
+  // Lỗi tải thông tin khóa không chặn trang: danh sách giáo án đã gán vẫn hiển thị
+  const summaryFailed = trainees.isError;
 
   return (
     <div className="mx-auto w-full max-w-[960px]">
@@ -46,7 +46,8 @@ export function EnrollmentPlansPage() {
         description={
           trainee ? (
             <>
-              Học viên <b className="text-ink">{trainee.member.displayName}</b> ({trainee.member.memberCode})
+              Học viên <b className="text-ink">{traineeName(trainee.member)}</b>
+              {trainee.member.displayName && ` (${trainee.member.memberCode})`}
               {sport && ` · môn ${sport.name}`}
             </>
           ) : sport ? (
@@ -60,10 +61,10 @@ export function EnrollmentPlansPage() {
         }
       />
 
-      {summaryPending && (
+      {summaryFailed && (
         <div className="mb-4">
           <InlineAlert tone="info">
-            Tên khóa, học viên và trạng thái khóa chưa hiển thị được vì backend chưa có API GET /api/coaches/me/trainees.
+            Tên khóa, học viên và trạng thái khóa chưa hiển thị được vì không tải được GET /api/private-courses/enrollments.
           </InlineAlert>
         </div>
       )}

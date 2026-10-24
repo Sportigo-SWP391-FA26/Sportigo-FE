@@ -254,10 +254,21 @@ export type MemberTraining = {
   assessments: ProgressAssessment[];
 };
 
-// ---------- API chưa có ở backend (đề xuất trong docs/training-ui.md) ----------
+// ---------- API của module khác mà Training dùng ----------
 
-// BE-1: GET /api/sports (FR-12)
+// GET /api/sports (FR-12)
 export type Sport = SportRef & { isActive?: boolean };
+
+// GET /api/private-courses/enrollments (module Khóa 1-1): chỉ khai báo các trường Training dùng.
+// Backend hiện chưa trả tên học viên, chỉ có mã; `user` để sẵn cho khi được bổ sung.
+export type PrivateEnrollmentRow = {
+  id: number;
+  status: EnrollmentStatus;
+  member: { userId: number; memberCode: string; user?: { displayName: string } | null };
+  privateCourse: { name: string; sport: SportRef };
+};
+
+// ---------- API chưa có ở backend (đề xuất trong docs/training-ui.md) ----------
 
 // BE-2: GET /api/coaches/me/sessions
 export type CoachSession = {
@@ -272,7 +283,8 @@ export type CoachSession = {
   isLocked: boolean;
 };
 
-// BE-3: GET /api/coaches/me/trainees
+// Học viên Coach phụ trách và các ngữ cảnh (lớp nhóm / khóa 1-1).
+// Khóa 1-1 lấy từ GET /api/private-courses/enrollments; lớp nhóm chờ API riêng (BE-3).
 export type TraineeContext =
   | { type: 'GROUP_CLASS'; classRegistrationId: number; name: string; sport: SportRef }
   | {
@@ -283,7 +295,10 @@ export type TraineeContext =
       status: EnrollmentStatus;
     };
 
+/** displayName = null khi API nguồn chưa trả tên; giao diện hiện mã học viên thay thế */
+export type TraineeMember = Omit<MemberRef, 'displayName'> & { displayName: string | null };
+
 export type Trainee = {
-  member: MemberRef;
+  member: TraineeMember;
   contexts: TraineeContext[];
 };

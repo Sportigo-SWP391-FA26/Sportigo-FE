@@ -6,7 +6,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useCoachTrainees } from '../hooks/usePendingApis';
 import { useAssignPlan } from '../hooks/usePlanAssignments';
 import { useWorkoutPlans } from '../hooks/useWorkoutPlans';
-import { enrollmentStatusLabels, levelLabel } from '../labels';
+import { enrollmentStatusLabels, levelLabel, traineeName } from '../labels';
 import type { PlanAssignment, SportRef, WorkoutPlan } from '../types';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
@@ -14,7 +14,7 @@ import { Dialog } from './ui/Dialog';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton, NotReady } from './ui/States';
 import { inputClass } from './ui/styles';
 
-const TRAINEES_API = 'GET /api/coaches/me/trainees';
+const TRAINEES_API = 'GET /api/private-courses/enrollments';
 
 function OptionCard({ checked, disabled, children }: { checked: boolean; disabled?: boolean; children: ReactNode }) {
   return (
@@ -226,9 +226,10 @@ function EnrollmentPicker({ plan, onClose }: { plan: WorkoutPlan; onClose: () =>
                         className="mt-1 size-4 accent-primary"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block font-bold text-ink">{enrollment.member.displayName}</span>
+                        <span className="block font-bold text-ink">{traineeName(enrollment.member)}</span>
                         <span className="mt-1 block text-xs text-muted">
-                          {enrollment.member.memberCode} · {enrollment.name}
+                          {enrollment.member.displayName && `${enrollment.member.memberCode} · `}
+                          {enrollment.name}
                         </span>
                       </span>
                       <Chip tone={inactive ? 'neutral' : 'success'}>{enrollmentStatusLabels[enrollment.status]}</Chip>

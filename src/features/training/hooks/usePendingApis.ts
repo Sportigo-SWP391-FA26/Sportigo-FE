@@ -3,8 +3,8 @@ import { getCoachSessions, getCoachTrainees, getSports } from '../api';
 import { retryServerErrors } from '../errors';
 import { trainingKeys } from '../queryKeys';
 
-// Các API dưới đây backend chưa có (BE-1 → BE-3 trong docs/training-ui.md).
-// Khi gọi sẽ nhận 404 "route missing" và giao diện hiển thị "chưa sẵn sàng";
+// API Training lấy từ module khác của nhóm (môn, khóa 1-1) hoặc backend chưa có (BE-2).
+// API chưa có trả 404 "route missing" và giao diện hiển thị "chưa sẵn sàng";
 // backend bổ sung đúng hợp đồng thì màn hình tự hoạt động, không cần sửa FE.
 
 export function useSports() {

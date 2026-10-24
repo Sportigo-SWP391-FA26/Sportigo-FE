@@ -12,6 +12,7 @@ import type {
   Paginated,
   PlanAssignment,
   PlanItemInput,
+  PrivateEnrollmentRow,
   ProgressAssessment,
   ReorderItemsInput,
   SessionRoster,
@@ -142,25 +143,51 @@ export async function getMyTraining() {
   return data;
 }
 
-// ---------- API đề xuất, backend chưa có (trả 404 "route missing" → hiển thị "chưa sẵn sàng") ----------
+// ---------- API của module khác ----------
 
-// BE-1 (FR-12). Chấp nhận cả mảng lẫn dạng phân trang vì module Bộ môn chưa chốt hợp đồng.
-export async function getSports() {
-  const { data } = await apiClient.get<Sport[] | Paginated<Sport>>('/sports');
-  const sports = Array.isArray(data) ? data : data.items;
-  return sports.filter((sport) => sport.isActive !== false);
+// Module Training trả thẳng mảng hoặc { items }; các module khác của nhóm bọc trong { success, data }.
+type ListBody<T> = T[] | Paginated<T> | { data: T[] };
+
+function unwrapList<T>(body: ListBody<T>): T[] {
+  if (Array.isArray(body)) return body;
+  return 'items' in body ? body.items : body.data;
 }
+
+// FR-12: chỉ lấy môn đang hoạt động để chọn khi tạo giáo án
+export async function getSports() {
+  const { data } = await apiClient.get<ListBody<Sport>>('/sports');
+  return unwrapList(data).filter((sport) => sport.isActive !== false);
+}
+
+// Học viên Coach phụ trách, dựng từ danh sách khóa 1-1 (backend tự lọc theo Coach đang đăng nhập).
+// Chỉ có ngữ cảnh khóa 1-1; ngữ cảnh lớp nhóm cần API riêng (BE-3, chưa có).
+export async function getCoachTrainees(): Promise<Trainee[]> {
+  const { data } = await apiClient.get<ListBody<PrivateEnrollmentRow>>('/private-courses/enrollments');
+  const byMember = new Map<number, Trainee>();
+  for (const enrollment of unwrapList(data)) {
+    const { member, privateCourse } = enrollment;
+    const trainee = byMember.get(member.userId) ?? {
+      member: { id: member.userId, memberCode: member.memberCode, displayName: member.user?.displayName ?? null },
+      contexts: [],
+    };
+    trainee.contexts.push({
+      type: 'PRIVATE_COURSE',
+      privateEnrollmentId: enrollment.id,
+      name: privateCourse.name,
+      sport: { id: privateCourse.sport.id, name: privateCourse.sport.name },
+      status: enrollment.status,
+    });
+    byMember.set(member.userId, trainee);
+  }
+  return [...byMember.values()];
+}
+
+// ---------- API đề xuất, backend chưa có (trả 404 "route missing" → hiển thị "chưa sẵn sàng") ----------
 
 // BE-2
 export async function getCoachSessions(query: { from?: string; to?: string }) {
   const { data } = await apiClient.get<CoachSession[]>('/coaches/me/sessions', {
     params: cleanParams(query),
   });
-  return data;
-}
-
-// BE-3
-export async function getCoachTrainees() {
-  const { data } = await apiClient.get<Trainee[]>('/coaches/me/trainees');
   return data;
 }
