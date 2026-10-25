@@ -24,6 +24,7 @@ const memberSchema = baseSchema.extend({
     .refine((value) => value === '' || (value >= '1900-01-01' && value <= todayIso()), 'Ngày sinh phải từ 1900 đến hôm nay'),
   gender: z.enum(['', 'MALE', 'FEMALE', 'OTHER']),
   emergencyContact: z.string().trim().max(100, 'Liên hệ khẩn cấp tối đa 100 ký tự'),
+  trainingGoal: z.string().trim().max(500, 'Mục tiêu tập luyện tối đa 500 ký tự'),
 });
 
 const coachSchema = baseSchema.extend({
@@ -48,10 +49,11 @@ export type ProfileFormValues = {
   dateOfBirth?: string;
   gender?: Gender | '';
   emergencyContact?: string;
+  trainingGoal?: string;
   bio?: string;
 };
 
-export const PROFILE_FIELDS = ['displayName', 'phone', 'dateOfBirth', 'gender', 'emergencyContact', 'bio'] as const;
+export const PROFILE_FIELDS = ['displayName', 'phone', 'dateOfBirth', 'gender', 'emergencyContact', 'trainingGoal', 'bio'] as const;
 
 export function toFormValues(profile: MyProfile): ProfileFormValues {
   const base = { displayName: profile.displayName, phone: profile.phone ?? '' };
@@ -61,6 +63,7 @@ export function toFormValues(profile: MyProfile): ProfileFormValues {
       dateOfBirth: profile.member.dateOfBirth ?? '',
       gender: profile.member.gender ?? '',
       emergencyContact: profile.member.emergencyContact ?? '',
+      trainingGoal: profile.member.trainingGoal ?? '',
     };
   }
   if (profile.coach) return { ...base, bio: profile.coach.bio ?? '' };
@@ -99,6 +102,7 @@ export function toUpdateInput(values: ProfileFormValues, dirty: Partial<Record<k
   if (dirty.dateOfBirth && values.dateOfBirth !== undefined) input.dateOfBirth = values.dateOfBirth || null;
   if (dirty.gender && values.gender !== undefined) input.gender = values.gender || null;
   if (dirty.emergencyContact && values.emergencyContact !== undefined) input.emergencyContact = values.emergencyContact.trim() || null;
+  if (dirty.trainingGoal && values.trainingGoal !== undefined) input.trainingGoal = values.trainingGoal.trim() || null;
   if (dirty.bio && values.bio !== undefined) input.bio = values.bio.trim() || null;
   return input;
 }

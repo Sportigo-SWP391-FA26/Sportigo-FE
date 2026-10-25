@@ -11,11 +11,13 @@ const member: CoachMember = {
   id: 20,
   displayName: 'Trần Bình',
   memberCode: 'MEM-1A2B3C4D',
+  trainingGoal: 'Bơi liên tục 1.000 m',
   gender: 'MALE',
   dateOfBirth: '2000-05-20',
   classes: [{ id: 3, name: 'Yoga sáng', sport: 'Yoga', status: 'IN_PROGRESS' }],
   privateCourses: [{ enrollmentId: 9, name: 'Bơi 1-1', sport: 'Bơi', status: 'ACTIVE', remainingSessions: 6, expiryDate: '2026-12-31' }],
   goals: {
+    statedGoal: 'Bơi liên tục 1.000 m',
     workoutPlans: [{ id: 5, name: 'Bơi sải cơ bản', level: 'BEGINNER' }],
     latestAssessment: { assessmentDate: '2026-10-20', score: 7.5, recommendation: 'Tăng sức bền', nextAssessmentDate: '2026-11-20' },
   },

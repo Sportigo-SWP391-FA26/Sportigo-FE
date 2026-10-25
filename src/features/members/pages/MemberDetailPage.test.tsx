@@ -20,6 +20,7 @@ const profile: MemberProfile = {
   dateOfBirth: '2000-05-20',
   gender: 'MALE',
   emergencyContact: 'Mẹ 0909',
+  trainingGoal: 'Cải thiện sức bền',
   joinedAt: '2026-10-01T00:00:00.000Z',
   classRegistrations: [
     {

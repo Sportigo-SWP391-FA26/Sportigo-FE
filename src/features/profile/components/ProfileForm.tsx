@@ -211,6 +211,26 @@ export function ProfileForm({ profile }: Props) {
                 placeholder: 'Tên và số điện thoại người thân',
               })}
             </div>
+            <div className="sm:col-span-2">
+              <Field
+                id={`${id}-trainingGoal`}
+                label="Mục tiêu tập luyện"
+                error={errors.trainingGoal?.message}
+                hint="Coach phụ trách sẽ dùng mục tiêu này để chuẩn bị giáo án phù hợp."
+              >
+                <textarea
+                  id={`${id}-trainingGoal`}
+                  className={textareaClass}
+                  placeholder="Ví dụ: Bơi liên tục 1.000 m sau 3 tháng"
+                  aria-invalid={errors.trainingGoal ? true : undefined}
+                  aria-describedby={describedBy(`${id}-trainingGoal`, {
+                    error: errors.trainingGoal,
+                    hint: true,
+                  })}
+                  {...form.register('trainingGoal')}
+                />
+              </Field>
+            </div>
           </div>
         )}
 

@@ -24,7 +24,7 @@ const base = {
 const member: MyProfile = {
   ...base,
   role: 'MEMBER',
-  member: { memberCode: 'MEM-007', dateOfBirth: '2004-10-14', gender: 'MALE', emergencyContact: null, joinedAt: '2026-10-01T00:00:00.000Z' },
+  member: { memberCode: 'MEM-007', dateOfBirth: '2004-10-14', gender: 'MALE', emergencyContact: null, trainingGoal: 'Tăng sức bền', joinedAt: '2026-10-01T00:00:00.000Z' },
 };
 const coach: MyProfile = { ...base, role: 'COACH', coach: { coachCode: 'COA-01', bio: 'HLV bơi', hiredAt: null } };
 const manager: MyProfile = { ...base, role: 'CENTER_MANAGER' };
@@ -40,6 +40,7 @@ describe('Form hồ sơ cá nhân (FR-05)', () => {
     expect(screen.getByLabelText('Ngày sinh')).toHaveValue('2004-10-14');
     expect(screen.getByLabelText('Giới tính')).toBeInTheDocument();
     expect(screen.getByLabelText('Liên hệ khẩn cấp')).toBeInTheDocument();
+    expect(screen.getByLabelText('Mục tiêu tập luyện')).toHaveValue('Tăng sức bền');
     expect(screen.queryByLabelText(/Giới thiệu/)).not.toBeInTheDocument();
     expect(screen.getByText('MEM-007')).toBeInTheDocument();
   });
@@ -105,5 +106,14 @@ describe('Form hồ sơ cá nhân (FR-05)', () => {
     fireEvent.change(screen.getByLabelText(/Giới thiệu/), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
     await waitFor(() => expect(api.updateMyProfile).toHaveBeenCalledWith({ bio: null }));
+  });
+
+  test('Member cập nhật mục tiêu tập luyện riêng', async () => {
+    const updatedGoal = 'Bơi liên tục 1.000 m sau 3 tháng';
+    vi.mocked(api.updateMyProfile).mockResolvedValue({ ...member, member: { ...member.member!, trainingGoal: updatedGoal } });
+    renderWithProviders(<ProfileForm profile={member} />);
+    fireEvent.change(screen.getByLabelText('Mục tiêu tập luyện'), { target: { value: updatedGoal } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
+    await waitFor(() => expect(api.updateMyProfile).toHaveBeenCalledWith({ trainingGoal: updatedGoal }));
   });
 });

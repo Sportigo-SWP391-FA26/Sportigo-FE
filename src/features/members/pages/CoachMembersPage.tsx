@@ -18,10 +18,11 @@ const typeOptions = [
 const isType = (value: string | null): value is NonNullable<CoachMembersQuery['type']> => value === 'CLASS' || value === 'PRIVATE';
 
 function Goals({ member }: { member: CoachMember }) {
-  const { workoutPlans, latestAssessment } = member.goals;
-  if (workoutPlans.length === 0 && !latestAssessment) return <span className="text-muted">Chưa có</span>;
+  const { statedGoal, workoutPlans, latestAssessment } = member.goals;
+  if (!statedGoal && workoutPlans.length === 0 && !latestAssessment) return <span className="text-muted">Chưa có</span>;
   return (
     <div className="space-y-1">
+      {statedGoal && <p>Mục tiêu: <strong>{statedGoal}</strong></p>}
       {workoutPlans.map((plan) => (
         <p key={plan.id}>
           Giáo án: <strong>{plan.name}</strong> <span className="text-muted">({plan.level})</span>

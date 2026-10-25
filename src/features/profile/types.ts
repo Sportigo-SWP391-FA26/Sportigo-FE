@@ -17,6 +17,7 @@ export type MyProfile = {
     dateOfBirth: string | null; // "YYYY-MM-DD"
     gender: Gender | null;
     emergencyContact: string | null;
+    trainingGoal: string | null;
     joinedAt: string;
   } | null;
   coach: {
@@ -33,6 +34,7 @@ export type UpdateProfileInput = Partial<{
   dateOfBirth: string | null;
   gender: Gender | null;
   emergencyContact: string | null;
+  trainingGoal: string | null;
   bio: string | null;
 }>;
 

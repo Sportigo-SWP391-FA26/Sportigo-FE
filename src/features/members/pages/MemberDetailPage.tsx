@@ -97,6 +97,7 @@ export function MemberDetailPage({ backTo, backLabel }: Props) {
     ['Ngày sinh', member.dateOfBirth ? formatDate(member.dateOfBirth) : '—'],
     ['Giới tính', member.gender ? genderLabel[member.gender] : '—'],
     ['Liên hệ khẩn cấp', member.emergencyContact ?? '—'],
+    ['Mục tiêu tập luyện', member.trainingGoal ?? '—'],
     ['Tham gia từ', formatDate(member.joinedAt)],
   ];
 

@@ -7,9 +7,11 @@ export type CoachMember = {
   memberCode: string | null;
   gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
   dateOfBirth: string | null;
+  trainingGoal: string | null;
   classes: { id: number; name: string; sport: string; status: string }[];
   privateCourses: { enrollmentId: number; name: string; sport: string; status: string; remainingSessions: number; expiryDate: string | null }[];
   goals: {
+    statedGoal: string | null;
     workoutPlans: { id: number; name: string; level: string }[];
     latestAssessment: { assessmentDate: string | null; score: number | null; recommendation: string | null; nextAssessmentDate: string | null } | null;
   };
@@ -33,6 +35,7 @@ export type MemberProfile = {
   dateOfBirth: string | null;
   gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
   emergencyContact: string | null;
+  trainingGoal: string | null;
   joinedAt: string;
   classRegistrations: {
     id: number;
