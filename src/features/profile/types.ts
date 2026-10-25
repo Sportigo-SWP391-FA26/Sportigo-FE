@@ -45,6 +45,14 @@ export type ChangePasswordInput = {
 
 export type ChangePasswordResponse = { message: string; accessToken: string };
 
+// note: FR-05 đổi email 2 bước – body/response của POST /users/me/email-change và /confirm
+export type EmailChangeInput = { newEmail: string; currentPassword: string };
+export type EmailChangeResponse = {
+  message: string;
+  newEmail: string;
+  expiresAt: string;
+};
+
 // Nhóm trường hiển thị trên form, suy ra từ bản ghi Member/Coach giống backend
 export type ProfileKind = 'member' | 'coach' | 'staff';
 

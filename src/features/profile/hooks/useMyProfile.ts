@@ -1,7 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changePassword, getMyProfile, updateMyProfile } from '../api';
-import type { ChangePasswordInput, UpdateProfileInput } from '../types';
+import {
+  changePassword,
+  confirmEmailChange,
+  getMyProfile,
+  requestEmailChange,
+  updateMyProfile,
+} from '../api';
+import type {
+  ChangePasswordInput,
+  EmailChangeInput,
+  UpdateProfileInput,
+} from '../types';
 
 export const profileKeys = {
   me: () => ['profile', 'me'] as const,
@@ -26,6 +36,22 @@ export function useUpdateMyProfile() {
       queryClient.setQueryData(profileKeys.me(), profile);
       return queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
+  });
+}
+
+// FR-05 đổi email bước 1: chưa đổi dữ liệu hồ sơ nên không đụng cache
+export function useRequestEmailChange() {
+  return useMutation({
+    mutationFn: (input: EmailChangeInput) => requestEmailChange(input),
+  });
+}
+
+// FR-05 đổi email bước 2: ghi hồ sơ mới vào cache để trang Hồ sơ và navbar hiện email mới ngay
+export function useConfirmEmailChange() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) => confirmEmailChange(code),
+    onSuccess: (profile) => queryClient.setQueryData(profileKeys.me(), profile),
   });
 }
 
