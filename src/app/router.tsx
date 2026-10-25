@@ -26,6 +26,15 @@ import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansP
 import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
 import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
+import { ProfilePage } from '../features/profile/pages/ProfilePage';
+import { UsersPage } from '../features/users/pages/UsersPage';
+import { StaffPage } from '../features/staff/pages/StaffPage';
+import { MemberSupportPage } from '../features/support/pages/MemberSupportPage';
+import { MemberSupportDetailPage } from '../features/support/pages/MemberSupportDetailPage';
+import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
+import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
+import { MemberDetailPage } from '../features/members/pages/MemberDetailPage';
+import { CoachMembersPage } from '../features/members/pages/CoachMembersPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -50,12 +59,25 @@ export const router = createBrowserRouter([
               { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
               { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
               { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
+              // FR-07: chỉ Manager quản lý nhân sự
+              { path: 'staff', element: <StaffPage /> },
               { path: ':section', element: <ComingSoonPage /> },
             ],
           },
           {
             element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
-            children: [{ path: 'cashier', element: <CashierPage /> }],
+            children: [
+              { path: 'cashier', element: <CashierPage /> },
+              // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
+              { path: 'profile', element: <ProfilePage /> },
+              // FR-09: Manager và Receptionist cùng dùng, backend tự giới hạn Receptionist chỉ thấy Member
+              { path: 'users', element: <UsersPage /> },
+              // FR-56: hàng đợi hỗ trợ cho Receptionist và Manager
+              { path: 'support', element: <SupportQueuePage /> },
+              { path: 'support/:requestId', element: <StaffSupportDetailPage /> },
+              // FR-10: hồ sơ tổng hợp hội viên (khối này để Receptionist cũng vào được)
+              { path: 'members/:memberId', element: <MemberDetailPage backTo="/app/users" backLabel="Danh sách người dùng" /> },
+            ],
           },
         ],
       },
@@ -75,6 +97,10 @@ export const router = createBrowserRouter([
         children: [
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
           { path: 'progress', element: <MemberProgressPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          // FR-55: yêu cầu hỗ trợ của Member
+          { path: 'support', element: <MemberSupportPage /> },
+          { path: 'support/:requestId', element: <MemberSupportDetailPage /> },
         ],
       },
       { path: ':section', element: <ComingSoonPage /> },
@@ -95,6 +121,10 @@ export const router = createBrowserRouter([
           { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
           { path: 'assessments/new', element: <NewAssessmentPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          // FR-11: học viên của Coach + hồ sơ tổng hợp (FR-10, backend tự giới hạn theo Coach)
+          { path: 'members', element: <CoachMembersPage /> },
+          { path: 'members/:memberId', element: <MemberDetailPage backTo="/coach/members" backLabel="Học viên của tôi" /> },
         ],
       },
     ],

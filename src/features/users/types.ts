@@ -1,0 +1,45 @@
+import type { AppRole } from '../../components/auth/session';
+
+export type UserStatus = 'ACTIVE' | 'LOCKED' | 'INACTIVE';
+
+// Khớp response GET /api/users (Sportigo-BE/src/modules/users/user-admin.service.ts → toUserSummary)
+export type UserSummary = {
+  id: number;
+  email: string;
+  phone: string | null;
+  displayName: string;
+  role: AppRole;
+  status: UserStatus;
+  /** Mã hội viên hoặc mã Coach */
+  code: string | null;
+  emailVerified: boolean;
+  createdAt: string;
+};
+
+export type UserListQuery = {
+  q?: string;
+  role?: AppRole;
+  status?: UserStatus;
+  page: number;
+  pageSize: number;
+};
+
+// FR-06: body PATCH /api/users/:id/status
+export type ChangeStatusInput = { status: 'ACTIVE' | 'LOCKED'; reason: string };
+
+// FR-08: body POST /api/members (mã hội viên và mật khẩu do hệ thống tạo)
+export type CreateMemberInput = {
+  displayName: string;
+  email: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  emergencyContact?: string;
+};
+
+export type UserListPage = {
+  items: UserSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};

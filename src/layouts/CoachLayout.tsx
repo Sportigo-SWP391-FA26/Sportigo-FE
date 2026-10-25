@@ -29,7 +29,7 @@ export function CoachLayout() {
         </button>
       </header>
       <div id="coach-sidebar" className={`${menuOpen ? 'block' : 'hidden lg:block'} lg:[&>aside]:h-full`} onClick={closeOnNavigate}>
-        <Sidebar roleLabel="Coach" items={coachNavigation} />
+        <Sidebar roleLabel="Coach" items={coachNavigation} profilePath="/coach/profile" />
       </div>
       <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
         <Outlet />

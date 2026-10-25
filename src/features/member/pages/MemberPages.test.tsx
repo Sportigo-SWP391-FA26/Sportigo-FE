@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { MemberNavbar } from '../components/MemberNavbar';
@@ -22,9 +24,19 @@ Object.defineProperty(window, 'matchMedia', {
 
 afterEach(cleanup);
 
+// Navbar đọc tên từ useMyProfile (FR-05) nên cần QueryClient; bọc cả trang Home để sẵn sàng khi Home dùng API
+function withProviders(route: string) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
 describe('member pages', () => {
   test('renders the calm member home with reduced Hairline motion', () => {
-    render(<MemberHomePage />, { wrapper: MemoryRouter });
+    render(<MemberHomePage />, { wrapper: withProviders('/member/home') });
     expect(screen.getByText(/Chào buổi sáng/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Swimming Endurance', level: 1 })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Xem chi tiết/ })).toHaveAttribute('href', '/member/classes');
@@ -33,12 +45,12 @@ describe('member pages', () => {
   });
 
   test('uses the overlay navigation variant on member home', () => {
-    render(<MemberNavbar />, { wrapper: ({ children }) => <MemoryRouter initialEntries={['/member/home']}>{children}</MemoryRouter> });
+    render(<MemberNavbar />, { wrapper: withProviders('/member/home') });
     expect(screen.getByRole('banner')).toHaveClass('member-nav--overlay');
   });
 
   test('marks the active member navigation route', () => {
-    render(<MemberNavbar />, { wrapper: ({ children }) => <MemoryRouter initialEntries={['/member/classes']}>{children}</MemoryRouter> });
+    render(<MemberNavbar />, { wrapper: withProviders('/member/classes') });
     expect(screen.getByRole('link', { name: 'Lịch lớp' })).toHaveClass('active');
   });
 
