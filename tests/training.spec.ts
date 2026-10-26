@@ -201,8 +201,10 @@ test.describe('B. Member', () => {
     await expect(page).toHaveURL(/assignment=\d+/);
     await expect(page.getByRole('heading', { name: SEED.demoPlanName, level: 2 })).toBeVisible();
 
-    // Tuần hiện tại được đánh dấu và mở sẵn
+    // Tuần hiện tại (tính từ ngày bắt đầu khóa, nên đổi theo ngày chạy test) được đánh dấu
     await expect(page.getByText('Tuần này').first()).toBeVisible();
+    // Mở Tuần 1 bằng chip để xem nội dung, không giả định tuần hiện tại là tuần 1
+    await page.getByRole('navigation', { name: 'Chọn tuần' }).getByRole('button', { name: /^Tuần 1/ }).click();
     await expect(page.getByRole('button', { name: /^Tuần 1/, expanded: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Khởi động/, level: 4 })).toBeVisible();
     await expect(page.getByText('Buổi 2').first()).toBeVisible();
@@ -390,7 +392,8 @@ test.describe('C. Coach – điểm danh buổi học', () => {
       `/class-sessions/${SEED.ongoingSessionId}/attendance`,
       { records: [{ classRegistrationId: 999999, status: 'PRESENT' }] },
     );
-    expect(rejected.status).toBe(422);
+    // errorHandler chung của backend đổi 422 thành 400 (commit f9b98b4); mã lỗi nghiệp vụ giữ nguyên
+    expect(rejected.status).toBe(400);
     expect(rejected.body).toMatchObject({ code: 'REGISTRATION_NOT_ELIGIBLE', details: { invalidRegistrationIds: [999999] } });
   });
 
@@ -450,9 +453,16 @@ test.describe('D. Lịch sử điểm danh', () => {
   test('D1 · FR-48: Coach lọc theo lớp và mở lại màn điểm danh', async ({ page, request }) => {
     await signIn(page, request, 'coach');
     await page.goto('/coach/attendance');
-    // Khối "Buổi dạy cần điểm danh" chờ API BE-2
-    await expect(page.getByText('Chức năng chưa sẵn sàng')).toBeVisible();
-    await expect(page.getByText('GET /api/coaches/me/sessions').first()).toBeVisible();
+    // Khối "Buổi dạy cần điểm danh" (ghép FR-11 + FR-17 + FR-47): có buổi đang diễn ra của lớp demo
+    const today = page.getByRole('region', { name: 'Buổi dạy cần điểm danh' });
+    const ongoing = today.locator(`a[href="/coach/sessions/${SEED.ongoingSessionId}/attendance"]`);
+    await expect(ongoing).toBeVisible();
+    await expect(ongoing).toContainText(SEED.className);
+    await expect(ongoing).toContainText('đã điểm danh');
+    await expect(ongoing).toContainText('Đang mở');
+    // Buổi sắp tới (2 ngày nữa) nằm ngoài khoảng hôm qua – hôm nay
+    await expect(today.locator(`a[href="/coach/sessions/${SEED.upcomingSessionId}/attendance"]`)).toHaveCount(0);
+    await expect(page.getByText('Chức năng chưa sẵn sàng')).toHaveCount(0);
 
     await page.getByRole('button', { name: `Lọc theo lớp ${SEED.className}` }).first().click();
     await expect(page).toHaveURL(/classId=\d+/);
@@ -497,7 +507,7 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
   test.describe.configure({ mode: 'serial' });
   let planId = 0;
 
-  // Chuẩn bị giáo án kiểm thử: Nháp, chưa có mục. Tạo qua API vì màn tạo mới đang chờ GET /api/sports.
+  // Chuẩn bị giáo án kiểm thử: Nháp, chưa có mục. Tạo qua API để các lần chạy sau dùng lại đúng một giáo án.
   test.beforeAll(async ({ request }) => {
     const found = await api<Paginated<Plan>>(request, 'coach', 'GET', `/workout-plans?search=${encodeURIComponent('[E2E]')}&pageSize=100`);
     const existing = found.body.items.find((plan) => plan.name === E2E_PLAN);
@@ -545,14 +555,31 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
     await expect(page.getByRole('link', { name: SEED.demoPlanName })).toHaveCount(0);
   });
 
-  test('E2 · FR-49: tạo giáo án mới — CHỜ API GET /api/sports', async ({ page, request }) => {
-    test.info().annotations.push({ type: 'Bị chặn', description: 'Chưa có GET /api/sports nên chưa chọn được môn' });
+  test('E2 · FR-49: tạo giáo án mới theo môn (danh sách môn từ GET /api/sports)', async ({ page, request }) => {
+    const name = `[E2E] Tạo từ form ${Date.now()}`;
     await signIn(page, request, 'coach');
     await page.goto('/coach/workout-plans');
     await page.getByRole('button', { name: 'Tạo giáo án' }).click();
     const dialog = page.getByRole('dialog', { name: 'Tạo giáo án' });
-    await expect(dialog.getByText('Chưa thể tạo giáo án mới vì danh sách môn chưa sẵn sàng.')).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Tạo giáo án' })).toBeDisabled();
+
+    // Bỏ trống môn thì báo lỗi tại ô, không gửi request
+    await dialog.getByRole('textbox', { name: 'Tên giáo án' }).fill(name);
+    await dialog.getByRole('button', { name: 'Tạo giáo án' }).click();
+    await expect(dialog.getByRole('combobox', { name: 'Môn' })).toHaveAttribute('aria-invalid', 'true');
+
+    await dialog.getByRole('combobox', { name: 'Môn' }).selectOption(String(SEED.sportId));
+    await dialog.getByRole('group', { name: /Cấp độ/ }).locator('label', { hasText: 'Cơ bản' }).click();
+    await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith('/api/workout-plans') && response.request().method() === 'POST'),
+      dialog.getByRole('button', { name: 'Tạo giáo án' }).click(),
+    ]);
+    await expect(toast(page, 'Đã tạo giáo án. Hãy thêm các mục tập luyện.')).toBeVisible();
+    await expect(page).toHaveURL(/\/coach\/workout-plans\/\d+$/);
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+
+    // Dọn dẹp: chuyển giáo án vừa tạo sang Ngừng (backend không xóa cứng giáo án)
+    const createdId = Number(page.url().split('/').pop());
+    expect((await api(request, 'coach', 'PATCH', `/workout-plans/${createdId}/status`, { status: 'INACTIVE' })).status).toBe(200);
   });
 
   test('E3 · FR-49: không kích hoạt được giáo án chưa có mục', async ({ page, request }) => {
@@ -689,7 +716,7 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
   test('F2 · BR-44: backend từ chối giáo án chưa kích hoạt và khóa 1-1 không tồn tại', async ({ request }) => {
     expect((await api(request, 'coach', 'PATCH', `/workout-plans/${planId}/status`, { status: 'DRAFT' })).status).toBe(200);
     const notActive = await api<{ code: string }>(request, 'coach', 'POST', `/private-enrollments/${SEED.enrollmentId}/plans`, { workoutPlanId: planId });
-    expect(notActive.status).toBe(422);
+    expect(notActive.status).toBe(400);
     expect(notActive.body.code).toBe('PLAN_NOT_ASSIGNABLE');
     expect((await api(request, 'coach', 'PATCH', `/workout-plans/${planId}/status`, { status: 'ACTIVE' })).status).toBe(200);
     expect((await api(request, 'coach', 'POST', '/private-enrollments/999999/plans', { workoutPlanId: planId })).status).toBe(404);
@@ -706,10 +733,10 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
 // G. Coach: đánh giá tiến độ (FR-52, BR-46)
 // =====================================================================
 
-// Giả lập RIÊNG API GET /api/coaches/me/trainees (BE-3 chưa có) bằng ID thật của dữ liệu seed.
+// Giả lập RIÊNG danh sách khóa 1-1 của Coach (GET /api/private-courses/enrollments) để dựng ngữ cảnh sai.
 // Việc ghi đánh giá vẫn gọi backend thật.
-async function mockTrainees(page: Page, trainees: unknown) {
-  await page.route('**/api/coaches/me/trainees', (route) => route.fulfill({ json: trainees }));
+async function mockCoachEnrollments(page: Page, enrollments: unknown[]) {
+  await page.route('**/api/private-courses/enrollments', (route) => route.fulfill({ json: { success: true, data: enrollments } }));
 }
 
 const swim = { id: SEED.sportId, name: 'Bơi lội' };
@@ -736,27 +763,25 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     for (const text of await page.locator('ol > li article').allTextContents()) expect(text).toContain(SEED.member1.name);
   });
 
-  test('G2 · FR-52: form ghi đánh giá — CHỜ API GET /api/coaches/me/trainees', async ({ page, request }) => {
-    test.info().annotations.push({ type: 'Bị chặn', description: 'Chưa có GET /api/coaches/me/trainees để chọn học viên' });
+  test('G2 · FR-52: form chỉ liệt kê học viên khóa 1-1 Coach phụ trách (dữ liệu thật)', async ({ page, request }) => {
+    const enrollments = await api<{ data: { id: number; member: { userId: number } }[] }>(request, 'coach', 'GET', '/private-courses/enrollments');
+    const memberIds = [...new Set(enrollments.body.data.map((enrollment) => enrollment.member.userId))];
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    await expect(page.getByText('Chức năng chưa sẵn sàng')).toBeVisible();
-    await expect(page.getByText('GET /api/coaches/me/trainees')).toBeVisible();
+    await expect(page.getByText('Hiện chỉ chọn được học viên khóa 1-1.')).toBeVisible();
+    const options = await page.getByRole('combobox', { name: 'Học viên' }).locator('option:not([value=""])').evaluateAll((nodes) =>
+      nodes.map((node) => Number((node as HTMLOptionElement).value)),
+    );
+    expect(options.sort()).toEqual(memberIds.sort());
   });
 
-  test('G3 · FR-52: ghi đánh giá lớp nhóm (giả lập danh sách học viên, lưu vào backend thật)', async ({ page, request }) => {
+  test('G3 · FR-52: ghi đánh giá cho khóa 1-1 (dữ liệu thật, lưu vào backend thật)', async ({ page, request }) => {
     const comment = `Kiểm thử E2E ${Date.now()}: phối hợp tay chân tốt hơn.`;
-    await mockTrainees(page, [
-      {
-        member: { id: SEED.member2.id, memberCode: 'MEM-DEMO-02', displayName: SEED.member2.name },
-        contexts: [{ type: 'GROUP_CLASS', classRegistrationId: 2, name: SEED.className, sport: swim }],
-      },
-    ]);
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
 
-    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member2.id));
-    await page.locator('label', { hasText: SEED.className }).click();
+    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
+    await page.locator('label', { hasText: 'Khóa 1-1' }).first().click();
     const date = page.getByLabel(/^Ngày đánh giá\s*\*?$/);
     await expect(date).toHaveAttribute('max', centerMonthRange().today);
     await page.getByRole('textbox', { name: 'Nhận xét' }).fill(comment);
@@ -764,24 +789,26 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     await page.getByLabel('Giá trị chỉ số 1').fill('7');
     await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
 
-    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member2.name}.`)).toBeVisible();
+    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible();
     await expect(page).toHaveURL(/\/coach\/assessments$/);
     await expect(page.getByText(comment)).toBeVisible();
     const saved = await api<Paginated<{ coachComment: string; context: { type: string } }>>(
       request,
       'coach',
       'GET',
-      `/progress-assessments?memberId=${SEED.member2.id}&pageSize=100`,
+      `/progress-assessments?memberId=${SEED.member1.id}&pageSize=100`,
     );
-    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('GROUP_CLASS');
+    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('PRIVATE_COURSE');
   });
 
   test('G4 · BR-46: đánh giá sai ngữ cảnh (khóa 1-1 không thuộc học viên) bị từ chối tại ô Ngữ cảnh', async ({ page, request }) => {
-    await mockTrainees(page, [
+    // Gắn khóa 1-1 của Member 1 cho Member 2 để backend phải từ chối
+    await mockCoachEnrollments(page, [
       {
-        member: { id: SEED.member2.id, memberCode: 'MEM-DEMO-02', displayName: SEED.member2.name },
-        // Khóa 1-1 này thuộc Member 1, không phải Member 2
-        contexts: [{ type: 'PRIVATE_COURSE', privateEnrollmentId: SEED.enrollmentId, name: 'Bơi 1-1 – 12 buổi (demo)', sport: swim, status: 'ACTIVE' }],
+        id: SEED.enrollmentId,
+        status: 'ACTIVE',
+        member: { userId: SEED.member2.id, memberCode: 'MEM-DEMO-02' },
+        privateCourse: { name: 'Bơi 1-1 – 12 buổi (demo)', sport: swim },
       },
     ]);
     await signIn(page, request, 'coach');

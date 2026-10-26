@@ -5,8 +5,19 @@ import type {
   PlanAssignmentStatus,
   PlanLevel,
   PlanStatus,
+  TraineeMember,
   WorkoutPlanItem,
 } from './types';
+
+/** Tên học viên; API khóa 1-1 chưa trả tên thì dùng mã học viên */
+export function traineeName(member: TraineeMember) {
+  return member.displayName ?? member.memberCode;
+}
+
+/** "Tên · mã" khi có tên, chỉ "mã" khi chưa có, tránh lặp mã hai lần */
+export function traineeLabel(member: TraineeMember) {
+  return member.displayName ? `${member.displayName} · ${member.memberCode}` : member.memberCode;
+}
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 

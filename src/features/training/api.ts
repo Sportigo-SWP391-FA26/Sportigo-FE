@@ -4,6 +4,9 @@ import type {
   AssessmentQuery,
   AttendanceHistoryItem,
   AttendanceQuery,
+  ClassSessionRow,
+  CoachClassRow,
+  CoachMemberRow,
   CoachSession,
   EditablePlanStatus,
   MarkAttendanceInput,
@@ -12,6 +15,7 @@ import type {
   Paginated,
   PlanAssignment,
   PlanItemInput,
+  PrivateEnrollmentRow,
   ProgressAssessment,
   ReorderItemsInput,
   SessionRoster,
@@ -142,25 +146,109 @@ export async function getMyTraining() {
   return data;
 }
 
-// ---------- API đề xuất, backend chưa có (trả 404 "route missing" → hiển thị "chưa sẵn sàng") ----------
+// ---------- API của module khác ----------
 
-// BE-1 (FR-12). Chấp nhận cả mảng lẫn dạng phân trang vì module Bộ môn chưa chốt hợp đồng.
+// Module Training trả thẳng mảng hoặc { items }; các module khác của nhóm bọc trong { success, data }.
+type ListBody<T> = T[] | Paginated<T> | { data: T[] };
+
+function unwrapList<T>(body: ListBody<T>): T[] {
+  if (Array.isArray(body)) return body;
+  return 'items' in body ? body.items : body.data;
+}
+
+// FR-12: chỉ lấy môn đang hoạt động để chọn khi tạo giáo án
 export async function getSports() {
-  const { data } = await apiClient.get<Sport[] | Paginated<Sport>>('/sports');
-  const sports = Array.isArray(data) ? data : data.items;
-  return sports.filter((sport) => sport.isActive !== false);
+  const { data } = await apiClient.get<ListBody<Sport>>('/sports');
+  return unwrapList(data).filter((sport) => sport.isActive !== false);
 }
 
-// BE-2
-export async function getCoachSessions(query: { from?: string; to?: string }) {
-  const { data } = await apiClient.get<CoachSession[]>('/coaches/me/sessions', {
-    params: cleanParams(query),
-  });
-  return data;
+// Học viên Coach phụ trách, dựng từ danh sách khóa 1-1 (backend tự lọc theo Coach đang đăng nhập).
+// Chỉ có ngữ cảnh khóa 1-1; ngữ cảnh lớp nhóm cần API riêng (BE-3, chưa có).
+export async function getCoachTrainees(): Promise<Trainee[]> {
+  const { data } = await apiClient.get<ListBody<PrivateEnrollmentRow>>('/private-courses/enrollments');
+  const byMember = new Map<number, Trainee>();
+  for (const enrollment of unwrapList(data)) {
+    const { member, privateCourse } = enrollment;
+    const trainee = byMember.get(member.userId) ?? {
+      member: { id: member.userId, memberCode: member.memberCode, displayName: member.user?.displayName ?? null },
+      contexts: [],
+    };
+    trainee.contexts.push({
+      type: 'PRIVATE_COURSE',
+      privateEnrollmentId: enrollment.id,
+      name: privateCourse.name,
+      sport: { id: privateCourse.sport.id, name: privateCourse.sport.name },
+      status: enrollment.status,
+    });
+    byMember.set(member.userId, trainee);
+  }
+  return [...byMember.values()];
 }
 
-// BE-3
-export async function getCoachTrainees() {
-  const { data } = await apiClient.get<Trainee[]>('/coaches/me/trainees');
-  return data;
+// Buổi dạy của Coach trong khoảng [from, to] cho khối "Buổi dạy cần điểm danh" (FR-47).
+// Backlog không có API riêng nên ghép 3 API có sẵn:
+//   1. GET /coaches/me/members?type=CLASS (FR-11): các lớp nhóm Coach phụ trách
+//   2. GET /group-classes/:id/sessions (FR-17): buổi học của từng lớp
+//   3. GET /class-sessions/:id/attendance (FR-47): sĩ số, số đã điểm danh và trạng thái khóa (BR-43)
+const MEMBERS_PAGE_SIZE = 100;
+const MEMBERS_MAX_PAGES = 20;
+// Lớp chưa mở hoặc đã hủy thì không có buổi cần điểm danh
+const SKIPPED_CLASS_STATUSES = new Set(['DRAFT', 'CANCELLED']);
+
+async function getCoachClasses() {
+  const classes = new Map<number, CoachClassRow>();
+  for (let page = 1; page <= MEMBERS_MAX_PAGES; page += 1) {
+    const { data } = await apiClient.get<Paginated<CoachMemberRow>>('/coaches/me/members', {
+      params: { type: 'CLASS', page, pageSize: MEMBERS_PAGE_SIZE },
+    });
+    for (const member of data.items) {
+      for (const groupClass of member.classes) {
+        if (!SKIPPED_CLASS_STATUSES.has(groupClass.status)) classes.set(groupClass.id, groupClass);
+      }
+    }
+    if (page * MEMBERS_PAGE_SIZE >= data.total) break;
+  }
+  return [...classes.values()];
+}
+
+export async function getCoachSessions({ from, to }: { from: string; to: string }): Promise<CoachSession[]> {
+  const fromTime = new Date(from).getTime();
+  const toTime = new Date(to).getTime();
+  const classes = await getCoachClasses();
+
+  const perClass = await Promise.all(
+    classes.map(async (groupClass) => {
+      const { data } = await apiClient.get<ListBody<ClassSessionRow>>(`/group-classes/${groupClass.id}/sessions`);
+      return unwrapList(data)
+        .filter((session) => {
+          const startsAt = new Date(session.startsAt).getTime();
+          return startsAt >= fromTime && startsAt <= toTime;
+        })
+        .map((session) => ({ session, groupClass }));
+    }),
+  );
+
+  const sessions = await Promise.all(
+    perClass.flat().map(async ({ session, groupClass }): Promise<CoachSession> => {
+      const roster = await getSessionAttendance(session.id);
+      return {
+        id: session.id,
+        startsAt: session.startsAt,
+        endsAt: session.endsAt,
+        status: session.status,
+        class: {
+          id: groupClass.id,
+          name: groupClass.name,
+          // FR-11 hiện trả tên môn dạng chuỗi; nhận cả { id, name } khi backend bổ sung
+          sport: typeof groupClass.sport === 'string' ? { name: groupClass.sport } : groupClass.sport,
+        },
+        room: session.room ? { code: session.room.code, name: session.room.name } : null,
+        confirmedCount: roster.students.length,
+        markedCount: roster.students.filter((student) => student.attendance !== null).length,
+        isLocked: roster.isLocked,
+      };
+    }),
+  );
+
+  return sessions.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 }

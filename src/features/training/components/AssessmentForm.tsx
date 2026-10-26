@@ -6,7 +6,7 @@ import { contextValue, isContextAssessable, METRIC_SUGGESTIONS, toAssessmentInpu
 import { parseApiError } from '../errors';
 import { addDays, todayInCenter } from '../format';
 import { useCreateAssessment } from '../hooks/useAssessments';
-import { enrollmentStatusLabels } from '../labels';
+import { enrollmentStatusLabels, traineeLabel } from '../labels';
 import { assessmentFormSchema, METRICS_MAX, type AssessmentFormOutput, type AssessmentFormValues } from '../schemas';
 import type { ProgressAssessment, Trainee } from '../types';
 import { Button } from './ui/Button';
@@ -112,7 +112,7 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             <option value="">Chọn học viên bạn phụ trách</option>
             {trainees.map((entry) => (
               <option key={entry.member.id} value={entry.member.id}>
-                {entry.member.displayName} · {entry.member.memberCode}
+                {traineeLabel(entry.member)}
               </option>
             ))}
           </select>

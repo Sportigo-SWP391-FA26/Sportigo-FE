@@ -10,13 +10,13 @@
 | M2 | Kế hoạch tập luyện | `/member/training-plan` | MEMBER | `GET /members/me/training` | 53 |
 | M3 | Kết quả & Tiến độ | `/member/progress` | MEMBER | `GET /members/me/training`, `GET /attendance` | 53, 48 |
 | C1 | Điểm danh buổi học | `/coach/sessions/:sessionId/attendance` | COACH | `GET`, `PUT /class-sessions/:id/attendance` | 47 |
-| C2 | Điểm danh + lịch sử (Coach) | `/coach/attendance` | COACH | `GET /attendance`, *`GET /coaches/me/sessions`* | 48 |
+| C2 | Điểm danh + lịch sử (Coach) | `/coach/attendance` | COACH | `GET /attendance`, `GET /coaches/me/members`, `GET /group-classes/:id/sessions`, `GET /class-sessions/:id/attendance` | 47, 48 |
 | C2 | Lịch sử điểm danh (Manager) | `/manager/attendance` | CENTER_MANAGER | `GET /attendance` | 48 |
 | C3 | Danh sách giáo án | `/coach/workout-plans` | COACH | `GET`, `POST /workout-plans`, `PATCH /workout-plans/:id`, `PATCH /workout-plans/:id/status`, *`GET /sports`* | 49 |
 | C4 | Chi tiết giáo án | `/coach/workout-plans/:planId` | COACH | `GET /workout-plans/:id`, `POST`, `PATCH`, `DELETE /workout-plans/:id/items…`, `PATCH /workout-plans/:id/items/reorder` | 50 |
-| C5 | Giáo án của khóa 1-1 | `/coach/private-enrollments/:enrollmentId/plans` | COACH | `GET`, `POST /private-enrollments/:id/plans`, `GET /workout-plans?status=ACTIVE&sportId=`, *`GET /coaches/me/trainees`* | 51 |
+| C5 | Giáo án của khóa 1-1 | `/coach/private-enrollments/:enrollmentId/plans` | COACH | `GET`, `POST /private-enrollments/:id/plans`, `GET /workout-plans?status=ACTIVE&sportId=`, `GET /private-courses/enrollments` | 51 |
 | C6 | Danh sách đánh giá | `/coach/assessments` | COACH | `GET /progress-assessments` | 52 |
-| C6 | Ghi đánh giá | `/coach/assessments/new` | COACH | `POST /progress-assessments`, *`GET /coaches/me/trainees`* | 52 |
+| C6 | Ghi đánh giá | `/coach/assessments/new` | COACH | `POST /progress-assessments`, `GET /private-courses/enrollments` (khóa 1-1), *học viên lớp nhóm (BE-3)* | 52 |
 
 API in nghiêng là API **backend chưa có** (xem mục 3). Mọi route đều có `RequireRole`, nhưng backend vẫn là nơi kiểm tra quyền chính.
 
@@ -74,9 +74,9 @@ Khi chưa có các API dưới đây, giao diện hiện **"Chức năng chưa s
 
 | Mã | API | Màn bị ảnh hưởng | Hợp đồng đề xuất |
 |---|---|---|---|
-| BE-1 | `GET /api/sports` (FR-12) | C3: chọn môn khi tạo giáo án, lọc theo môn | `[{ id, name, isActive }]` (FE nhận cả dạng `{ items }`) |
-| BE-2 | `GET /api/coaches/me/sessions?from&to` | C2: khối "Buổi dạy cần điểm danh" là lối vào chính của C1 | `[{ id, startsAt, endsAt, status, class: { id, name, sport: { id, name } }, room: { code, name } \| null, confirmedCount, markedCount, isLocked }]` |
-| BE-3 | `GET /api/coaches/me/trainees` (gần FR-11) | C6: chọn học viên và ngữ cảnh; C5: tên khóa, học viên, môn; nút "Gán cho khóa 1-1" ở C4 | `[{ member: { id, memberCode, displayName }, contexts: [{ type: 'GROUP_CLASS', classRegistrationId, name, sport } \| { type: 'PRIVATE_COURSE', privateEnrollmentId, name, sport, status }] }]` |
+| BE-1 | `GET /api/sports` (FR-12) | C3: chọn môn khi tạo giáo án, lọc theo môn | **Đã có** trên `develop` (module Bộ môn), trả `{ success, data: [...] }`. FE đọc được cả dạng này, mảng thuần và `{ items }`. |
+| BE-2 | Buổi dạy của Coach | C2: khối "Buổi dạy cần điểm danh" là lối vào chính của C1 | **Đã làm ở FE, không cần API mới** (backlog không có FR cho API này). FE ghép: `GET /coaches/me/members?type=CLASS` (FR-11) lấy lớp → `GET /group-classes/:id/sessions` (FR-17) lấy buổi hôm qua và hôm nay → `GET /class-sessions/:id/attendance` (FR-47) lấy sĩ số, số đã điểm danh, trạng thái khóa. Lớp chưa có học viên nào sẽ không hiện (không có ai để điểm danh). |
+| BE-3 | Học viên Coach phụ trách (gần FR-11) | C6: chọn học viên và ngữ cảnh; C5: tên khóa, học viên, môn; nút "Gán cho khóa 1-1" ở C4 | **Khóa 1-1 đã nối** qua `GET /api/private-courses/enrollments` (backend tự lọc theo Coach), FE gom thành danh sách học viên. **Còn thiếu:** học viên lớp nhóm của Coach (`GROUP_CLASS`), và tên học viên trong API khóa 1-1 (hiện chỉ có `memberCode`; FE đọc `member.user.displayName` nếu backend bổ sung). |
 | BE-4 | `GET /api/users?role=MEMBER&search=` (FR-09), `GET /api/group-classes` (FR-21) | C2 Manager: bộ chọn học viên và lớp | Tạm thời bấm vào tên lớp/học viên trong bảng để lọc (`?classId=`, `?memberId=`). |
 | BE-5 | Thêm `room { code, name }` vào `session` của `GET /class-sessions/:id/attendance` | C1: hiện phòng | FE đã hiển thị nếu trường này có. |
 | BE-6 | Thêm `schedules [{ dayOfWeek, startTime, endTime }]` vào `enrollment` của `GET /members/me/training` | M1: biết buổi nào là "hôm nay" | Hiện M1 hiển thị tuần hiện tại và cho chọn buổi. |
@@ -121,7 +121,7 @@ Các ý tưởng trong ảnh mẫu Dashboard **chưa làm** vì backend chưa c�
      - `/coach/attendance`: bấm thời gian buổi học, hoặc mở `/coach/sessions/<id buổi đang diễn ra>/attendance` (ID in ra khi chạy seed). Chọn trạng thái rồi lưu (FR-47). Mở buổi sắp tới để thấy chế độ chỉ xem.
      - `/coach/workout-plans`: mở giáo án demo, thêm/sửa/sắp xếp mục, thử thêm mục trùng thứ tự để thấy lỗi 409 tại ô "Thứ tự" (FR-49, FR-50).
      - `/coach/private-enrollments/<id enrollment>/plans`: gán giáo án demo (FR-51).
-     - `/coach/assessments`: xem đánh giá. Form `/new` chờ BE-3 (FR-52).
+     - `/coach/assessments`: xem đánh giá. Form `/new` ghi được đánh giá cho khóa 1-1; ngữ cảnh lớp nhóm chờ BE-3 (FR-52).
    - **Member** `member1.demo@sportcenter.local`: `/member/training-plan` (FR-53) và `/member/progress` (FR-53, FR-48).
    - **Manager** `manager@sportcenter.local`: `/manager/attendance` (FR-48). Cần xác minh email trước, xem câu hỏi 4.
 
@@ -152,10 +152,11 @@ Cách chạy:
 
 Lưu ý:
 
-- **Hai kịch bản chờ API:** E2 (tạo giáo án) và G2 (form đánh giá) hiện kiểm tra thông báo "chưa sẵn sàng". G3 và G4 **giả lập riêng** `GET /api/coaches/me/trainees` bằng ID thật của seed; việc ghi đánh giá vẫn gọi backend thật.
+- **Tạo giáo án và form đánh giá chạy với API thật:** E2 tạo giáo án qua form (môn lấy từ `GET /api/sports`) rồi chuyển giáo án vừa tạo sang Ngừng. G2 và G3 dùng danh sách khóa 1-1 thật của Coach. Riêng G4 **giả lập** `GET /api/private-courses/enrollments` để dựng ngữ cảnh sai; việc ghi đánh giá vẫn gọi backend thật.
 - **Dữ liệu do test tạo ra trong DB local:**
   - Giáo án `[E2E] Giáo án kiểm thử`, gán cho khóa 1-1 demo. Giáo án này được tái sử dụng, không tạo thêm ở các lần chạy sau.
-  - Mỗi lần chạy thêm một đánh giá có nhận xét bắt đầu bằng "Kiểm thử E2E" cho Member 2.
+  - Mỗi lần chạy thêm một đánh giá có nhận xét bắt đầu bằng "Kiểm thử E2E" cho Member 1 (khóa 1-1 demo).
+  - Mỗi lần chạy thêm một giáo án `[E2E] Tạo từ form …` ở trạng thái Ngừng (backend không xóa cứng giáo án).
   - Điểm danh buổi đang diễn ra được đặt lại thành Có mặt / Muộn.
 - **Phải dùng `localhost`:** test mở `http://localhost:5173` vì CORS của backend chỉ cho phép `localhost`. `baseURL` mặc định trong `playwright.config.ts` là `127.0.0.1`, nên các test khác có gọi API cũng cần lưu ý điều này.
 

@@ -55,7 +55,7 @@ export function AssessmentsPage() {
       ) : (
         <p className="mb-4 flex items-start gap-2 text-xs text-muted">
           <Funnel className="mt-0.5 shrink-0" aria-hidden="true" />
-          Bấm "Chỉ xem …" dưới một thẻ để lọc theo học viên. Bộ chọn học viên chờ API GET /api/coaches/me/trainees.
+          Bấm "Chỉ xem …" dưới một thẻ để lọc theo học viên.
         </p>
       )}
 
