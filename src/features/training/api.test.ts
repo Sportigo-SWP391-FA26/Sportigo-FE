@@ -1,6 +1,7 @@
+import type { AxiosRequestConfig } from 'axios';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { getCoachTrainees, getSports } from './api';
+import { getCoachSessions, getCoachTrainees, getSports } from './api';
 import { traineeLabel, traineeName } from './labels';
 
 // Dữ liệu theo đúng dạng module Bộ môn và Khóa 1-1 của backend trả về: { success, data }
@@ -76,5 +77,89 @@ describe('học viên Coach phụ trách (từ GET /api/private-courses/enrollme
     const member = { id: 4, memberCode: 'MEM-4', displayName: null };
     expect(traineeName(member)).toBe('MEM-4');
     expect(traineeLabel(member)).toBe('MEM-4');
+  });
+});
+
+describe('buổi dạy của Coach (ghép FR-11 + FR-17 + FR-47)', () => {
+  const groupClass = (id: number, status: string) => ({ id, name: `Lớp ${id}`, sport: 'Bơi lội', status });
+  const session = (id: number, startsAt: string) => ({
+    id,
+    startsAt,
+    endsAt: startsAt.replace('T01', 'T02'),
+    status: 'SCHEDULED',
+    room: { id: 9, code: 'P1', name: 'Hồ bơi 1', capacity: 20 },
+  });
+
+  test('lấy buổi trong khoảng thời gian, bỏ lớp hủy/nháp, đếm sĩ số và số đã điểm danh', async () => {
+    const get = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string) => {
+      if (url === '/coaches/me/members') {
+        return {
+          data: {
+            items: [
+              // Hai học viên cùng lớp 1 → lớp chỉ được lấy buổi một lần
+              { id: 20, classes: [groupClass(1, 'IN_PROGRESS'), groupClass(3, 'CANCELLED')] },
+              { id: 21, classes: [groupClass(1, 'IN_PROGRESS'), groupClass(4, 'DRAFT')] },
+            ],
+            page: 1,
+            pageSize: 100,
+            total: 2,
+          },
+        };
+      }
+      if (url === '/group-classes/1/sessions') {
+        return {
+          data: {
+            success: true,
+            data: [session(11, '2026-10-26T01:00:00.000Z'), session(10, '2026-10-25T01:00:00.000Z'), session(12, '2026-10-30T01:00:00.000Z')],
+          },
+        };
+      }
+      if (url.startsWith('/class-sessions/')) {
+        const id = Number(url.split('/')[2]);
+        return {
+          data: {
+            isLocked: id === 10,
+            students: [
+              { registrationId: 1, attendance: { status: 'PRESENT' } },
+              { registrationId: 2, attendance: null },
+            ],
+          },
+        };
+      }
+      throw new Error(`URL không mong đợi: ${url}`);
+    });
+
+    const result = await getCoachSessions({ from: '2026-10-24T17:00:00.000Z', to: '2026-10-26T16:59:59.999Z' });
+
+    expect(get).toHaveBeenCalledWith('/coaches/me/members', { params: { type: 'CLASS', page: 1, pageSize: 100 } });
+    expect(get).not.toHaveBeenCalledWith('/group-classes/3/sessions');
+    expect(get).not.toHaveBeenCalledWith('/group-classes/4/sessions');
+    expect(result.map((item) => item.id)).toEqual([10, 11]);
+    expect(result[0]).toEqual({
+      id: 10,
+      startsAt: '2026-10-25T01:00:00.000Z',
+      endsAt: '2026-10-25T02:00:00.000Z',
+      status: 'SCHEDULED',
+      class: { id: 1, name: 'Lớp 1', sport: { name: 'Bơi lội' } },
+      room: { code: 'P1', name: 'Hồ bơi 1' },
+      confirmedCount: 2,
+      markedCount: 1,
+      isLocked: true,
+    });
+  });
+
+  test('đọc hết các trang học viên khi Coach có nhiều hơn 100 học viên', async () => {
+    const get = vi.spyOn(apiClient, 'get').mockImplementation(async (url: string, config?: AxiosRequestConfig) => {
+      if (url === '/coaches/me/members') {
+        const page = (config?.params as { page?: number } | undefined)?.page ?? 1;
+        return { data: { items: [{ id: page, classes: [groupClass(page, 'OPEN')] }], page, pageSize: 100, total: 150 } };
+      }
+      return { data: { success: true, data: [] } };
+    });
+
+    await expect(getCoachSessions({ from: '2026-10-24T17:00:00.000Z', to: '2026-10-26T16:59:59.999Z' })).resolves.toEqual([]);
+    expect(get).toHaveBeenCalledWith('/group-classes/1/sessions');
+    expect(get).toHaveBeenCalledWith('/group-classes/2/sessions');
+    expect(get.mock.calls.filter(([url]) => url === '/coaches/me/members')).toHaveLength(2);
   });
 });

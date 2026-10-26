@@ -10,7 +10,7 @@
 | M2 | Kế hoạch tập luyện | `/member/training-plan` | MEMBER | `GET /members/me/training` | 53 |
 | M3 | Kết quả & Tiến độ | `/member/progress` | MEMBER | `GET /members/me/training`, `GET /attendance` | 53, 48 |
 | C1 | Điểm danh buổi học | `/coach/sessions/:sessionId/attendance` | COACH | `GET`, `PUT /class-sessions/:id/attendance` | 47 |
-| C2 | Điểm danh + lịch sử (Coach) | `/coach/attendance` | COACH | `GET /attendance`, *`GET /coaches/me/sessions`* | 48 |
+| C2 | Điểm danh + lịch sử (Coach) | `/coach/attendance` | COACH | `GET /attendance`, `GET /coaches/me/members`, `GET /group-classes/:id/sessions`, `GET /class-sessions/:id/attendance` | 47, 48 |
 | C2 | Lịch sử điểm danh (Manager) | `/manager/attendance` | CENTER_MANAGER | `GET /attendance` | 48 |
 | C3 | Danh sách giáo án | `/coach/workout-plans` | COACH | `GET`, `POST /workout-plans`, `PATCH /workout-plans/:id`, `PATCH /workout-plans/:id/status`, *`GET /sports`* | 49 |
 | C4 | Chi tiết giáo án | `/coach/workout-plans/:planId` | COACH | `GET /workout-plans/:id`, `POST`, `PATCH`, `DELETE /workout-plans/:id/items…`, `PATCH /workout-plans/:id/items/reorder` | 50 |
@@ -75,7 +75,7 @@ Khi chưa có các API dưới đây, giao diện hiện **"Chức năng chưa s
 | Mã | API | Màn bị ảnh hưởng | Hợp đồng đề xuất |
 |---|---|---|---|
 | BE-1 | `GET /api/sports` (FR-12) | C3: chọn môn khi tạo giáo án, lọc theo môn | **Đã có** trên `develop` (module Bộ môn), trả `{ success, data: [...] }`. FE đọc được cả dạng này, mảng thuần và `{ items }`. |
-| BE-2 | `GET /api/coaches/me/sessions?from&to` | C2: khối "Buổi dạy cần điểm danh" là lối vào chính của C1 | `[{ id, startsAt, endsAt, status, class: { id, name, sport: { id, name } }, room: { code, name } \| null, confirmedCount, markedCount, isLocked }]` |
+| BE-2 | Buổi dạy của Coach | C2: khối "Buổi dạy cần điểm danh" là lối vào chính của C1 | **Đã làm ở FE, không cần API mới** (backlog không có FR cho API này). FE ghép: `GET /coaches/me/members?type=CLASS` (FR-11) lấy lớp → `GET /group-classes/:id/sessions` (FR-17) lấy buổi hôm qua và hôm nay → `GET /class-sessions/:id/attendance` (FR-47) lấy sĩ số, số đã điểm danh, trạng thái khóa. Lớp chưa có học viên nào sẽ không hiện (không có ai để điểm danh). |
 | BE-3 | Học viên Coach phụ trách (gần FR-11) | C6: chọn học viên và ngữ cảnh; C5: tên khóa, học viên, môn; nút "Gán cho khóa 1-1" ở C4 | **Khóa 1-1 đã nối** qua `GET /api/private-courses/enrollments` (backend tự lọc theo Coach), FE gom thành danh sách học viên. **Còn thiếu:** học viên lớp nhóm của Coach (`GROUP_CLASS`), và tên học viên trong API khóa 1-1 (hiện chỉ có `memberCode`; FE đọc `member.user.displayName` nếu backend bổ sung). |
 | BE-4 | `GET /api/users?role=MEMBER&search=` (FR-09), `GET /api/group-classes` (FR-21) | C2 Manager: bộ chọn học viên và lớp | Tạm thời bấm vào tên lớp/học viên trong bảng để lọc (`?classId=`, `?memberId=`). |
 | BE-5 | Thêm `room { code, name }` vào `session` của `GET /class-sessions/:id/attendance` | C1: hiện phòng | FE đã hiển thị nếu trường này có. |

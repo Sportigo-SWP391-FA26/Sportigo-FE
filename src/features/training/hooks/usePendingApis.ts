@@ -3,7 +3,7 @@ import { getCoachSessions, getCoachTrainees, getSports } from '../api';
 import { retryServerErrors } from '../errors';
 import { trainingKeys } from '../queryKeys';
 
-// API Training lấy từ module khác của nhóm (môn, khóa 1-1) hoặc backend chưa có (BE-2).
+// API Training lấy từ module khác của nhóm: môn (FR-12), khóa 1-1, lớp và buổi học (FR-11, FR-17).
 // API chưa có trả 404 "route missing" và giao diện hiển thị "chưa sẵn sàng";
 // backend bổ sung đúng hợp đồng thì màn hình tự hoạt động, không cần sửa FE.
 
@@ -16,7 +16,7 @@ export function useSports() {
   });
 }
 
-export function useCoachSessions(range: { from?: string; to?: string }) {
+export function useCoachSessions(range: { from: string; to: string }) {
   return useQuery({
     queryKey: trainingKeys.coachSessions(range),
     queryFn: () => getCoachSessions(range),

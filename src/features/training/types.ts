@@ -268,15 +268,27 @@ export type PrivateEnrollmentRow = {
   privateCourse: { name: string; sport: SportRef };
 };
 
-// ---------- API chưa có ở backend (đề xuất trong docs/training-ui.md) ----------
+// GET /api/coaches/me/members (FR-11): chỉ khai báo phần lớp nhóm Training dùng.
+// `sport` hiện là tên môn dạng chuỗi; nhận cả { id, name } nếu backend đổi.
+export type CoachClassRow = { id: number; name: string; sport: string | SportRef; status: string };
+export type CoachMemberRow = { id: number; classes: CoachClassRow[] };
 
-// BE-2: GET /api/coaches/me/sessions
+// GET /api/group-classes/:id/sessions (FR-17)
+export type ClassSessionRow = {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  status: SessionStatus;
+  room: { code: string; name: string } | null;
+};
+
+// Buổi dạy của Coach, ghép từ 3 API trên và GET /class-sessions/:id/attendance (xem api.ts)
 export type CoachSession = {
   id: number;
   startsAt: string;
   endsAt: string;
   status: SessionStatus;
-  class: { id: number; name: string; sport: SportRef };
+  class: { id: number; name: string; sport: { id?: number; name: string } };
   room: { code: string; name: string } | null;
   confirmedCount: number;
   markedCount: number;

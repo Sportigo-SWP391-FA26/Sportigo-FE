@@ -42,7 +42,7 @@ export function AttendanceHistoryPage({ scope }: { scope: 'coach' | 'manager' })
   );
 }
 
-/** Buổi dạy hôm qua và hôm nay của Coach (cần API BE-2, hiện chưa có) */
+/** Buổi dạy hôm qua và hôm nay của Coach: lối vào chính của màn điểm danh (FR-47) */
 function CoachSessionsToday() {
   const today = todayInCenter();
   const sessions = useCoachSessions({ from: startOfCenterDay(addDays(today, -1)), to: endOfCenterDay(today) });
@@ -66,7 +66,7 @@ function CoachSessionsToday() {
           error={sessions.error}
           onRetry={() => sessions.refetch()}
           retrying={sessions.isRefetching}
-          pendingApi="GET /api/coaches/me/sessions"
+          pendingApi="GET /api/coaches/me/members, /api/group-classes/:id/sessions"
         />
       ) : sessions.data.length === 0 ? (
         <EmptyState compact icon={<CalendarCheck />} title="Không có buổi dạy" description="Bạn không có buổi lớp nhóm nào hôm qua và hôm nay." />
