@@ -9,3 +9,6 @@ test-results
 .stitch-reference/
 .playwright-cli/
 output/
+
+.vercel
+.env*

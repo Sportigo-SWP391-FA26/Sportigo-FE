@@ -1,12 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Barbell, Clock, Globe, Phone, SealCheck, UsersThree } from '@phosphor-icons/react'
-import { BrandLogo } from '../../../components/brand/BrandLogo'
 
 type AuthShellProps = { children: ReactNode; variant: 'login' | 'register' }
 const slides = [
-  { label: 'Hồ bơi Olympic', image: '/images/auth/pool.webp' },
-  { label: 'Sân Tennis ITF', image: '/images/auth/tennis.webp' },
-  { label: 'Gym & Thể lực', image: '/images/auth/gym.webp' },
+  { label: 'Hồ bơi Olympic', image: '/images/landing/hero/swimming.webp' },
+  { label: 'Gym & Thể lực', image: '/images/landing/hero/gym.webp' },
+  { label: 'Cầu lông trong nhà', image: '/images/landing/hero/badminton.webp' },
 ]
 
 export function AuthShell({ children, variant }: AuthShellProps) {
@@ -22,10 +21,16 @@ export function AuthShell({ children, variant }: AuthShellProps) {
         <div className="auth-visual__card">
           <div className="auth-slides" aria-hidden="true">{slides.map((slide, index) => <div className={`auth-slide ${index === activeSlide ? 'is-active' : ''}`} style={{ backgroundImage: `url(${slide.image})` }} key={slide.label} />)}</div>
           <div className="auth-visual__shade" />
-          <BrandLogo className="auth-visual__logo" />
           <div className="auth-visual__copy">
-            <h2>ĐỈNH CAO THỂ THAO &amp; PHỤC HỒI<br />CHUYÊN NGHIỆP</h2>
-            <div className="auth-badges"><span><UsersThree />15.000+ Hội viên</span><span><Barbell />350+ Lớp tập/tuần</span><span><SealCheck />100% Chuẩn quốc tế</span></div>
+            <div className="auth-visual__statement">
+              <h2>Không chỉ tập luyện.<br /><span>Sống trọn nhịp thể thao.</span></h2>
+              <p>Một không gian dành cho chuyển động, phục hồi và những mục tiêu bền vững hơn mỗi ngày.</p>
+            </div>
+            <div className="auth-highlights" aria-label="Điểm nổi bật của Sportigo">
+              <span><UsersThree /><strong>15.000+</strong><small>Hội viên</small></span>
+              <span><Barbell /><strong>350+</strong><small>Lớp mỗi tuần</small></span>
+              <span><SealCheck /><strong>100%</strong><small>Chuẩn quốc tế</small></span>
+            </div>
             <div className="auth-slide-controls">{slides.map((slide, index) => <button type="button" className={index === activeSlide ? 'active' : ''} onClick={() => setActiveSlide(index)} key={slide.label}><span>0{index + 1} {slide.label}</span><i /></button>)}</div>
           </div>
         </div>

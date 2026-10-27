@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, CaretLeft, CaretRight, Check, Clock, EnvelopeSimple, FacebookLogo, InstagramLogo, MapPin, Phone, Sparkle, UsersThree, YoutubeLogo } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { BrandLogo } from '../../../components/brand/BrandLogo'
@@ -60,6 +60,21 @@ export function LandingPage() {
   const [heroIndex, setHeroIndex] = useAutoAdvance(heroSlides.length)
   const [coachGroup, setCoachGroup] = useAutoAdvance(2)
   const [activeDay, setActiveDay] = useState(0)
+  const [navScrolled, setNavScrolled] = useState(false)
+  const [navHidden, setNavHidden] = useState(false)
+  const previousScrollY = useRef(0)
+  useEffect(() => {
+    const updateNavigation = () => {
+      const currentScrollY = window.scrollY
+      const heroHeight = document.querySelector<HTMLElement>('.landing-hero')?.offsetHeight ?? 780
+      setNavScrolled(currentScrollY >= heroHeight - 88)
+      setNavHidden(currentScrollY > 120 && currentScrollY > previousScrollY.current)
+      previousScrollY.current = currentScrollY
+    }
+    updateNavigation()
+    window.addEventListener('scroll', updateNavigation, { passive: true })
+    return () => window.removeEventListener('scroll', updateNavigation)
+  }, [])
   const visibleCoaches = coaches.slice(coachGroup * 3, coachGroup * 3 + 3)
   const toggleCoachGroup = () => setCoachGroup(coachGroup === 0 ? 1 : 0)
   return (
@@ -67,10 +82,10 @@ export function LandingPage() {
       <section className="landing-hero">
         <div className="landing-hero__slides" aria-hidden="true">{heroSlides.map((slide, index) => <div className={`landing-hero__slide ${index === heroIndex ? 'is-active' : ''}`} style={{ backgroundImage: `url(${slide.image})` }} key={slide.name} />)}</div>
         <div className="landing-hero__overlay" />
-        <header className="landing-nav">
+        <header className={`landing-nav ${navScrolled ? 'landing-nav--scrolled' : ''} ${navHidden ? 'landing-nav--hidden' : ''}`}>
           <BrandLogo className="landing-logo" />
           <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Hạng thẻ</a><a href="#coaches">Huấn luyện viên</a></nav>
-          <div className="landing-nav__actions"><a href="tel:19006868"><Phone />1900 6868</a><Link to="/login">Đăng nhập</Link></div>
+          <div className="landing-nav__actions"><a className="landing-nav__phone" href="tel:19006868"><Phone />1900 6868</a><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
         </header>
         <div className="landing-hero__body"><div className="landing-hero__copy">
           <span className="landing-location"><MapPin /> Sportigo Athletic Club · TP.HCM</span>

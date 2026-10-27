@@ -2,21 +2,165 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegisterPage } from '../features/auth/pages/RegisterPage';
+import { VerifyEmailPage } from '../features/auth/pages/VerifyEmailPage';
+import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { LandingPage } from '../features/landing/pages/LandingPage';
+import { MemberLayout } from '../layouts/MemberLayout';
+import { MemberHomePage } from '../features/member/pages/MemberHomePage';
+import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
+import { MemberPaymentsPage } from '../features/finance/pages/MemberPaymentsPage';
+import { PaymentResultPage } from '../features/finance/pages/PaymentResultPage';
+import { CashierPage } from '../features/finance/pages/CashierPage';
+import { ManagerFinancePage } from '../features/finance/pages/ManagerFinancePage';
+import { RequireRole } from '../components/auth/RequireRole';
+import { MemberTrainingPlanPage } from '../features/training/pages/MemberTrainingPlanPage';
+import { MemberProgressPage } from '../features/training/pages/MemberProgressPage';
+import { CoachLayout } from '../layouts/CoachLayout';
+import { AttendanceHistoryPage } from '../features/training/pages/AttendanceHistoryPage';
+import { SessionAttendancePage } from '../features/training/pages/SessionAttendancePage';
+import { WorkoutPlansPage } from '../features/training/pages/WorkoutPlansPage';
+import { WorkoutPlanDetailPage } from '../features/training/pages/WorkoutPlanDetailPage';
+import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansPage';
+import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
+import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
+import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
+import { ProfilePage } from '../features/profile/pages/ProfilePage';
+import { UsersPage } from '../features/users/pages/UsersPage';
+import { StaffPage } from '../features/staff/pages/StaffPage';
+import { MemberSupportPage } from '../features/support/pages/MemberSupportPage';
+import { MemberSupportDetailPage } from '../features/support/pages/MemberSupportDetailPage';
+import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
+import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
+import { MemberDetailPage } from '../features/members/pages/MemberDetailPage';
+import { CoachMembersPage } from '../features/members/pages/CoachMembersPage';
+import { CoachManagementListPage, CoachManagementPage, CoachOwnSchedulePage } from '../features/coaches/pages/CoachManagementPage';
+import { GroupClassDetailPage } from '../features/group-classes/pages/GroupClassDetailPage';
+import { GroupClassesPage } from '../features/group-classes/pages/GroupClassesPage';
+import { MemberPrivateSchedulePage } from '../features/private-courses/pages/MemberPrivateSchedulePage';
+import { PrivateCourseDetailPage } from '../features/private-courses/pages/PrivateCourseDetailPage';
+import { PrivateCoursesPage } from '../features/private-courses/pages/PrivateCoursesPage';
+import { GroupClassBookingDetailPage } from '../features/member/pages/GroupClassBookingDetailPage';
+import { RoomsManagementPage } from '../features/catalog/pages/RoomsManagementPage';
+import { SportsManagementPage } from '../features/catalog/pages/SportsManagementPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
   {
     path: '/app',
-    element: <AppLayout />,
+    element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: <DashboardPage /> },
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <RoleHomeRedirect /> },
+          {
+            element: <RequireRole roles={['CENTER_MANAGER']} />,
+            children: [
+              { path: 'dashboard', element: <DashboardPage /> },
+              { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
+              { path: 'operations-report', element: <ManagerFinancePage view="classes" /> },
+              { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
+              { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
+              { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
+              // FR-07: chỉ Manager quản lý nhân sự
+              { path: 'staff', element: <StaffPage /> },
+              { path: 'coaches', element: <CoachManagementListPage /> },
+              { path: 'coaches/:coachId', element: <CoachManagementPage /> },
+              { path: 'sports', element: <SportsManagementPage /> },
+              { path: 'rooms', element: <RoomsManagementPage /> },
+              { path: 'classes', element: <GroupClassesPage /> },
+              { path: 'classes/:classId', element: <GroupClassDetailPage /> },
+              { path: 'private-courses', element: <PrivateCoursesPage /> },
+              { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
+              { path: ':section', element: <ComingSoonPage /> },
+            ],
+          },
+          {
+            element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
+            children: [
+              { path: 'cashier', element: <CashierPage /> },
+              { path: 'class-bookings', element: <ClassSchedulePage receptionistMode /> },
+              { path: 'class-bookings/:classId', element: <GroupClassBookingDetailPage /> },
+              // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
+              { path: 'profile', element: <ProfilePage /> },
+              // FR-09: Manager và Receptionist cùng dùng, backend tự giới hạn Receptionist chỉ thấy Member
+              { path: 'users', element: <UsersPage /> },
+              // FR-56: hàng đợi hỗ trợ cho Receptionist và Manager
+              { path: 'support', element: <SupportQueuePage /> },
+              { path: 'support/:requestId', element: <StaffSupportDetailPage /> },
+              // FR-10: hồ sơ tổng hợp hội viên (khối này để Receptionist cũng vào được)
+              { path: 'members/:memberId', element: <MemberDetailPage backTo="/app/users" backLabel="Danh sách người dùng" /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/member',
+    element: <MemberLayout />,
+    children: [
+      { index: true, element: <Navigate to="home" replace /> },
+      { path: 'home', element: <MemberHomePage /> },
+      { path: 'classes', element: <ClassSchedulePage /> },
+      { path: 'classes/:classId', element: <GroupClassBookingDetailPage /> },
+      { path: 'payments', element: <MemberPaymentsPage /> },
+      { path: 'payments/result', element: <PaymentResultPage /> },
+      {
+        element: <RequireRole roles={['MEMBER']} />,
+        children: [
+          { path: 'training-plan', element: <MemberTrainingPlanPage /> },
+          { path: 'progress', element: <MemberProgressPage /> },
+          { path: 'private-courses', element: <PrivateCoursesPage /> },
+          { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
+          { path: 'my-schedule', element: <MemberPrivateSchedulePage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          // FR-55: yêu cầu hỗ trợ của Member
+          { path: 'support', element: <MemberSupportPage /> },
+          { path: 'support/:requestId', element: <MemberSupportDetailPage /> },
+        ],
+      },
       { path: ':section', element: <ComingSoonPage /> },
+    ],
+  },
+  {
+    path: '/coach',
+    element: <RequireRole roles={['COACH']} />,
+    children: [
+      {
+        element: <CoachLayout />,
+        children: [
+          { index: true, element: <Navigate to="attendance" replace /> },
+          { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
+          { path: 'schedule', element: <CoachOwnSchedulePage /> },
+          { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
+          { path: 'workout-plans', element: <WorkoutPlansPage /> },
+          { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },
+          { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
+          { path: 'assessments', element: <AssessmentsPage /> },
+          { path: 'assessments/new', element: <NewAssessmentPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          // FR-11: học viên của Coach + hồ sơ tổng hợp (FR-10, backend tự giới hạn theo Coach)
+          { path: 'members', element: <CoachMembersPage /> },
+          { path: 'members/:memberId', element: <MemberDetailPage backTo="/coach/members" backLabel="Học viên của tôi" /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/manager',
+    element: <RequireRole roles={['CENTER_MANAGER']} />,
+    children: [
+      {
+        element: <AppLayout />,
+        children: [{ path: 'attendance', element: <AttendanceHistoryPage scope="manager" /> }],
+      },
     ],
   },
   { path: '/dashboard', element: <Navigate to="/app/dashboard" replace /> },
