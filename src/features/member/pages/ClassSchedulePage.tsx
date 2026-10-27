@@ -1,68 +1,110 @@
-import { CaretLeft, CaretRight, Clock, MapPin, Star, User } from '@phosphor-icons/react';
-import { Rail } from '@lucasmarkes/hairline/react';
-import { useMemo, useState } from 'react';
-import { StatusBadge } from '../components/StatusBadge';
-import { classSchedules, coachAvailability } from '../mockData';
-import type { ClassSchedule, ClassType } from '../types';
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import { CalendarBlank, FunnelSimple } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getSessionRole } from '../../../components/auth/session';
+import { Button } from '../../training/components/ui/Button';
+import { Card, PageHeader } from '../../training/components/ui/Card';
+import { Chip } from '../../training/components/ui/Chip';
+import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
+import { formatDate } from '../../training/format';
+import { parseApiError } from '../../training/errors';
+import { trainingKeys } from '../../training/queryKeys';
+import { getSports } from '../../training/api';
+import { useQuery } from '@tanstack/react-query';
+import { usePublicClasses } from '../bookingHooks';
+import type { PublicClassFilters } from '../bookingTypes';
 
-const days = ['Tất cả', 'Th 2', 'Th 4', 'Th 5', 'Th 6'];
-const sports = ['Tất cả', 'Bơi lội', 'Gym', 'Yoga', 'Cầu lông'];
+const PAGE_SIZE = 10;
 
-export function ClassSchedulePage() {
-  const reducedMotion = useReducedMotion();
-  const [day, setDay] = useState('Tất cả');
-  const [sport, setSport] = useState('Tất cả');
-  const [type, setType] = useState<'ALL' | ClassType>('ALL');
-  const [selected, setSelected] = useState<ClassSchedule>(classSchedules[0]);
+export function ClassSchedulePage({ receptionistMode = false }: { receptionistMode?: boolean }) {
+  const role = getSessionRole();
+  const sports = useQuery({ queryKey: trainingKeys.sports(), queryFn: getSports, retry: false });
+  const [sportId, setSportId] = useState('');
+  const [coachId, setCoachId] = useState('');
+  const [date, setDate] = useState('');
+  const [filters, setFilters] = useState<PublicClassFilters>({ page: 1, limit: PAGE_SIZE });
+  const classes = usePublicClasses(filters);
+  const coachOptions = [...new Map((classes.data?.data ?? []).map((item) => [item.coachId, item.coach.user.displayName])).entries()];
 
-  const filtered = useMemo(() => classSchedules.filter((item) =>
-    (day === 'Tất cả' || item.dayLabel === day) &&
-    (sport === 'Tất cả' || item.sport === sport) &&
-    (type === 'ALL' || item.type === type)
-  ), [day, sport, type]);
+  const applyFilters = () => {
+    setFilters({
+      page: 1,
+      limit: PAGE_SIZE,
+      ...(sportId ? { sportId: Number(sportId) } : {}),
+      ...(coachId ? { coachId: Number(coachId) } : {}),
+      ...(date ? { date } : {}),
+    });
+  };
+  const setPage = (page: number) => setFilters((current) => ({ ...current, page }));
 
   return (
-    <div className="schedule-page">
-      <header className="schedule-page__hero">
-        <div><h1>Lịch tập của bạn, theo cách bạn muốn</h1><p>Tìm lớp nhóm hoặc lịch 1–1 phù hợp trong tuần này.</p></div>
-        <div className="schedule-page__hairline" aria-hidden="true"><Rail intensity={0.15} theme="light" play={!reducedMotion} label="Đồ họa chuyển động trang trí" /></div>
-      </header>
-
-      <section className="schedule-toolbar" aria-label="Bộ lọc lịch lớp">
-        <div className="week-switcher"><button aria-label="Tuần trước"><CaretLeft /></button><span>12 – 18 tháng 10, 2026</span><button aria-label="Tuần sau"><CaretRight /></button></div>
-        <label>Ngày<select aria-label="Lọc theo ngày" value={day} onChange={(event) => setDay(event.target.value)}>{days.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label>Môn<select aria-label="Lọc theo môn" value={sport} onChange={(event) => setSport(event.target.value)}>{sports.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <div className="type-filter" role="group" aria-label="Loại hình">
-          {[['ALL', 'Tất cả'], ['GROUP', 'Lớp nhóm'], ['PRIVATE', '1–1']].map(([value, label]) => <button key={value} className={type === value ? 'active' : ''} onClick={() => setType(value as 'ALL' | ClassType)}>{label}</button>)}
+    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
+      <PageHeader eyebrow="Lớp nhóm" title={receptionistMode ? 'Đăng ký lớp cho hội viên' : 'Tìm lớp phù hợp'} description={receptionistMode ? 'Tìm lớp đang mở đăng ký để lập đơn cho hội viên đã có tài khoản.' : 'Xem các lớp đang mở đăng ký. Tình trạng chỗ và điều kiện đăng ký được xác nhận lại bởi backend khi bạn đăng ký.'} />
+      <Card className="mb-5 p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+          <label className="block text-[13px] font-bold text-ink">Môn thể thao
+            <select className="mt-1.5 block min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm" value={sportId} onChange={(event) => setSportId(event.target.value)} disabled={sports.isPending || sports.isError}>
+              <option value="">Tất cả môn</option>
+              {sports.data?.filter((sport) => sport.isActive).map((sport) => <option key={sport.id} value={sport.id}>{sport.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-[13px] font-bold text-ink">Coach
+            <select className="mt-1.5 block min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm" value={coachId} onChange={(event) => setCoachId(event.target.value)}>
+              <option value="">Tất cả Coach</option>
+              {coachOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          </label>
+          <label className="block text-[13px] font-bold text-ink">Ngày lớp diễn ra
+            <input type="date" className="mt-1.5 block min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm" value={date} onChange={(event) => setDate(event.target.value)} />
+          </label>
+          <Button icon={<FunnelSimple aria-hidden="true" />} onClick={applyFilters}>Lọc lớp</Button>
         </div>
-      </section>
+        {sports.isError && <p role="alert" className="mt-3 text-sm text-danger">Không tải được danh sách môn: {parseApiError(sports.error).message}</p>}
+        <p className="mt-3 text-xs text-muted">API chỉ trả lớp đang mở đăng ký. Bộ lọc Coach lấy các Coach xuất hiện trong trang kết quả hiện tại.</p>
+      </Card>
 
-      <div className="schedule-workspace">
-        <section className="week-calendar" aria-label="Danh sách lịch tuần">
-          <div className="week-calendar__head"><span>Thời gian</span>{['Th 2 · 12', 'Th 3 · 13', 'Th 4 · 14', 'Th 5 · 15', 'Th 6 · 16'].map((item) => <span key={item}>{item}</span>)}</div>
-          <div className="week-calendar__body">
-            {['06:00', '09:00', '15:00', '18:00', '19:00'].map((time) => <span key={time} className="calendar-time">{time}</span>)}
-            {filtered.length ? filtered.map((item) => {
-              const column = { 'Th 2': 2, 'Th 4': 4, 'Th 5': 5, 'Th 6': 6 }[item.dayLabel] ?? 3;
-              const row = { '06:00': 1, '09:00': 2, '15:00': 3, '18:00': 4, '19:00': 5 }[item.startTime] ?? 2;
-              return <button key={item.id} className={`calendar-event calendar-event--${item.sport.toLowerCase().replace(' ', '-')}`} style={{ gridColumn: column, gridRow: row }} onClick={() => setSelected(item)}><b>{item.title}</b><span>{item.startTime} · {item.room}</span></button>;
-            }) : <p className="calendar-empty">Không có lịch phù hợp bộ lọc.</p>}
+      {classes.isPending ? (
+        <ListSkeleton label="Đang tải lớp học…" />
+      ) : classes.isError ? (
+        <ErrorState error={classes.error} onRetry={() => classes.refetch()} retrying={classes.isRefetching} pendingApi="GET /api/bookings/classes" />
+      ) : classes.data.data.length === 0 ? (
+        <EmptyState icon={<CalendarBlank />} title="Không tìm thấy lớp phù hợp" description="Thử bỏ bớt bộ lọc hoặc chọn một ngày khác." />
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {classes.data.data.map((item) => (
+              <Card key={item.id} className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary-deep">{item.sport.name}</p>
+                    <h2 className="mt-1 text-lg font-extrabold text-ink">{item.name}</h2>
+                    <p className="mt-1 text-sm text-muted">Coach {item.coach.user.displayName}</p>
+                  </div>
+                  <Chip tone="success" dot>Đang mở đăng ký</Chip>
+                </div>
+                {item.description && <p className="mt-3 line-clamp-2 text-sm text-muted">{item.description}</p>}
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <p><span className="text-muted">Học phí</span><br /><strong>{new Intl.NumberFormat('vi-VN').format(Number(item.tuitionFee))} ₫</strong></p>
+                  <p><span className="text-muted">Lớp</span><br /><strong>{formatDate(item.startDate)} – {formatDate(item.endDate)}</strong></p>
+                  <p><span className="text-muted">Chỉ tiêu</span><br /><strong>{item.capacity} học viên</strong></p>
+                  <p><span className="text-muted">Đã xác nhận</span><br /><strong>{item._count.registrations}</strong></p>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Link to={`${receptionistMode ? '/app/class-bookings' : '/member/classes'}/${item.id}`} className="inline-flex min-h-11 items-center rounded-control bg-primary px-4 text-sm font-bold text-white hover:bg-primary-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{receptionistMode ? 'Đăng ký hộ' : 'Xem chi tiết'}</Link>
+                </div>
+              </Card>
+            ))}
           </div>
-        </section>
-
-        <aside className="schedule-detail" aria-live="polite">
-          <span>Buổi được chọn</span>
-          <img src={selected.image} alt={selected.sport} />
-          <div><StatusBadge status={selected.status} /><h2>{selected.title}</h2><p>{selected.type === 'GROUP' ? 'Lớp nhóm' : 'Khóa 1–1'}</p></div>
-          <ul><li><Clock /> {selected.dayLabel}, {selected.startTime} – {selected.endTime}</li><li><MapPin /> {selected.room}</li><li><User /> {selected.coach}</li></ul>
-          <p className="schedule-capacity">{selected.booked}/{selected.capacity} chỗ đã được đăng ký</p>
-          <button disabled={selected.status === 'FULL' || selected.status === 'REGISTERED'}>{selected.status === 'FULL' ? 'Lớp đã đầy' : selected.status === 'REGISTERED' ? 'Bạn đã đăng ký' : 'Đăng ký lịch này'}</button>
-        </aside>
-      </div>
-
-      <section className="available-section"><header><h2>Coach 1–1 đang khả dụng</h2><p>Chọn Coach và thống nhất một lịch học cố định cho toàn khóa.</p></header><div>{coachAvailability.map((coach) => <article key={coach.id}><img src={coach.avatar} alt={coach.name} /><div><h3>{coach.name}</h3><p>{coach.sport}</p><span><Star weight="fill" /> {coach.rating}</span></div><time>{coach.nextAvailable}</time><button>Xem lịch</button></article>)}</div></section>
-      <p className="member-demo-note">Dữ liệu trên trang đang là dữ liệu minh họa.</p>
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <p className="text-sm text-muted">Trang {classes.data.pagination.page} / {Math.max(classes.data.pagination.totalPages, 1)} · {classes.data.pagination.total} lớp</p>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" disabled={classes.data.pagination.page <= 1 || classes.isFetching} onClick={() => setPage(classes.data.pagination.page - 1)}>Trang trước</Button>
+              <Button variant="secondary" size="sm" disabled={classes.data.pagination.page >= classes.data.pagination.totalPages || classes.isFetching} onClick={() => setPage(classes.data.pagination.page + 1)}>Trang sau</Button>
+            </div>
+          </div>
+        </>
+      )}
+      {role && role !== 'MEMBER' && <p className="mt-4 text-sm text-muted">Tài khoản hiện tại không phải Member; đăng ký lớp chỉ dành cho Member.</p>}
     </div>
   );
 }

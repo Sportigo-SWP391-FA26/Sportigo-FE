@@ -30,6 +30,29 @@ export function formatDateTime(value: string) {
   return `${day}/${month}/${year} ${hour}:${minute}`;
 }
 
+/** Chuỗi ISO → giá trị `datetime-local` theo giờ trung tâm */
+export function toCenterDateTimeInput(value: string) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: CENTER_TIME_ZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(new Date(value))
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** `datetime-local` theo giờ trung tâm → ISO 8601 UTC để gửi API */
+export function fromCenterDateTimeInput(value: string) {
+  return new Date(`${value}:00${CENTER_UTC_OFFSET}`).toISOString();
+}
+
 /** Chuỗi ISO → "13:17" theo giờ trung tâm */
 export function formatTime(value: string) {
   const { hour, minute } = centerParts(value);

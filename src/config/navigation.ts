@@ -8,8 +8,10 @@ export const centerManagerNavigation: NavigationItem[] = [
   { label: 'Quản lý Người dùng', path: '/app/users' },
   { label: 'Quản lý Hội viên', path: '/app/members' },
   { label: 'Quản lý Nhân sự', path: '/app/staff' },
+  { label: 'Quản lý Coach', path: '/app/coaches' },
   { label: 'Quản lý Bộ môn', path: '/app/sports' },
   { label: 'Danh sách Lớp học', path: '/app/classes' },
+  { label: 'Khóa học 1–1', path: '/app/private-courses' },
   { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
   { label: 'Quản lý Phòng tập', path: '/app/rooms' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
@@ -24,6 +26,7 @@ export const centerManagerNavigation: NavigationItem[] = [
 // FR-09: trước đây Receptionist dùng chung menu Manager nên thấy cả mục không có quyền
 export const receptionistNavigation: NavigationItem[] = [
   { label: 'Tra cứu Hội viên', path: '/app/users' },
+  { label: 'Đăng ký lớp cho Hội viên', path: '/app/class-bookings' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
   // FR-56
   { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
@@ -32,6 +35,7 @@ export const receptionistNavigation: NavigationItem[] = [
 export const coachNavigation: NavigationItem[] = [
   // FR-11
   { label: 'Học viên của tôi', path: '/coach/members' },
+  { label: 'Lịch của tôi', path: '/coach/schedule' },
   { label: 'Điểm danh', path: '/coach/attendance' },
   { label: 'Giáo án', path: '/coach/workout-plans' },
   { label: 'Đánh giá tiến độ', path: '/coach/assessments' },

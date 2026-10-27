@@ -1,14 +1,16 @@
 import { ArrowSquareOut, ClockCounterClockwise, Wallet } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { financeApi, saveBlob } from '../api';
 
 const money = (value: number | string) => Number(value).toLocaleString('vi-VN') + ' ₫';
 
 export function MemberPaymentsPage() {
+  const [searchParams] = useSearchParams();
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: financeApi.wallet });
   const payments = useQuery({ queryKey: ['payments'], queryFn: financeApi.payments });
-  const [orderId, setOrderId] = useState('');
+  const [orderId, setOrderId] = useState(() => searchParams.get('orderId') ?? '');
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const startVnpay = async () => { try { const result = await financeApi.vnpay(Number(orderId)); window.location.assign(result.paymentUrl); } catch { setMessage('Không thể tạo giao dịch VNPay. Hãy kiểm tra mã đơn hàng.'); } };
