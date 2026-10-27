@@ -160,6 +160,29 @@ Lưu ý:
   - Điểm danh buổi đang diễn ra được đặt lại thành Có mặt / Muộn.
 - **Phải dùng `localhost`:** test mở `http://localhost:5173` vì CORS của backend chỉ cho phép `localhost`. `baseURL` mặc định trong `playwright.config.ts` là `127.0.0.1`, nên các test khác có gọi API cũng cần lưu ý điều này.
 
+## 5. Quản lý Coach, lớp nhóm và khóa học 1–1
+
+| Màn hình | Route | Role | API |
+|---|---|---|---|
+| Danh sách/hồ sơ Coach, chuyên môn và availability | `/app/coaches`, `/app/coaches/:coachId` | CENTER_MANAGER | `GET /staff?role=COACH`, `/coaches/:id/sports`, `/sports`, `/coaches/:id/availability`; POST/DELETE sports, POST/PUT/DELETE availability |
+| Lịch Coach tổng hợp | `/coach/schedule`, trong hồ sơ Coach Manager | COACH xem chính mình; CENTER_MANAGER chọn Coach | `GET /coaches/:id/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD` |
+| Danh sách/chi tiết và các buổi lớp nhóm | `/app/classes`, `/app/classes/:classId` | CENTER_MANAGER | `GET`, `POST /group-classes`, `PATCH /group-classes/:id`, `PATCH /group-classes/:id/status`, `GET /group-classes/:id/sessions`, `POST /group-classes/:id/sessions`, `POST /group-classes/:id/sessions/recurring`, `POST /class-sessions/:id/change`, `POST /class-sessions/:id/cancel` |
+| Danh sách/chi tiết khóa 1–1 | `/member/private-courses`, `/member/private-courses/:courseId`; `/app/private-courses`, `/app/private-courses/:courseId` | MEMBER, CENTER_MANAGER | `GET /private-courses`, `GET /private-courses/:id` |
+| Lịch occurrence khóa 1–1 của Member | `/member/my-schedule` | MEMBER sở hữu enrollment | `GET /private-courses/enrollments`, `PATCH /private-courses/enrollments/:id/schedules/:scheduleId/occurrences/:sessionDate` |
+| Tìm lớp nhóm | `/member/classes` | Khách xem; MEMBER đăng ký từ chi tiết | `GET /bookings/classes`, `GET /sports` |
+| Chi tiết/đăng ký lớp nhóm | `/member/classes/:classId` | Khách xem; MEMBER đăng ký | `GET /bookings/classes/:id`, `POST /bookings/classes/:id/register` |
+| Waitlist, hủy đăng ký vừa tạo và đăng ký hộ | `/member/classes/:classId`, `/app/class-bookings`, `/app/class-bookings/:classId` | MEMBER vào waitlist/hủy đăng ký của mình; RECEPTIONIST tạo/hủy đăng ký hộ | `POST /group-classes/:id/waitlist`, `POST /bookings/registrations/:id/cancel`, `POST /group-classes/:id/register-on-behalf` |
+
+Các màn dùng Axios client, query cache, token/role và trạng thái loading/error/empty hiện có. API lỗi 401/403 được giữ theo interceptor và `ErrorState`; endpoint phân quyền phía backend vẫn là nguồn quyết định cuối cùng. Form sửa lớp không gửi `status`; trạng thái đăng ký được cập nhật riêng bằng endpoint status. Lớp mới bắt đầu ở `DRAFT`. Tạo buổi đơn/lặp và đổi/hủy buổi yêu cầu backend kiểm tra xung đột; thao tác hủy buổi yêu cầu lý do. Không cung cấp nút hủy toàn lớp do nghiệp vụ endpoint có thể hủy đăng ký/hoàn tiền và chưa có xác nhận nghiệp vụ tương ứng trong giao diện. Lịch lặp nhập theo giờ Việt Nam và được chuyển sang UTC theo cách service hiện tạo `ClassSession`. FR63 chỉ gửi `newRoomId` khi người dùng chọn phòng khác; nếu giữ phòng thì bỏ trường này khỏi request.
+
+Trang lớp Member thay dữ liệu minh họa bằng API booking: có phân trang, lọc môn/Coach/ngày, xem chi tiết và tạo đơn đăng ký chờ thanh toán. Sau khi tạo đơn, link thanh toán chuyển sang `/member/payments?orderId=...` và điền sẵn mã đơn. API hiện chỉ trả lớp `OPEN`, không cung cấp filter trạng thái; danh sách Coach dùng các Coach xuất hiện trong trang kết quả hiện tại vì chưa có endpoint public để lấy toàn bộ Coach.
+
+Member có thể gửi yêu cầu vào waitlist khi lớp đã đầy; backend kiểm tra lại tình trạng chỗ và điều kiện đăng ký. Receptionist có trang tìm lớp riêng và chọn Member ACTIVE từ API tra cứu người dùng để đăng ký hộ, không nhập Member ID thủ công. Cả Member và Receptionist có thể yêu cầu hủy đăng ký vừa được tạo từ trang xác nhận đơn; backend quyết định cuối cùng theo trạng thái registration và chính sách hủy. Chưa có API danh sách registration của Member để mở thao tác hủy cho các đăng ký cũ trong lịch sử.
+
+**Contract cần backend bổ sung để hoàn tất waitlist:** hiện có API tham gia waitlist và phản hồi offer, nhưng không có API đọc trạng thái waitlist/offer của Member theo lớp. Notification hiện tại không cung cấp `classId` hoặc liên kết hành động. Vì vậy FE không thể an toàn hiển thị offer đến hạn hoặc nút chấp nhận/từ chối sau khi tải lại trang; thao tác phản hồi offer chưa được nối vào UI.
+
+**Contract cần backend bổ sung/xác nhận:** response `GET /private-courses/enrollments` hiện gồm schedule nhưng không gồm occurrence exceptions. UI cập nhật occurrence vừa thao tác ngay trong cache hiện tại, song sau khi tải lại trang backend không cung cấp dữ liệu để tái dựng trạng thái `CANCELLED`/`RESCHEDULED`. Cần trả exceptions (hoặc endpoint occurrences cho Member) để trạng thái được khôi phục chính xác sau reload. Cần xác nhận thêm cách diễn giải múi giờ của `startTime`/`newStartsAt`: API dùng chuỗi ISO và cột Time trong UTC, còn form hiển thị giờ trung tâm Asia/Ho_Chi_Minh.
+
 ### Kiểm thử đơn vị
 
 `npm test` chạy Vitest + Testing Library. Các test của module:

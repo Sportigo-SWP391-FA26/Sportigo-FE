@@ -35,6 +35,15 @@ import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
 import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
 import { MemberDetailPage } from '../features/members/pages/MemberDetailPage';
 import { CoachMembersPage } from '../features/members/pages/CoachMembersPage';
+import { CoachManagementListPage, CoachManagementPage, CoachOwnSchedulePage } from '../features/coaches/pages/CoachManagementPage';
+import { GroupClassDetailPage } from '../features/group-classes/pages/GroupClassDetailPage';
+import { GroupClassesPage } from '../features/group-classes/pages/GroupClassesPage';
+import { MemberPrivateSchedulePage } from '../features/private-courses/pages/MemberPrivateSchedulePage';
+import { PrivateCourseDetailPage } from '../features/private-courses/pages/PrivateCourseDetailPage';
+import { PrivateCoursesPage } from '../features/private-courses/pages/PrivateCoursesPage';
+import { GroupClassBookingDetailPage } from '../features/member/pages/GroupClassBookingDetailPage';
+import { RoomsManagementPage } from '../features/catalog/pages/RoomsManagementPage';
+import { SportsManagementPage } from '../features/catalog/pages/SportsManagementPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -61,6 +70,14 @@ export const router = createBrowserRouter([
               { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
+              { path: 'coaches', element: <CoachManagementListPage /> },
+              { path: 'coaches/:coachId', element: <CoachManagementPage /> },
+              { path: 'sports', element: <SportsManagementPage /> },
+              { path: 'rooms', element: <RoomsManagementPage /> },
+              { path: 'classes', element: <GroupClassesPage /> },
+              { path: 'classes/:classId', element: <GroupClassDetailPage /> },
+              { path: 'private-courses', element: <PrivateCoursesPage /> },
+              { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
               { path: ':section', element: <ComingSoonPage /> },
             ],
           },
@@ -68,6 +85,8 @@ export const router = createBrowserRouter([
             element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
             children: [
               { path: 'cashier', element: <CashierPage /> },
+              { path: 'class-bookings', element: <ClassSchedulePage receptionistMode /> },
+              { path: 'class-bookings/:classId', element: <GroupClassBookingDetailPage /> },
               // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
               { path: 'profile', element: <ProfilePage /> },
               // FR-09: Manager và Receptionist cùng dùng, backend tự giới hạn Receptionist chỉ thấy Member
@@ -90,6 +109,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="home" replace /> },
       { path: 'home', element: <MemberHomePage /> },
       { path: 'classes', element: <ClassSchedulePage /> },
+      { path: 'classes/:classId', element: <GroupClassBookingDetailPage /> },
       { path: 'payments', element: <MemberPaymentsPage /> },
       { path: 'payments/result', element: <PaymentResultPage /> },
       {
@@ -97,6 +117,9 @@ export const router = createBrowserRouter([
         children: [
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
           { path: 'progress', element: <MemberProgressPage /> },
+          { path: 'private-courses', element: <PrivateCoursesPage /> },
+          { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
+          { path: 'my-schedule', element: <MemberPrivateSchedulePage /> },
           { path: 'profile', element: <ProfilePage /> },
           // FR-55: yêu cầu hỗ trợ của Member
           { path: 'support', element: <MemberSupportPage /> },
@@ -115,6 +138,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="attendance" replace /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
+          { path: 'schedule', element: <CoachOwnSchedulePage /> },
           { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
           { path: 'workout-plans', element: <WorkoutPlansPage /> },
           { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },

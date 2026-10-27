@@ -73,4 +73,9 @@ describe('đọc lỗi API', () => {
     expect(parseApiError(axiosError(404, '<pre>Cannot GET /api/sports</pre>')).kind).toBe('not-ready');
     expect(parseApiError(axiosError(404, { code: 'NOT_FOUND', message: 'Không tìm thấy buổi học' })).kind).toBe('not-found');
   });
+
+  test('dịch mã conflict FR63 kể cả khi backend chỉ trả message tiếng Anh', () => {
+    const error = parseApiError(axiosError(409, { code: 'PRIVATE_SESSION_CANCELLATION_CUTOFF', message: 'Cutoff exceeded' }));
+    expect(error.message).toBe('Chỉ được đổi hoặc hủy buổi học trước ít nhất 24 giờ.');
+  });
 });

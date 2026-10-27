@@ -1,6 +1,6 @@
 import { IdentificationBadge, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../training/components/ui/Button';
 import { PageHeader } from '../../training/components/ui/Card';
 import { Chip } from '../../training/components/ui/Chip';
@@ -153,6 +153,14 @@ export function StaffPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
+                          {staff.role === 'COACH' && (
+                            <Link
+                              className="inline-flex min-h-9 items-center rounded-control px-3 text-[13px] font-bold text-primary-deep hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary"
+                              to={`/app/coaches/${staff.id}`}
+                            >
+                              Hồ sơ Coach
+                            </Link>
+                          )}
                           <Button size="sm" variant="secondary" onClick={() => setForm({ open: true, staff })} aria-label={`Sửa ${staff.displayName}`}>
                             Sửa
                           </Button>
