@@ -14,8 +14,7 @@ function initials(name: string) {
 
 const items = [
   ['Trang chủ', '/member/home'],
-  ['Lịch lớp', '/member/classes'],
-  ['Khóa 1–1', '/member/private-courses'],
+  ['Khám phá', '/member/classes'],
   ['Lịch của tôi', '/member/my-schedule'],
   // Nhãn ngắn để navbar 7 mục không tràn ở màn 1170–1280px; tiêu đề trang dùng tên đầy đủ
   ['Kế hoạch', '/member/training-plan'],
@@ -29,7 +28,8 @@ export function MemberNavbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const overlaysHero = pathname === '/member/home' && !scrolled;
+  const hasHero = pathname === '/member/home' || pathname === '/member/classes';
+  const overlaysHero = hasHero && !scrolled;
   // note: một số trang /member chưa yêu cầu đăng nhập; chỉ gọi /users/me khi có phiên Member để tránh 401 thừa
   const isMember = getSessionRole() === 'MEMBER';
   const profile = useMyProfile(isMember);
@@ -64,12 +64,15 @@ export function MemberNavbar() {
               {label}
             </NavLink>
           ))}
+          <NavLink to="/member/support" onClick={() => setOpen(false)} className="member-nav__mobile-support">
+            Hỗ trợ
+          </NavLink>
         </nav>
         <div className="member-nav__account">
           {/* note(FR-54): chuông thật thay cho nút tĩnh; chấm đỏ cũ đổi thành huy hiệu số chưa đọc */}
           <NotificationBell enabled={isMember} buttonClassName="member-nav__bell" align="right" />
           {/* note(FR-55): để dạng nút icon cạnh chuông vì thanh menu 7 mục đã kín chỗ */}
-          <Link to="/member/support" className="member-nav__bell" aria-label="Hỗ trợ" title="Hỗ trợ">
+          <Link to="/member/support" className="member-nav__bell member-nav__support" aria-label="Hỗ trợ" title="Hỗ trợ">
             <Headset aria-hidden="true" />
           </Link>
           <Link to="/member/profile" className="member-nav__profile" aria-label={`Hồ sơ của ${displayName}`}>

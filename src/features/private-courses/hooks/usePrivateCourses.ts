@@ -10,11 +10,12 @@ export const privateCourseKeys = {
   enrollments: () => [...privateCourseKeys.all, 'enrollments'] as const,
 };
 
-export function usePrivateCourses() {
+export function usePrivateCourses(enabled = true) {
   return useQuery({
     queryKey: privateCourseKeys.list(),
     queryFn: getPrivateCourses,
     retry: retryServerErrors,
+    enabled,
   });
 }
 

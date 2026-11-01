@@ -17,6 +17,7 @@ const coach: StaffMember = {
   email: 'lan@sportigo.vn',
   phone: '0901234567',
   displayName: 'Lê Lan',
+  avatarUrl: null,
   role: 'COACH',
   status: 'ACTIVE',
   emailVerified: true,
@@ -37,7 +38,8 @@ const receptionist: StaffMember = {
   coachStatus: null,
   status: 'LOCKED',
 };
-const list: StaffListPage = { items: [coach, receptionist], page: 1, pageSize: 20, total: 2 };
+const inactiveCoach: StaffMember = { ...coach, id: 9, email: 'newcoach@sportigo.vn', displayName: 'Coach mới', staffCode: 'COA-09', status: 'INACTIVE' };
+const list: StaffListPage = { items: [coach, receptionist, inactiveCoach], page: 1, pageSize: 20, total: 3 };
 
 afterEach(() => {
   cleanup();
@@ -66,7 +68,7 @@ describe('Quản lý nhân sự (FR-07)', () => {
   test('hiển thị danh sách với mã, ngày vào làm và trạng thái tài khoản', async () => {
     await openPage();
     expect(screen.getByText('COA-07')).toBeInTheDocument();
-    expect(screen.getByText('01/10/2026')).toBeInTheDocument();
+    expect(screen.getAllByText('01/10/2026').length).toBeGreaterThan(0);
     expect(screen.getByRole('cell', { name: 'Đã khóa' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mở khóa Phạm Mai' })).toBeInTheDocument();
   });
@@ -79,7 +81,8 @@ describe('Quản lý nhân sự (FR-07)', () => {
     expect(await within(dialog).findByText('Email không hợp lệ')).toBeInTheDocument();
     expect(api.createStaff).not.toHaveBeenCalled();
 
-    fill(dialog, /Mã nhân sự/, 'coa-09');
+    expect(within(dialog).queryByLabelText(/Mã nhân sự/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText('Mã nhân sự được hệ thống cấp tự động')).toBeInTheDocument();
     fill(dialog, /Họ tên/, 'Ngô Huy');
     fill(dialog, /Email/, 'Huy@Sportigo.vn');
     fill(dialog, /Số điện thoại/, '0912345678');
@@ -90,7 +93,6 @@ describe('Quản lý nhân sự (FR-07)', () => {
     await waitFor(() =>
       expect(api.createStaff).toHaveBeenCalledWith({
         role: 'COACH',
-        staffCode: 'coa-09',
         displayName: 'Ngô Huy',
         email: 'huy@sportigo.vn',
         phone: '0912345678',
@@ -108,26 +110,11 @@ describe('Quản lý nhân sự (FR-07)', () => {
     expect(within(dialog).queryByLabelText(/Giới thiệu/)).not.toBeInTheDocument();
   });
 
-  test('mã nhân sự trùng hiện lỗi ngay dưới ô mã', async () => {
-    vi.mocked(api.createStaff).mockRejectedValue(axiosError(409, { code: 'STAFF_CODE_EXISTS', message: 'Mã nhân sự đã tồn tại' }));
-    const dialog = await openCreateForm();
-    fill(dialog, /Mã nhân sự/, 'COA-07');
-    fill(dialog, /Họ tên/, 'Ngô Huy');
-    fill(dialog, /Email/, 'huy@sportigo.vn');
-    fill(dialog, /Số điện thoại/, '0912345678');
-    fill(dialog, /Mật khẩu ban đầu/, 'matkhau123');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo tài khoản' }));
-
-    expect(await within(dialog).findByText('Mã nhân sự đã tồn tại')).toBeInTheDocument();
-    expect(within(dialog).getByLabelText(/Mã nhân sự/)).toHaveAttribute('aria-invalid', 'true');
-  });
-
   test('email trùng gắn lỗi vào ô email', async () => {
     vi.mocked(api.createStaff).mockRejectedValue(
       axiosError(409, { code: 'ACCOUNT_EXISTS', message: 'Email đã được sử dụng', details: { field: 'email' } }),
     );
     const dialog = await openCreateForm();
-    fill(dialog, /Mã nhân sự/, 'COA-10');
     fill(dialog, /Họ tên/, 'Ngô Huy');
     fill(dialog, /Email/, 'lan@sportigo.vn');
     fill(dialog, /Số điện thoại/, '0912345678');
@@ -172,5 +159,16 @@ describe('Quản lý nhân sự (FR-07)', () => {
     fireEvent.change(screen.getByLabelText(/Lý do/), { target: { value: 'Nghỉ việc' } });
     fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản' }));
     await waitFor(() => expect(usersApi.changeUserStatus).toHaveBeenCalledWith(7, { status: 'LOCKED', reason: 'Nghỉ việc' }));
+  });
+
+  test('nhân sự chưa kích hoạt có nút Kích hoạt và mọi nhân sự có thể xóa', async () => {
+    vi.mocked(usersApi.deleteUser).mockResolvedValue(undefined);
+    await openPage();
+
+    expect(screen.getByRole('button', { name: 'Kích hoạt Coach mới' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Xóa Lê Lan' }));
+    expect(await screen.findByRole('dialog', { name: 'Xóa tài khoản' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Xóa tài khoản' }));
+    await waitFor(() => expect(usersApi.deleteUser).toHaveBeenCalledWith(7));
   });
 });

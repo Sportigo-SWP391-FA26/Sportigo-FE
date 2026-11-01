@@ -3,7 +3,7 @@ import { cardClass, eyebrowClass } from './styles';
 
 export function Card({ className = '', children, ...props }: HTMLAttributes<HTMLElement>) {
   return (
-    <section className={`${cardClass} ${className}`} {...props}>
+    <section className={`app-card ${cardClass} ${className}`} {...props}>
       {children}
     </section>
   );
@@ -23,7 +23,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ eyebrow, title, description, actions, back }: PageHeaderProps) {
   return (
-    <header className="mb-6 sm:mb-8">
+    <header className="app-page-header mb-6 sm:mb-8">
       {back}
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       {/* Nút thao tác căn giữa theo dòng tiêu đề; trên điện thoại nằm dưới mô tả */}
@@ -39,7 +39,7 @@ export function PageHeader({ eyebrow, title, description, actions, back }: PageH
 
 export function SectionHeading({ title, description, actions, id }: { title: string; description?: ReactNode; actions?: ReactNode; id?: string }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="app-section-heading mb-4 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <h2 id={id} className="text-lg font-extrabold tracking-[-.015em] text-ink">
           {title}

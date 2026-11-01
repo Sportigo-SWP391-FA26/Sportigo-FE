@@ -1,49 +1,56 @@
+/* eslint-disable react-refresh/only-export-components -- route-level lazy modules are configuration, not Fast Refresh component exports */
+import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
-import { LoginPage } from '../features/auth/pages/LoginPage';
-import { RegisterPage } from '../features/auth/pages/RegisterPage';
-import { VerifyEmailPage } from '../features/auth/pages/VerifyEmailPage';
-import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
 import { AppLayout } from '../layouts/AppLayout';
-import { ComingSoonPage } from '../pages/ComingSoonPage';
-import { LandingPage } from '../features/landing/pages/LandingPage';
 import { MemberLayout } from '../layouts/MemberLayout';
-import { MemberHomePage } from '../features/member/pages/MemberHomePage';
-import { ClassSchedulePage } from '../features/member/pages/ClassSchedulePage';
-import { MemberPaymentsPage } from '../features/finance/pages/MemberPaymentsPage';
-import { PaymentResultPage } from '../features/finance/pages/PaymentResultPage';
-import { CashierPage } from '../features/finance/pages/CashierPage';
-import { ManagerFinancePage } from '../features/finance/pages/ManagerFinancePage';
 import { RequireRole } from '../components/auth/RequireRole';
-import { MemberTrainingPlanPage } from '../features/training/pages/MemberTrainingPlanPage';
-import { MemberProgressPage } from '../features/training/pages/MemberProgressPage';
 import { CoachLayout } from '../layouts/CoachLayout';
-import { AttendanceHistoryPage } from '../features/training/pages/AttendanceHistoryPage';
-import { SessionAttendancePage } from '../features/training/pages/SessionAttendancePage';
-import { WorkoutPlansPage } from '../features/training/pages/WorkoutPlansPage';
-import { WorkoutPlanDetailPage } from '../features/training/pages/WorkoutPlanDetailPage';
-import { EnrollmentPlansPage } from '../features/training/pages/EnrollmentPlansPage';
-import { AssessmentsPage } from '../features/training/pages/AssessmentsPage';
-import { NewAssessmentPage } from '../features/training/pages/NewAssessmentPage';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
-import { ProfilePage } from '../features/profile/pages/ProfilePage';
-import { UsersPage } from '../features/users/pages/UsersPage';
-import { StaffPage } from '../features/staff/pages/StaffPage';
-import { MemberSupportPage } from '../features/support/pages/MemberSupportPage';
-import { MemberSupportDetailPage } from '../features/support/pages/MemberSupportDetailPage';
-import { SupportQueuePage } from '../features/support/pages/SupportQueuePage';
-import { StaffSupportDetailPage } from '../features/support/pages/StaffSupportDetailPage';
-import { MemberDetailPage } from '../features/members/pages/MemberDetailPage';
-import { CoachMembersPage } from '../features/members/pages/CoachMembersPage';
-import { CoachManagementListPage, CoachManagementPage, CoachOwnSchedulePage } from '../features/coaches/pages/CoachManagementPage';
-import { GroupClassDetailPage } from '../features/group-classes/pages/GroupClassDetailPage';
-import { GroupClassesPage } from '../features/group-classes/pages/GroupClassesPage';
-import { MemberPrivateSchedulePage } from '../features/private-courses/pages/MemberPrivateSchedulePage';
-import { PrivateCourseDetailPage } from '../features/private-courses/pages/PrivateCourseDetailPage';
-import { PrivateCoursesPage } from '../features/private-courses/pages/PrivateCoursesPage';
-import { GroupClassBookingDetailPage } from '../features/member/pages/GroupClassBookingDetailPage';
-import { RoomsManagementPage } from '../features/catalog/pages/RoomsManagementPage';
-import { SportsManagementPage } from '../features/catalog/pages/SportsManagementPage';
+import { LandingPage } from '../features/landing/pages/LandingPage';
+
+const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const VerifyEmailPage = lazy(() => import('../features/auth/pages/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })));
+const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })));
+const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const ComingSoonPage = lazy(() => import('../pages/ComingSoonPage').then((module) => ({ default: module.ComingSoonPage })));
+const MemberHomePage = lazy(() => import('../features/member/pages/MemberHomePage').then((module) => ({ default: module.MemberHomePage })));
+const ClassSchedulePage = lazy(() => import('../features/member/pages/ClassSchedulePage').then((module) => ({ default: module.ClassSchedulePage })));
+const GroupClassBookingDetailPage = lazy(() => import('../features/member/pages/GroupClassBookingDetailPage').then((module) => ({ default: module.GroupClassBookingDetailPage })));
+const MemberPaymentsPage = lazy(() => import('../features/finance/pages/MemberPaymentsPage').then((module) => ({ default: module.MemberPaymentsPage })));
+const PaymentResultPage = lazy(() => import('../features/finance/pages/PaymentResultPage').then((module) => ({ default: module.PaymentResultPage })));
+const CashierPage = lazy(() => import('../features/finance/pages/CashierPage').then((module) => ({ default: module.CashierPage })));
+const ManagerFinancePage = lazy(() => import('../features/finance/pages/ManagerFinancePage').then((module) => ({ default: module.ManagerFinancePage })));
+const MemberTrainingPlanPage = lazy(() => import('../features/training/pages/MemberTrainingPlanPage').then((module) => ({ default: module.MemberTrainingPlanPage })));
+const MemberProgressPage = lazy(() => import('../features/training/pages/MemberProgressPage').then((module) => ({ default: module.MemberProgressPage })));
+const AttendanceHistoryPage = lazy(() => import('../features/training/pages/AttendanceHistoryPage').then((module) => ({ default: module.AttendanceHistoryPage })));
+const SessionAttendancePage = lazy(() => import('../features/training/pages/SessionAttendancePage').then((module) => ({ default: module.SessionAttendancePage })));
+const WorkoutPlansPage = lazy(() => import('../features/training/pages/WorkoutPlansPage').then((module) => ({ default: module.WorkoutPlansPage })));
+const WorkoutPlanDetailPage = lazy(() => import('../features/training/pages/WorkoutPlanDetailPage').then((module) => ({ default: module.WorkoutPlanDetailPage })));
+const EnrollmentPlansPage = lazy(() => import('../features/training/pages/EnrollmentPlansPage').then((module) => ({ default: module.EnrollmentPlansPage })));
+const AssessmentsPage = lazy(() => import('../features/training/pages/AssessmentsPage').then((module) => ({ default: module.AssessmentsPage })));
+const NewAssessmentPage = lazy(() => import('../features/training/pages/NewAssessmentPage').then((module) => ({ default: module.NewAssessmentPage })));
+const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const UsersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })));
+const MembersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.MembersPage })));
+const StaffPage = lazy(() => import('../features/staff/pages/StaffPage').then((module) => ({ default: module.StaffPage })));
+const MemberSupportPage = lazy(() => import('../features/support/pages/MemberSupportPage').then((module) => ({ default: module.MemberSupportPage })));
+const MemberSupportDetailPage = lazy(() => import('../features/support/pages/MemberSupportDetailPage').then((module) => ({ default: module.MemberSupportDetailPage })));
+const SupportQueuePage = lazy(() => import('../features/support/pages/SupportQueuePage').then((module) => ({ default: module.SupportQueuePage })));
+const StaffSupportDetailPage = lazy(() => import('../features/support/pages/StaffSupportDetailPage').then((module) => ({ default: module.StaffSupportDetailPage })));
+const MemberDetailPage = lazy(() => import('../features/members/pages/MemberDetailPage').then((module) => ({ default: module.MemberDetailPage })));
+const CoachMembersPage = lazy(() => import('../features/members/pages/CoachMembersPage').then((module) => ({ default: module.CoachMembersPage })));
+const CoachManagementListPage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachManagementListPage })));
+const CoachManagementPage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachManagementPage })));
+const CoachOwnSchedulePage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachOwnSchedulePage })));
+const GroupClassDetailPage = lazy(() => import('../features/group-classes/pages/GroupClassDetailPage').then((module) => ({ default: module.GroupClassDetailPage })));
+const GroupClassesPage = lazy(() => import('../features/group-classes/pages/GroupClassesPage').then((module) => ({ default: module.GroupClassesPage })));
+const MemberPrivateSchedulePage = lazy(() => import('../features/private-courses/pages/MemberPrivateSchedulePage').then((module) => ({ default: module.MemberPrivateSchedulePage })));
+const PrivateCourseDetailPage = lazy(() => import('../features/private-courses/pages/PrivateCourseDetailPage').then((module) => ({ default: module.PrivateCourseDetailPage })));
+const PrivateCoursesPage = lazy(() => import('../features/private-courses/pages/PrivateCoursesPage').then((module) => ({ default: module.PrivateCoursesPage })));
+const RoomsManagementPage = lazy(() => import('../features/catalog/pages/RoomsManagementPage').then((module) => ({ default: module.RoomsManagementPage })));
+const SportsManagementPage = lazy(() => import('../features/catalog/pages/SportsManagementPage').then((module) => ({ default: module.SportsManagementPage })));
+const LandingContentPage = lazy(() => import('../features/content/pages/LandingContentPage').then((module) => ({ default: module.LandingContentPage })));
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -68,8 +75,10 @@ export const router = createBrowserRouter([
               { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
               { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
               { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
+              { path: 'website-content', element: <LandingContentPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
+              { path: 'members', element: <MembersPage /> },
               { path: 'coaches', element: <CoachManagementListPage /> },
               { path: 'coaches/:coachId', element: <CoachManagementPage /> },
               { path: 'sports', element: <SportsManagementPage /> },
@@ -104,29 +113,29 @@ export const router = createBrowserRouter([
   },
   {
     path: '/member',
-    element: <MemberLayout />,
+    element: <RequireRole roles={['MEMBER']} />,
     children: [
-      { index: true, element: <Navigate to="home" replace /> },
-      { path: 'home', element: <MemberHomePage /> },
-      { path: 'classes', element: <ClassSchedulePage /> },
-      { path: 'classes/:classId', element: <GroupClassBookingDetailPage /> },
-      { path: 'payments', element: <MemberPaymentsPage /> },
-      { path: 'payments/result', element: <PaymentResultPage /> },
       {
-        element: <RequireRole roles={['MEMBER']} />,
+        element: <MemberLayout />,
         children: [
+          { index: true, element: <Navigate to="home" replace /> },
+          { path: 'home', element: <MemberHomePage /> },
+          { path: 'classes', element: <ClassSchedulePage /> },
+          { path: 'classes/:classId', element: <GroupClassBookingDetailPage /> },
+          { path: 'payments', element: <MemberPaymentsPage /> },
+          { path: 'payments/result', element: <PaymentResultPage /> },
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
           { path: 'progress', element: <MemberProgressPage /> },
-          { path: 'private-courses', element: <PrivateCoursesPage /> },
+          { path: 'private-courses', element: <Navigate to="/member/classes?type=private" replace /> },
           { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
           { path: 'my-schedule', element: <MemberPrivateSchedulePage /> },
           { path: 'profile', element: <ProfilePage /> },
           // FR-55: yêu cầu hỗ trợ của Member
           { path: 'support', element: <MemberSupportPage /> },
           { path: 'support/:requestId', element: <MemberSupportDetailPage /> },
+          { path: ':section', element: <ComingSoonPage /> },
         ],
       },
-      { path: ':section', element: <ComingSoonPage /> },
     ],
   },
   {

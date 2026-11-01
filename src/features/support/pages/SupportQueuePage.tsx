@@ -2,11 +2,11 @@ import { ChatCircleDots, MagnifyingGlass } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
-import { PageHeader } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { Pagination } from '../../training/components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { formatDateTime } from '../../training/format';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
 import { useSupportQueue } from '../hooks/useSupportStaff';
@@ -58,7 +58,7 @@ export function SupportQueuePage() {
         }
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_160px_auto] sm:items-center">
+      <Card className="manager-filter-bar mb-5 grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_180px_160px_auto] sm:items-center sm:p-4">
         <label className="relative block">
           <span className="sr-only">Tìm yêu cầu</span>
           <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -96,7 +96,7 @@ export function SupportQueuePage() {
           <input type="checkbox" className="size-4 accent-primary" checked={mine} onChange={(event) => update({ mine: event.target.checked ? 'true' : undefined })} />
           Của tôi
         </label>
-      </div>
+      </Card>
 
       {queue.isPending ? (
         <ListSkeleton rows={5} label="Đang tải hàng đợi…" />

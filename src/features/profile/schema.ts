@@ -13,6 +13,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const baseSchema = z.object({
   displayName: z.string().trim().min(2, 'Họ tên phải có ít nhất 2 ký tự').max(80, 'Họ tên tối đa 80 ký tự'),
+  avatarUrl: z.union([z.literal(''), z.string().url('URL ảnh đại diện không hợp lệ')]),
   // note: cùng regex với form đăng ký và backend; bắt buộc vì phone là định danh đăng nhập
   phone: z.string().trim().regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không hợp lệ'),
 });
@@ -45,6 +46,7 @@ export function profileSchemaFor(kind: ProfileKind) {
 // Gộp mọi trường để một kiểu dùng chung cho cả 3 form; trường không thuộc role sẽ không được render
 export type ProfileFormValues = {
   displayName: string;
+  avatarUrl: string;
   phone: string;
   dateOfBirth?: string;
   gender?: Gender | '';
@@ -53,10 +55,10 @@ export type ProfileFormValues = {
   bio?: string;
 };
 
-export const PROFILE_FIELDS = ['displayName', 'phone', 'dateOfBirth', 'gender', 'emergencyContact', 'trainingGoal', 'bio'] as const;
+export const PROFILE_FIELDS = ['displayName', 'avatarUrl', 'phone', 'dateOfBirth', 'gender', 'emergencyContact', 'trainingGoal', 'bio'] as const;
 
 export function toFormValues(profile: MyProfile): ProfileFormValues {
-  const base = { displayName: profile.displayName, phone: profile.phone ?? '' };
+  const base = { displayName: profile.displayName, avatarUrl: profile.avatarUrl ?? '', phone: profile.phone ?? '' };
   if (profile.member) {
     return {
       ...base,
@@ -98,6 +100,7 @@ export const PASSWORD_FIELDS = ['currentPassword', 'newPassword', 'confirmPasswo
 export function toUpdateInput(values: ProfileFormValues, dirty: Partial<Record<keyof ProfileFormValues, unknown>>): UpdateProfileInput {
   const input: UpdateProfileInput = {};
   if (dirty.displayName) input.displayName = values.displayName.trim();
+  if (dirty.avatarUrl) input.avatarUrl = values.avatarUrl.trim() || null;
   if (dirty.phone) input.phone = values.phone.trim();
   if (dirty.dateOfBirth && values.dateOfBirth !== undefined) input.dateOfBirth = values.dateOfBirth || null;
   if (dirty.gender && values.gender !== undefined) input.gender = values.gender || null;

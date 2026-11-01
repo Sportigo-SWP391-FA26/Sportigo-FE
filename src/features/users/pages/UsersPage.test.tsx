@@ -4,7 +4,7 @@ import { renderWithProviders } from '../../training/testing/renderWithProviders'
 import * as api from '../api';
 import { loginAs } from '../testing/session';
 import type { UserListPage } from '../types';
-import { UsersPage } from './UsersPage';
+import { MembersPage, UsersPage } from './UsersPage';
 
 vi.mock('../api');
 
@@ -62,6 +62,16 @@ describe('Trang quản lý người dùng (FR-09)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Tra cứu hội viên' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Lọc theo vai trò')).not.toBeInTheDocument();
+  });
+
+  test('trang Hội viên của Manager luôn gọi API với role MEMBER', async () => {
+    loginAs('CENTER_MANAGER');
+    vi.mocked(api.listUsers).mockResolvedValue(page({ items: [page().items[0]], total: 1 }));
+    renderWithProviders(<MembersPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Quản lý hội viên' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Lọc theo vai trò')).not.toBeInTheDocument();
+    expect(api.listUsers).toHaveBeenCalledWith({ q: undefined, role: 'MEMBER', status: undefined, page: 1, pageSize: 20 });
   });
 
   test('không có kết quả thì hiện trạng thái rỗng', async () => {

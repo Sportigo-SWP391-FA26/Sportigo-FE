@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { intensityLabel, intensityTone, itemSpecs } from '../labels';
 import type { WorkoutPlanItem } from '../types';
-import { Chip } from './ui/Chip';
+import { Chip } from '../../../components/ui/Chip';
 
 type PlanItemListProps = {
   items: WorkoutPlanItem[];

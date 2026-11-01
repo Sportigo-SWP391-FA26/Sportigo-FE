@@ -8,11 +8,11 @@ import { useCreateWorkoutPlan, useUpdateWorkoutPlan } from '../hooks/useWorkoutP
 import { levelLabel, planLevels } from '../labels';
 import { workoutPlanFormSchema, type WorkoutPlanFormOutput, type WorkoutPlanFormValues } from '../schemas';
 import type { PlanLevel, WorkoutPlan, WorkoutPlanInput } from '../types';
-import { Button } from './ui/Button';
-import { Dialog } from './ui/Dialog';
-import { Field, SegmentedControl } from './ui/Field';
-import { InlineAlert } from './ui/States';
-import { describedBy, inputClass, textareaClass } from './ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field, SegmentedControl } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 
 type Props = {
   open: boolean;

@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
 // note: bộ UI và xử lý lỗi đang nằm trong feature training (giống ProfileForm); khi chuyển ra src/components thì đổi import
 import { applyFieldErrors, parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
-import { describedBy, inputClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, inputClass } from '../../../components/ui/styles';
 import { useChangePassword } from '../hooks/useMyProfile';
 import { changePasswordSchema, PASSWORD_FIELDS, type ChangePasswordFormValues } from '../schema';
 

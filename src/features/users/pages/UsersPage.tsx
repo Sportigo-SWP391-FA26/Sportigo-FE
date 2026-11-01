@@ -2,13 +2,14 @@ import { MagnifyingGlass, UserPlus, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getSessionRole, type AppRole } from '../../../components/auth/session';
-import { PageHeader } from '../../training/components/ui/Card';
-import { Pagination } from '../../training/components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
-import { Button, ButtonLink } from '../../training/components/ui/Button';
+import { Button, ButtonLink } from '../../../components/ui/Button';
 import { CreateMemberDialog } from '../components/CreateMemberDialog';
+import { DeleteUserDialog } from '../components/DeleteUserDialog';
 import { UserStatusDialog } from '../components/UserStatusDialog';
 import { UserTable } from '../components/UserTable';
 import { useUserList } from '../hooks/useUsers';
@@ -21,17 +22,22 @@ const isRole = (value: string | null): value is AppRole => roleOptions.some((opt
 const isStatus = (value: string | null): value is UserStatus => statusOptions.some((option) => option.value === value);
 
 // FR-09 · /app/users: Manager tra cứu mọi người dùng; Receptionist chỉ tra cứu hội viên
-export function UsersPage() {
+export function UsersPage({ memberOnly = false }: { memberOnly?: boolean } = {}) {
   const isManager = getSessionRole() === 'CENTER_MANAGER';
   const [params, setParams] = useSearchParams();
   // note: bộ lọc lưu trên URL để F5 hoặc gửi link vẫn giữ nguyên kết quả
-  const role = isManager && isRole(params.get('role')) ? (params.get('role') as AppRole) : undefined;
+  const role: AppRole | undefined = memberOnly
+    ? 'MEMBER'
+    : isManager && isRole(params.get('role'))
+      ? (params.get('role') as AppRole)
+      : undefined;
   const status = isStatus(params.get('status')) ? (params.get('status') as UserStatus) : undefined;
   const page = Math.max(1, Number(params.get('page')) || 1);
 
   const [search, setSearch] = useState(params.get('q') ?? '');
   // FR-06: người đang được khóa/mở khóa (null = hộp thoại đóng)
   const [statusTarget, setStatusTarget] = useState<UserSummary | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserSummary | null>(null);
   const [creating, setCreating] = useState(false);
   // note: chờ người dùng ngừng gõ 300ms mới gọi API, tránh gửi request theo từng phím
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
@@ -59,9 +65,11 @@ export function UsersPage() {
     <div className="mx-auto w-full max-w-[1100px]">
       <PageHeader
         eyebrow="Người dùng"
-        title={isManager ? 'Quản lý người dùng' : 'Tra cứu hội viên'}
+        title={memberOnly ? 'Quản lý hội viên' : isManager ? 'Quản lý người dùng' : 'Tra cứu hội viên'}
         description={
-          isManager
+          memberOnly
+            ? 'Tra cứu hồ sơ, mã hội viên, trạng thái tài khoản và lịch sử tham gia dịch vụ.'
+            : isManager
             ? 'Tìm theo tên, email, số điện thoại hoặc mã; lọc theo vai trò và trạng thái.'
             : 'Tìm hội viên theo tên, email, số điện thoại hoặc mã hội viên.'
         }
@@ -73,7 +81,7 @@ export function UsersPage() {
         }
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px_200px]">
+      <Card className={`manager-filter-bar mb-5 grid gap-3 p-3 sm:p-4 ${isManager && !memberOnly ? 'sm:grid-cols-[minmax(0,1fr)_200px_200px]' : 'sm:grid-cols-[minmax(0,1fr)_200px]'}`}>
         <label className="relative block">
           <span className="sr-only">Tìm kiếm người dùng</span>
           <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -85,7 +93,7 @@ export function UsersPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        {isManager && (
+        {isManager && !memberOnly && (
           <label className="block">
             <span className="sr-only">Lọc theo vai trò</span>
             <select className={inputClass} value={role ?? ''} onChange={(event) => update({ role: event.target.value || undefined })}>
@@ -109,7 +117,7 @@ export function UsersPage() {
             ))}
           </select>
         </label>
-      </div>
+      </Card>
 
       {users.isPending ? (
         <ListSkeleton rows={5} label="Đang tải danh sách người dùng…" />
@@ -118,8 +126,8 @@ export function UsersPage() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={<UsersThree />}
-          title="Không tìm thấy người dùng"
-          description="Thử từ khóa khác hoặc bỏ bớt bộ lọc."
+          title={memberOnly ? 'Chưa có hội viên phù hợp' : 'Không tìm thấy người dùng'}
+          description={memberOnly ? 'Thử từ khóa khác hoặc tạo hội viên mới tại quầy.' : 'Thử từ khóa khác hoặc bỏ bớt bộ lọc.'}
         />
       ) : (
         <div className={`transition-opacity ${users.isPlaceholderData ? 'opacity-60' : ''}`} aria-busy={users.isFetching}>
@@ -135,13 +143,20 @@ export function UsersPage() {
                 )}
                 {/* note: backend không cho khóa Manager (kể cả chính mình) nên ẩn nút ở các dòng đó */}
                 {isManager && user.role !== 'CENTER_MANAGER' && (
-                  <Button
-                    size="sm"
-                    variant={user.status === 'LOCKED' ? 'secondary' : 'ghost'}
-                    onClick={() => setStatusTarget(user)}
-                    aria-label={`${user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'} ${user.displayName}`}
-                  >
-                    {user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
+                  <>
+                    <Button
+                      size="sm"
+                      variant={user.status === 'ACTIVE' ? 'ghost' : 'secondary'}
+                      onClick={() => setStatusTarget(user)}
+                      aria-label={`${user.status === 'INACTIVE' ? 'Kích hoạt' : user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'} ${user.displayName}`}
+                    >
+                      {user.status === 'INACTIVE' ? 'Kích hoạt' : user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
+                    </Button>
+                  </>
+                )}
+                {isManager && user.role !== 'CENTER_MANAGER' && (
+                  <Button size="sm" variant="danger" onClick={() => setDeleteTarget(user)} aria-label={`Xóa ${user.displayName}`}>
+                    Xóa
                   </Button>
                 )}
               </div>
@@ -158,7 +173,12 @@ export function UsersPage() {
       )}
 
       {isManager && <UserStatusDialog user={statusTarget} onClose={() => setStatusTarget(null)} />}
+      {isManager && <DeleteUserDialog user={deleteTarget} onClose={() => setDeleteTarget(null)} />}
       <CreateMemberDialog open={creating} onClose={() => setCreating(false)} />
     </div>
   );
+}
+
+export function MembersPage() {
+  return <UsersPage memberOnly />;
 }

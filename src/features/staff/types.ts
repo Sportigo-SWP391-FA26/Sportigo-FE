@@ -9,6 +9,7 @@ export type StaffMember = {
   email: string;
   phone: string | null;
   displayName: string;
+  avatarUrl: string | null;
   role: StaffRole;
   status: UserStatus;
   emailVerified: boolean;
@@ -36,11 +37,11 @@ export type StaffListPage = {
 
 export type CreateStaffInput = {
   role: StaffRole;
-  staffCode: string;
   displayName: string;
   email: string;
   phone: string;
   password: string;
+  avatarUrl?: string;
   hiredAt?: string;
   bio?: string;
 };
@@ -52,4 +53,5 @@ export type UpdateStaffInput = Partial<{
   hiredAt: string | null;
   bio: string | null;
   coachStatus: CoachStatus;
+  avatarUrl: string | null;
 }>;

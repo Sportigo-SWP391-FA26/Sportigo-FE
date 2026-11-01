@@ -18,6 +18,10 @@ export async function changeUserStatus(userId: number, input: ChangeStatusInput)
   return data;
 }
 
+export async function deleteUser(userId: number) {
+  await apiClient.delete(`/users/${userId}`);
+}
+
 // FR-08
 export async function createMember(input: CreateMemberInput) {
   const { data } = await apiClient.post<UserSummary & { emailSent: boolean }>('/members', input);

@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { applyFieldErrors, parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
-import { describedBy, inputClass, textareaClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 import { useCreateSupportRequest } from '../hooks/useSupport';
 import { categoryOptions, priorityOptions } from '../labels';
 

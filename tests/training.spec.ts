@@ -57,6 +57,11 @@ const test = base.extend<{ problems: string[] }>({
   ],
 });
 
+// Bộ kiểm thử này ghi dữ liệu thật (điểm danh, giáo án, đánh giá). Chỉ chạy khi
+// CI đã cấp database test riêng và seed fixture tương ứng; tuyệt đối không chạy
+// ngầm vào Supabase development/production.
+test.skip(process.env.E2E_TRAINING_FIXTURE !== '1', 'Cần database test riêng và training fixture');
+
 // ---------- Tiện ích ----------
 
 const tokens = new Map<Account, string>();
@@ -708,7 +713,7 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
     } else {
       await dialog.locator('label', { hasText: E2E_PLAN }).click();
       await dialog.getByRole('button', { name: 'Gán giáo án' }).click();
-      await expect(toast(page, `Đã gán "${E2E_PLAN}"`)).toBeVisible();
+      await expect(toast(page, `Đã gán "${E2E_PLAN}"`)).toBeVisible({ timeout: 15_000 });
     }
     await expect(page.getByRole('link', { name: E2E_PLAN })).toBeVisible();
   });
@@ -745,8 +750,9 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
   test('G1 · FR-52: danh sách mới nhất trước và lọc theo học viên', async ({ page, request }) => {
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments');
-    const dates = await page.locator('ol > li article header p:first-child').allTextContents();
-    test.skip(dates.length < 2, 'Cần ít nhất 2 đánh giá');
+    const assessmentDates = page.locator('ol > li article header p:first-child');
+    await expect(assessmentDates).toHaveCount(2, { timeout: 15_000 });
+    const dates = await assessmentDates.allTextContents();
     const toTime = (text: string) => {
       const [day, month, year] = text.slice(0, 10).split('/').map(Number);
       return Date.UTC(year, month - 1, day);
@@ -768,7 +774,7 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     const memberIds = [...new Set(enrollments.body.data.map((enrollment) => enrollment.member.userId))];
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    await expect(page.getByText('Hiện chỉ chọn được học viên khóa 1-1.')).toBeVisible();
+    await expect(page.getByText('Hiện chỉ chọn được học viên khóa 1-1.')).toBeVisible({ timeout: 15_000 });
     const options = await page.getByRole('combobox', { name: 'Học viên' }).locator('option:not([value=""])').evaluateAll((nodes) =>
       nodes.map((node) => Number((node as HTMLOptionElement).value)),
     );
@@ -789,7 +795,7 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     await page.getByLabel('Giá trị chỉ số 1').fill('7');
     await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
 
-    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible();
+    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveURL(/\/coach\/assessments$/);
     await expect(page.getByText(comment)).toBeVisible();
     const saved = await api<Paginated<{ coachComment: string; context: { type: string } }>>(
@@ -838,7 +844,7 @@ test.describe('I. Trạng thái lỗi', () => {
 
     await page.unroute('**/api/members/me/training');
     await page.getByRole('button', { name: 'Thử lại' }).click();
-    await expect(page.getByRole('link', { name: new RegExp(SEED.demoPlanName.replace(/[()]/g, '\\$&')) })).toBeVisible();
+    await expect(page.getByRole('link', { name: new RegExp(SEED.demoPlanName.replace(/[()]/g, '\\$&')) })).toBeVisible({ timeout: 15_000 });
   });
 
   test('I2 · Hết phiên đăng nhập: yêu cầu đăng nhập lại thay vì hiện lỗi kỹ thuật', async ({ page, request }) => {

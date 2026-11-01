@@ -1,24 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState } from 'react';
-import { useForm, type Path } from 'react-hook-form';
+import { useForm, useWatch, type Path } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { applyFieldErrors, parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
-import { describedBy, inputClass, textareaClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 import { useCreateStaff, useUpdateStaff } from '../hooks/useStaff';
 import { coachStatusOptions, staffRoleLabel, staffRoleOptions } from '../labels';
 import type { CoachStatus, StaffMember, UpdateStaffInput } from '../types';
 
 // note: cùng rule với staff.schema.ts bên backend
 const baseSchema = z.object({
-  staffCode: z
-    .string()
-    .trim()
-    .regex(/^[A-Za-z0-9-]{3,30}$/, 'Mã nhân sự gồm 3–30 ký tự chữ, số hoặc dấu gạch ngang'),
+  staffCode: z.string(),
   displayName: z.string().trim().min(2, 'Họ tên cần ít nhất 2 ký tự').max(80, 'Họ tên tối đa 80 ký tự'),
   phone: z.string().trim().regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không hợp lệ'),
   hiredAt: z.string(),
@@ -28,12 +26,20 @@ const baseSchema = z.object({
   // note: khi sửa, role/email/password không register nên giữ nguyên giá trị mặc định
   email: z.string(),
   password: z.string(),
+  avatarUrl: z.string(),
 });
 
 // note: email và mật khẩu chỉ bắt buộc khi tạo mới; khi sửa backend không cho đổi
 const createSchema = baseSchema.extend({
   email: z.string().trim().toLowerCase().email('Email không hợp lệ'),
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').max(72, 'Mật khẩu tối đa 72 ký tự'),
+});
+
+const editSchema = baseSchema.extend({
+  staffCode: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9-]{3,30}$/, 'Mã nhân sự gồm 3–30 ký tự chữ, số hoặc dấu gạch ngang'),
 });
 
 type FormValues = z.infer<typeof baseSchema>;
@@ -57,7 +63,7 @@ export function StaffFormDialog({ open, staff, onClose }: Props) {
       description={
         staff
           ? 'Không thể đổi vai trò hoặc email. Khóa tài khoản bằng nút Khóa trong bảng.'
-          : 'Nhân sự nhận mã OTP qua email để kích hoạt, sau đó đăng nhập bằng mật khẩu ban đầu và tự đổi lại.'
+          : 'Hệ thống tự cấp mã nhân sự. Nhân sự nhận OTP qua email để kích hoạt rồi đăng nhập bằng mật khẩu ban đầu.'
       }
     >
       {/* note: key để form reset khi mở cho người khác hoặc chuyển giữa tạo/sửa */}
@@ -72,7 +78,7 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
   const update = useUpdateStaff();
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(staff ? baseSchema : createSchema),
+    resolver: zodResolver(staff ? editSchema : createSchema),
     defaultValues: {
       role: staff?.role ?? 'COACH',
       staffCode: staff?.staffCode ?? '',
@@ -80,14 +86,16 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
       phone: staff?.phone ?? '',
       email: staff?.email ?? '',
       password: '',
+      avatarUrl: staff?.avatarUrl ?? '',
       hiredAt: staff?.hiredAt ?? '',
       bio: staff?.bio ?? '',
       coachStatus: staff?.coachStatus ?? 'ACTIVE',
     },
   });
   const { errors, dirtyFields } = form.formState;
-  const watchedRole = form.watch('role');
+  const watchedRole = useWatch({ control: form.control, name: 'role' });
   const isCoach = (staff ? staff.role : watchedRole) === 'COACH';
+  const avatarUrl = useWatch({ control: form.control, name: 'avatarUrl' });
   const pending = create.isPending || update.isPending;
 
   const showServerError = (err: unknown) => {
@@ -111,13 +119,13 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
       if (!staff) {
         const created = await create.mutateAsync({
           role: values.role,
-          staffCode: values.staffCode.trim(),
           displayName: values.displayName.trim(),
           email: values.email.trim().toLowerCase(),
           phone: values.phone.trim(),
           password: values.password,
           ...(values.hiredAt ? { hiredAt: values.hiredAt } : {}),
           ...(values.role === 'COACH' && values.bio.trim() ? { bio: values.bio.trim() } : {}),
+          ...(values.role === 'COACH' && values.avatarUrl ? { avatarUrl: values.avatarUrl } : {}),
         });
         toast(
           created.emailSent
@@ -133,6 +141,7 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
         if (dirtyFields.hiredAt) input.hiredAt = values.hiredAt || null;
         if (isCoach && dirtyFields.bio) input.bio = values.bio.trim() || null;
         if (isCoach && dirtyFields.coachStatus) input.coachStatus = values.coachStatus as CoachStatus;
+        if (isCoach && dirtyFields.avatarUrl) input.avatarUrl = values.avatarUrl || null;
         if (Object.keys(input).length === 0) {
           setFormError('Bạn chưa thay đổi thông tin nào.');
           return;
@@ -170,9 +179,15 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
             </select>
           )}
         </Field>
-        <Field id={fieldId('staffCode')} label="Mã nhân sự" required error={errors.staffCode?.message}>
-          <input className={`${inputClass} uppercase`} autoComplete="off" {...aria('staffCode')} {...form.register('staffCode')} />
-        </Field>
+        {staff ? (
+          <Field id={fieldId('staffCode')} label="Mã nhân sự" required error={errors.staffCode?.message}>
+            <input className={`${inputClass} uppercase`} autoComplete="off" {...aria('staffCode')} {...form.register('staffCode')} />
+          </Field>
+        ) : (
+          <div className="flex items-center rounded-lg bg-primary/6 px-4 text-sm font-semibold text-primary">
+            Mã nhân sự được hệ thống cấp tự động
+          </div>
+        )}
       </div>
 
       <Field id={fieldId('displayName')} label="Họ tên" required error={errors.displayName?.message}>
@@ -220,6 +235,10 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
           </Field>
         )}
       </div>
+
+      {isCoach && (
+        <ImageUploadField label="Ảnh Coach" value={avatarUrl} purpose="avatar" disabled={pending} hint="Ảnh sẽ xuất hiện trong hồ sơ Coach và các trang giới thiệu." onChange={(url) => form.setValue('avatarUrl', url, { shouldDirty: true, shouldValidate: true })} />
+      )}
 
       {isCoach && (
         <Field id={fieldId('bio')} label="Giới thiệu" error={errors.bio?.message}>

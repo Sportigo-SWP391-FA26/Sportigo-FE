@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Tone } from '../../labels';
+import type { Tone } from '../../features/training/labels';
 
 // Chữ luôn dùng màu đậm để đủ tương phản; màu trạng thái nằm ở nền và chấm tròn.
 const toneClasses: Record<Tone, { chip: string; dot: string }> = {

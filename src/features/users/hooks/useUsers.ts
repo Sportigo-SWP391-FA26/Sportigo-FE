@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changeUserStatus, createMember, listUsers } from '../api';
+import { changeUserStatus, createMember, deleteUser, listUsers } from '../api';
 import type { ChangeStatusInput, CreateMemberInput, UserListQuery } from '../types';
 
 export const userKeys = {
@@ -25,6 +25,14 @@ export function useChangeUserStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, input }: { userId: number; input: ChangeStatusInput }) => changeUserStatus(userId, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.all }),
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => deleteUser(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.all }),
   });
 }

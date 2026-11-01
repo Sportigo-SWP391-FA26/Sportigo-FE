@@ -1,16 +1,17 @@
 import { BookOpenText } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
-import { Card, PageHeader } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { usePrivateCourses } from '../hooks/usePrivateCourses';
 
 export function PrivateCoursesPage() {
   const courses = usePrivateCourses();
-  const basePath = getSessionRole() === 'CENTER_MANAGER' ? '/app/private-courses' : '/member/private-courses';
+  const isManager = getSessionRole() === 'CENTER_MANAGER';
+  const basePath = isManager ? '/app/private-courses' : '/member/private-courses';
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
+    <div className={`mx-auto w-full max-w-[1100px] ${isManager ? '' : 'px-4 py-8 sm:px-6 lg:py-10'}`}>
       <PageHeader eyebrow="Khóa học cá nhân" title="Khóa học 1–1" description="Xem nội dung khóa học, môn thể thao, học phí và Coach được phân công." />
       {courses.isPending ? (
         <ListSkeleton label="Đang tải khóa học…" />

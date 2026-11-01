@@ -1,16 +1,16 @@
 import { Funnel, X } from '@phosphor-icons/react';
-import { useId, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, endOfCenterDay, formatDateTime, formatTime, monthRange, startOfCenterDay, todayInCenter } from '../format';
 import { useAttendanceHistory } from '../hooks/useAttendance';
 import { attendanceStatuses, attendanceStatusLabels } from '../labels';
 import type { AttendanceHistoryItem, AttendanceQuery, AttendanceStatus } from '../types';
 import { AttendanceStatusChip } from './AttendanceStatusChip';
-import { Button } from './ui/Button';
-import { Field } from './ui/Field';
-import { Pagination } from './ui/Pagination';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from './ui/States';
-import { cardClass, describedBy, inputClass } from './ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Field } from '../../../components/ui/Field';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { cardClass, describedBy, inputClass } from '../../../components/ui/styles';
 
 export type AttendanceScope = 'member' | 'coach' | 'manager';
 
@@ -30,6 +30,10 @@ function presets(today: string) {
 export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
   const id = useId();
   const [params, setParams] = useSearchParams();
+  const latestParams = useRef(params);
+  useEffect(() => {
+    latestParams.current = params;
+  }, [params]);
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
   const status = (attendanceStatuses as string[]).includes(params.get('status') ?? '')
@@ -54,19 +58,16 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
   const hasFilters = FILTER_KEYS.some((key) => key !== 'page' && params.get(key));
 
   // Đổi bộ lọc thì quay về trang 1; giữ các tham số khác của trang (ví dụ ?tab=)
-  const updateParams = (patch: Partial<Record<(typeof FILTER_KEYS)[number], string | undefined>>) =>
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        for (const [key, value] of Object.entries(patch)) {
-          if (value) next.set(key, value);
-          else next.delete(key);
-        }
-        if (!('page' in patch)) next.delete('page');
-        return next;
-      },
-      { replace: true },
-    );
+  const updateParams = (patch: Partial<Record<(typeof FILTER_KEYS)[number], string | undefined>>) => {
+    const next = new URLSearchParams(latestParams.current);
+    for (const [key, value] of Object.entries(patch)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    if (!('page' in patch)) next.delete('page');
+    latestParams.current = next;
+    setParams(next, { replace: true });
+  };
 
   const clearFilters = () => updateParams(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])));
   const today = todayInCenter();
@@ -79,7 +80,7 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
       <div className={`${cardClass} p-4 sm:p-5`}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-end">
           <Field id={`${id}-from`} label="Từ ngày">
-            <input id={`${id}-from`} type="date" className={inputClass} value={from} max={to || undefined} onChange={(event) => updateParams({ from: event.target.value })} />
+            <input id={`${id}-from`} type="date" className={inputClass} value={from} onChange={(event) => updateParams({ from: event.target.value })} />
           </Field>
           <Field id={`${id}-to`} label="Đến ngày" error={rangeError}>
             <input
@@ -87,7 +88,6 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
               type="date"
               className={inputClass}
               value={to}
-              min={from || undefined}
               aria-invalid={rangeError ? true : undefined}
               aria-describedby={describedBy(`${id}-to`, { error: rangeError })}
               onChange={(event) => updateParams({ to: event.target.value })}
@@ -117,7 +117,7 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
                 type="button"
                 aria-pressed={active}
                 onClick={() => updateParams({ from: preset.from, to: preset.to })}
-                className={`min-h-9 rounded-full border px-3.5 text-[13px] font-bold whitespace-nowrap transition-colors ${
+                className={`min-h-11 rounded-full border px-3.5 text-[13px] font-bold whitespace-nowrap transition-colors ${
                   active ? 'border-primary bg-primary/10 text-primary-deep' : 'border-line bg-surface text-ink hover:border-primary/40'
                 }`}
               >

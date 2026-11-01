@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Card, PageHeader } from '../../training/components/ui/Card';
-import { ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { Tabs } from '../../training/components/ui/Tabs';
-import { tabPanelProps } from '../../training/components/ui/styles';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { Tabs } from '../../../components/ui/Tabs';
+import { tabPanelProps } from '../../../components/ui/styles';
 import { ChangePasswordForm } from '../components/ChangePasswordForm';
 import { ProfileForm } from '../components/ProfileForm';
 import { useMyProfile } from '../hooks/useMyProfile';

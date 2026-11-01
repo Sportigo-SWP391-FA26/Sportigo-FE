@@ -9,11 +9,11 @@ import { useCreateAssessment } from '../hooks/useAssessments';
 import { enrollmentStatusLabels, traineeLabel } from '../labels';
 import { assessmentFormSchema, METRICS_MAX, type AssessmentFormOutput, type AssessmentFormValues } from '../schemas';
 import type { ProgressAssessment, Trainee } from '../types';
-import { Button } from './ui/Button';
-import { Card } from './ui/Card';
-import { Field } from './ui/Field';
-import { InlineAlert } from './ui/States';
-import { describedBy, iconButtonClass, inputClass, textareaClass } from './ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, iconButtonClass, inputClass, textareaClass } from '../../../components/ui/styles';
 
 type Props = {
   trainees: Trainee[];

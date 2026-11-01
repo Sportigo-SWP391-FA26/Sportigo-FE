@@ -2,12 +2,12 @@ import { ArrowClockwise, ArrowLeft, CheckSquare, LockKey, NotePencil, Users } fr
 import { useEffect, useId, useState } from 'react';
 import { Link, useBlocker, useParams } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
-import { Button } from '../components/ui/Button';
-import { Chip } from '../components/ui/Chip';
-import { ConfirmDialog } from '../components/ui/Dialog';
-import { SegmentedControl } from '../components/ui/Field';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton, Skeleton } from '../components/ui/States';
-import { cardClass, describedBy, textareaClass } from '../components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Chip } from '../../../components/ui/Chip';
+import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { SegmentedControl } from '../../../components/ui/Field';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton, Skeleton } from '../../../components/ui/States';
+import { cardClass, describedBy, textareaClass } from '../../../components/ui/styles';
 import { parseApiError } from '../errors';
 import { formatDate, formatTime, formatWeekday } from '../format';
 import { useMarkAttendance, useSessionRoster } from '../hooks/useAttendance';

@@ -58,6 +58,7 @@ async function openDetail() {
     email: 'coach@sportigo.vn',
     phone: null,
     displayName: 'Coach An',
+    avatarUrl: null,
     role: 'COACH',
     status: 'ACTIVE',
     emailVerified: true,

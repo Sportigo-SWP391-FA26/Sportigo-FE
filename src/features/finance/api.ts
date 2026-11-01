@@ -6,7 +6,19 @@ export type Payment = { id: number; reference: string; amount: string; channel: 
 export type Promotion = { id: number; code: string; name: string; discountType: string; discountValue: string; status: string; startAt: string; endAt: string };
 export type RefundRequest = { id: number; requestedAmount: string; reason: string; status: string; requestedAt: string; member: { user: { displayName: string; email: string } }; payment: { reference: string; order: { orderNumber: string } } };
 export type Revenue = { gross: number; refunds: number; net: number; transactions: number; byChannel: Record<string, number> };
-export type AuditPage = { items: { id: number; action: string; entityType: string; entityId: string; createdAt: string; actor?: { displayName: string } }[]; total: number };
+export type AuditLogItem = {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId: string;
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
+  ipAddress: string | null;
+  createdAt: string;
+  actor?: { id: number; displayName: string; email: string } | null;
+};
+export type AuditQuery = { page: number; limit: number; action?: string; entityType?: string; from?: string; to?: string };
+export type AuditPage = { items: AuditLogItem[]; page: number; limit: number; total: number; facets: { actions: string[]; entityTypes: string[] } };
 export type ClassReportRow = { id: number; name: string; capacity: number; confirmed: number; waitlist: number; occupancyRate: number; attendanceRate: number };
 
 export const financeApi = {
@@ -22,7 +34,7 @@ export const financeApi = {
   reviewRefund: (id: number, decision: string, note: string, approvedAmount?: number) => apiClient.patch(`/refund-requests/${id}/review`, { decision, note, approvedAmount }).then((r) => r.data),
   completeRefund: (id: number) => apiClient.post(`/refund-requests/${id}/complete`).then((r) => r.data),
   revenue: () => apiClient.get<Revenue>('/reports/revenue').then((r) => r.data),
-  audit: () => apiClient.get<AuditPage>('/audit-logs').then((r) => r.data),
+  audit: (params: AuditQuery) => apiClient.get<AuditPage>('/audit-logs', { params }).then((r) => r.data),
   classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),
   verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; responseCode?: string; reference?: string }>(`/payments/vnpay/return?${query}`).then((r) => r.data),
   invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),

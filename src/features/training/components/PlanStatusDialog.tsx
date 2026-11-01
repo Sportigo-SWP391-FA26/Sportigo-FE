@@ -4,9 +4,9 @@ import { parseApiError } from '../errors';
 import { useChangePlanStatus } from '../hooks/useWorkoutPlans';
 import { nextStatuses, planStatusLabels } from '../labels';
 import type { EditablePlanStatus, WorkoutPlan } from '../types';
-import { ConfirmDialog } from './ui/Dialog';
-import { SegmentedControl } from './ui/Field';
-import { InlineAlert } from './ui/States';
+import { ConfirmDialog } from '../../../components/ui/Dialog';
+import { SegmentedControl } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
 
 const consequences: Record<EditablePlanStatus, string> = {
   ACTIVE: 'Giáo án có thể được gán cho khóa 1-1 cùng môn. Cần ít nhất một mục.',

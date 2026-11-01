@@ -8,6 +8,7 @@ export type MyProfile = {
   email: string;
   phone: string | null;
   displayName: string;
+  avatarUrl?: string | null;
   role: AppRole;
   status: 'ACTIVE' | 'LOCKED' | 'INACTIVE';
   emailVerifiedAt: string | null;
@@ -30,6 +31,7 @@ export type MyProfile = {
 // Body PATCH /api/users/me: chỉ gửi trường đã đổi; null để xóa trường không bắt buộc
 export type UpdateProfileInput = Partial<{
   displayName: string;
+  avatarUrl: string | null;
   phone: string;
   dateOfBirth: string | null;
   gender: Gender | null;

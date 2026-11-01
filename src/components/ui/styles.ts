@@ -16,7 +16,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
 // md cao 44px để đủ vùng bấm trên điện thoại
 const buttonSizes: Record<ButtonSize, string> = {
   md: 'min-h-11 px-4 text-sm',
-  sm: 'min-h-9 px-3 text-[13px]',
+  sm: 'min-h-11 px-3 text-[13px]',
 };
 
 export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', extra = '') {

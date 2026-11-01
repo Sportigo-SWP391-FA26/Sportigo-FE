@@ -1,8 +1,8 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { formatDateTime } from '../../training/format';
-import { Button } from '../../training/components/ui/Button';
-import { InlineAlert } from '../../training/components/ui/States';
-import { textareaClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { InlineAlert } from '../../../components/ui/States';
+import { textareaClass } from '../../../components/ui/styles';
 import type { SupportMessage } from '../types';
 
 type Props = {

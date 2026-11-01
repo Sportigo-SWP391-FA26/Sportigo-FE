@@ -1,10 +1,10 @@
 import { MagnifyingGlass, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { PageHeader } from '../../training/components/ui/Card';
-import { Pagination } from '../../training/components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { PageHeader } from '../../../components/ui/Card';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { formatDate } from '../../training/format';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
 import { useMyMembers } from '../hooks/useMemberProfile';

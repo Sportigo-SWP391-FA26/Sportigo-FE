@@ -1,9 +1,9 @@
 import { ArrowLeft, Clock } from '@phosphor-icons/react';
 import { Link, useParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
-import { Card, PageHeader, SectionHeading } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
+import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { formatDate } from '../../training/format';
 import { usePrivateCourse } from '../hooks/usePrivateCourses';
 
@@ -13,17 +13,19 @@ const clock = (value: string) => value.slice(11, 16);
 export function PrivateCourseDetailPage() {
   const courseId = Number(useParams().courseId);
   const course = usePrivateCourse(courseId);
-  const basePath = getSessionRole() === 'CENTER_MANAGER' ? '/app/private-courses' : '/member/private-courses';
+  const isManager = getSessionRole() === 'CENTER_MANAGER';
+  const basePath = isManager ? '/app/private-courses' : '/member/private-courses';
+  const frameClass = `mx-auto w-full max-w-[1100px] ${isManager ? '' : 'px-4 py-8 sm:px-6 lg:py-10'}`;
 
   if (!Number.isInteger(courseId) || courseId <= 0) return <ErrorState error={new Error('ID khóa học không hợp lệ.')} />;
-  if (course.isPending) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ListSkeleton label="Đang tải chi tiết khóa học…" /></div>;
-  if (course.isError) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ErrorState error={course.error} onRetry={() => course.refetch()} retrying={course.isRefetching} pendingApi="GET /api/private-courses/:id" /></div>;
-  if (!course.data) return <div className="mx-auto max-w-[1100px] px-4 py-8"><EmptyState title="Không tìm thấy khóa học" description="Khóa học có thể không còn tồn tại hoặc đã bị gỡ." /></div>;
+  if (course.isPending) return <div className={frameClass}><ListSkeleton label="Đang tải chi tiết khóa học…" /></div>;
+  if (course.isError) return <div className={frameClass}><ErrorState error={course.error} onRetry={() => course.refetch()} retrying={course.isRefetching} pendingApi="GET /api/private-courses/:id" /></div>;
+  if (!course.data) return <div className={frameClass}><EmptyState title="Không tìm thấy khóa học" description="Khóa học có thể không còn tồn tại hoặc đã bị gỡ." /></div>;
 
   const item = course.data;
   const coaches = item.coaches.filter((assignment) => assignment.isActive);
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
+    <div className={frameClass}>
       <PageHeader
         eyebrow="Chi tiết khóa 1–1"
         title={item.name}

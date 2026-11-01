@@ -6,7 +6,7 @@ import { axiosError } from '../../training/testing/axiosError';
 import * as coachApi from '../api';
 import * as trainingApi from '../../training/api';
 import * as profileApi from '../../profile/api';
-import { CoachManagementPage, CoachOwnSchedulePage } from './CoachManagementPage';
+import { CoachManagementListPage, CoachManagementPage, CoachOwnSchedulePage } from './CoachManagementPage';
 
 vi.mock('../api');
 vi.mock('../../training/api');
@@ -25,6 +25,7 @@ function setupManagerPage() {
     email: 'coach@sportigo.vn',
     phone: null,
     displayName: 'Coach An',
+    avatarUrl: null,
     role: 'COACH',
     status: 'ACTIVE',
     emailVerified: true,
@@ -40,6 +41,29 @@ function setupManagerPage() {
   vi.mocked(trainingApi.getSports).mockResolvedValue([{ id: 2, name: 'Bơi lội', isActive: true }]);
   return renderWithProviders(<CoachManagementPage />, { path: '/app/coaches/:coachId', route: '/app/coaches/8' });
 }
+
+test('shows the Coach profile image in the management list', async () => {
+  loginAs('CENTER_MANAGER');
+  vi.mocked(coachApi.getCoaches).mockResolvedValue([{
+    id: 8,
+    email: 'coach@sportigo.vn',
+    phone: null,
+    displayName: 'Coach An',
+    avatarUrl: 'https://images.example.com/coach-an.webp',
+    role: 'COACH',
+    status: 'ACTIVE',
+    emailVerified: true,
+    staffCode: 'COA-08',
+    hiredAt: null,
+    bio: null,
+    coachStatus: 'ACTIVE',
+    createdAt: '2029-01-01T00:00:00.000Z',
+  }]);
+
+  renderWithProviders(<CoachManagementListPage />);
+
+  expect(await screen.findByRole('img', { name: 'Ảnh Coach Coach An' })).toHaveAttribute('src', 'https://images.example.com/coach-an.webp');
+});
 
 test('validates and saves Coach availability with the API contract fields', async () => {
   setupManagerPage();

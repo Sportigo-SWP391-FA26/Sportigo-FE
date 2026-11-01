@@ -7,11 +7,11 @@ import { useCreatePlanItem, useUpdatePlanItem } from '../hooks/useWorkoutPlans';
 import { intensityLabel, intensityOptions } from '../labels';
 import { planItemFormSchema, type PlanItemFormOutput, type PlanItemFormValues } from '../schemas';
 import type { PlanItemInput, WorkoutPlanItem } from '../types';
-import { Button } from './ui/Button';
-import { Dialog } from './ui/Dialog';
-import { Field } from './ui/Field';
-import { InlineAlert } from './ui/States';
-import { describedBy, inputClass, textareaClass } from './ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 
 export type PlanItemDraft = { weekNumber: number; sessionNumber: number };
 

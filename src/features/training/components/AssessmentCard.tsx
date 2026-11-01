@@ -1,7 +1,7 @@
 import { formatDate, formatNumber, toScore } from '../format';
 import type { AssessmentContext, ProgressAssessment } from '../types';
-import { Chip } from './ui/Chip';
-import { cardClass } from './ui/styles';
+import { Chip } from '../../../components/ui/Chip';
+import { cardClass } from '../../../components/ui/styles';
 
 export function ContextChip({ context }: { context: AssessmentContext | null }) {
   if (!context) return <Chip>Không rõ ngữ cảnh</Chip>;

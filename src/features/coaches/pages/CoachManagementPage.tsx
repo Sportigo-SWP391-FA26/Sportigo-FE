@@ -7,13 +7,13 @@ import { getSessionRole } from '../../../components/auth/session';
 import { toast } from '../../../components/feedback/toast';
 import { useMyProfile } from '../../profile/hooks/useMyProfile';
 import { getSports } from '../../training/api';
-import { Button, ButtonLink } from '../../training/components/ui/Button';
-import { Card, PageHeader, SectionHeading } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { ConfirmDialog, Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { Button, ButtonLink } from '../../../components/ui/Button';
+import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { addDays, formatDate, formatDateTime, formatTime, todayInCenter } from '../../training/format';
 import { parseApiError, retryServerErrors } from '../../training/errors';
 import { trainingKeys } from '../../training/queryKeys';
@@ -60,19 +60,54 @@ export function CoachManagementListPage() {
       ) : coaches.data.length === 0 ? (
         <EmptyState icon={<Certificate />} title="Chưa có Coach" description="Tạo Coach trong mục Quản lý nhân sự trước khi quản lý chuyên môn và lịch." />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {coaches.data.map((coach) => (
-            <Card key={coach.id} className="p-5">
-              <p className="text-lg font-extrabold text-ink">{coach.displayName}</p>
-              <p className="mt-1 text-sm text-muted">{coach.staffCode ?? coach.email}</p>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <Chip tone={coach.coachStatus === 'ACTIVE' ? 'success' : 'neutral'} dot>
-                  {coach.coachStatus === 'ACTIVE' ? 'Đang hoạt động' : coach.coachStatus ?? coach.status}
-                </Chip>
-                <ButtonLink to={`/app/coaches/${coach.id}`} size="sm">Mở hồ sơ</ButtonLink>
+            <Card key={coach.id} className="group overflow-hidden p-0">
+              <div className="flex min-h-40">
+                <CoachAvatar name={coach.displayName} src={coach.avatarUrl} />
+                <div className="flex min-w-0 flex-1 flex-col p-5">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-extrabold text-ink">{coach.displayName}</p>
+                    <p className="mt-1 truncate text-sm text-muted">{coach.staffCode ?? coach.email}</p>
+                  </div>
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+                    <Chip tone={coach.coachStatus === 'ACTIVE' ? 'success' : 'neutral'} dot>
+                      {coach.coachStatus === 'ACTIVE' ? 'Đang hoạt động' : coach.coachStatus ?? coach.status}
+                    </Chip>
+                    <ButtonLink to={`/app/coaches/${coach.id}`} size="sm">Mở hồ sơ</ButtonLink>
+                  </div>
+                </div>
               </div>
             </Card>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoachAvatar({ name, src }: { name: string; src: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => part[0]?.toLocaleUpperCase('vi'))
+    .join('');
+
+  return (
+    <div className="relative w-28 shrink-0 overflow-hidden bg-primary/10 sm:w-32">
+      {src && !failed ? (
+        <img
+          src={src}
+          alt={`Ảnh Coach ${name}`}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="grid h-full min-h-40 place-items-center bg-primary/10 text-2xl font-extrabold text-primary-deep" aria-label={`Coach ${name} chưa có ảnh đại diện`}>
+          {initials || 'C'}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { attendanceStatusLabels, attendanceStatusTones } from '../labels';
 import type { AttendanceStatus } from '../types';
-import { Chip } from './ui/Chip';
+import { Chip } from '../../../components/ui/Chip';
 
 export function AttendanceStatusChip({ status }: { status: AttendanceStatus | null }) {
   if (!status) {

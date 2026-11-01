@@ -7,9 +7,9 @@ import { levelLabel } from '../labels';
 import { currentPlanWeek, groupPlanItems } from '../planStructure';
 import type { MemberPlanAssignment } from '../types';
 import { PlanItemList } from './PlanItemList';
-import { Card, Eyebrow } from './ui/Card';
-import { EmptyState, ErrorState, InlineAlert, Skeleton } from './ui/States';
-import { Tabs } from './ui/Tabs';
+import { Card, Eyebrow } from '../../../components/ui/Card';
+import { EmptyState, ErrorState, InlineAlert, Skeleton } from '../../../components/ui/States';
+import { Tabs } from '../../../components/ui/Tabs';
 
 const MAX_VISIBLE_ITEMS = 4;
 

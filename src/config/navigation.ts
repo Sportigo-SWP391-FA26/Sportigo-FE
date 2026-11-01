@@ -3,24 +3,52 @@ export type NavigationItem = {
   path: string;
 };
 
-export const centerManagerNavigation: NavigationItem[] = [
-  { label: 'Dashboard', path: '/app/dashboard' },
-  { label: 'Quản lý Người dùng', path: '/app/users' },
-  { label: 'Quản lý Hội viên', path: '/app/members' },
-  { label: 'Quản lý Nhân sự', path: '/app/staff' },
-  { label: 'Quản lý Coach', path: '/app/coaches' },
-  { label: 'Quản lý Bộ môn', path: '/app/sports' },
-  { label: 'Danh sách Lớp học', path: '/app/classes' },
-  { label: 'Khóa học 1–1', path: '/app/private-courses' },
-  { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
-  { label: 'Quản lý Phòng tập', path: '/app/rooms' },
-  { label: 'Thu tiền tại quầy', path: '/app/cashier' },
-  { label: 'Khuyến mãi', path: '/app/promotions' },
-  { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
-  { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
-  { label: 'Báo cáo Doanh thu', path: '/app/revenue' },
-  { label: 'Báo cáo Vận hành', path: '/app/operations-report' },
-  { label: 'Audit Log', path: '/app/audit-logs' },
+export type NavigationGroup = {
+  label: string;
+  items: NavigationItem[];
+};
+
+export type NavigationEntry = NavigationItem | NavigationGroup;
+
+export const centerManagerNavigation: NavigationEntry[] = [
+  { label: 'Tổng quan', items: [{ label: 'Dashboard', path: '/app/dashboard' }] },
+  {
+    label: 'TÀI KHOẢN',
+    items: [
+      { label: 'Người dùng', path: '/app/users' },
+      { label: 'Hội viên', path: '/app/members' },
+      { label: 'Nhân sự', path: '/app/staff' },
+      { label: 'Coach', path: '/app/coaches' },
+    ],
+  },
+  {
+    label: 'Lớp & cơ sở vật chất',
+    items: [
+      { label: 'Bộ môn', path: '/app/sports' },
+      { label: 'Lớp nhóm', path: '/app/classes' },
+      { label: 'Khóa học 1–1', path: '/app/private-courses' },
+      { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
+      { label: 'Phòng tập', path: '/app/rooms' },
+    ],
+  },
+  {
+    label: 'Tài chính & báo cáo',
+    items: [
+      { label: 'Thu tiền tại quầy', path: '/app/cashier' },
+      { label: 'Khuyến mãi', path: '/app/promotions' },
+      { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
+      { label: 'Báo cáo doanh thu', path: '/app/revenue' },
+      { label: 'Báo cáo vận hành', path: '/app/operations-report' },
+    ],
+  },
+  {
+    label: 'Hệ thống',
+    items: [
+      { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
+      { label: 'Audit Log', path: '/app/audit-logs' },
+      { label: 'Nội dung Website', path: '/app/website-content' },
+    ],
+  },
 ];
 
 // FR-09: trước đây Receptionist dùng chung menu Manager nên thấy cả mục không có quyền

@@ -1,10 +1,10 @@
 import { ArrowLeft } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { ButtonLink } from '../../training/components/ui/Button';
-import { Card, PageHeader } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
+import { ButtonLink } from '../../../components/ui/Button';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { formatDate, formatDateTime } from '../../training/format';
 import type { Tone } from '../../training/labels';
 import { statusLabel, statusTone } from '../../users/labels';

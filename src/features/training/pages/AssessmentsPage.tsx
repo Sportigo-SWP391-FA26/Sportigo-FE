@@ -1,10 +1,10 @@
 import { ChartLineUp, Funnel, Plus, X } from '@phosphor-icons/react';
 import { useSearchParams } from 'react-router-dom';
 import { AssessmentCard } from '../components/AssessmentCard';
-import { Button, ButtonLink } from '../components/ui/Button';
-import { PageHeader } from '../components/ui/Card';
-import { Pagination } from '../components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../components/ui/States';
+import { Button, ButtonLink } from '../../../components/ui/Button';
+import { PageHeader } from '../../../components/ui/Card';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { useAssessments } from '../hooks/useAssessments';
 
 const PAGE_SIZE = 10;

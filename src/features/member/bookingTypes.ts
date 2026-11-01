@@ -19,8 +19,8 @@ export type PublicGroupClass = {
   startDate: string;
   endDate: string;
   status: 'OPEN';
-  sport: { id: number; name: string; isActive: boolean };
-  coach: { user: { id: number; displayName: string } };
+  sport: { id: number; name: string; imageUrl?: string | null; isActive: boolean };
+  coach: { user: { id: number; displayName: string; avatarUrl?: string | null } };
   _count: { registrations: number };
 };
 

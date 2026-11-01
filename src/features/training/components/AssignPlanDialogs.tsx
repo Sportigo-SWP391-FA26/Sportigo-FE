@@ -8,11 +8,11 @@ import { useAssignPlan } from '../hooks/usePlanAssignments';
 import { useWorkoutPlans } from '../hooks/useWorkoutPlans';
 import { enrollmentStatusLabels, levelLabel, traineeName } from '../labels';
 import type { PlanAssignment, SportRef, WorkoutPlan } from '../types';
-import { Button } from './ui/Button';
-import { Chip } from './ui/Chip';
-import { Dialog } from './ui/Dialog';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton, NotReady } from './ui/States';
-import { inputClass } from './ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Chip } from '../../../components/ui/Chip';
+import { Dialog } from '../../../components/ui/Dialog';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton, NotReady } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 
 const TRAINEES_API = 'GET /api/private-courses/enrollments';
 

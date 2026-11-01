@@ -1,12 +1,12 @@
 import { ChatCircleDots, Plus } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button } from '../../training/components/ui/Button';
-import { PageHeader } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { Pagination } from '../../training/components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { PageHeader } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { formatDateTime } from '../../training/format';
 import { NewSupportRequestDialog } from '../components/NewSupportRequestDialog';
 import { useSupportList } from '../hooks/useSupport';

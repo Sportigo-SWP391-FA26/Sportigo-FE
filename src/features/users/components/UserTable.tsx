@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Chip } from '../../training/components/ui/Chip';
+import { Chip } from '../../../components/ui/Chip';
 import { roleLabel, statusLabel, statusTone } from '../labels';
 import type { UserSummary } from '../types';
 

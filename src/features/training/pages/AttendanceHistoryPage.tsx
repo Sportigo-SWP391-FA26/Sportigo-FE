@@ -1,9 +1,9 @@
 import { ArrowRight, CalendarCheck } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { AttendanceHistoryPanel } from '../components/AttendanceHistoryPanel';
-import { Card, PageHeader, SectionHeading } from '../components/ui/Card';
-import { Chip } from '../components/ui/Chip';
-import { EmptyState, ErrorState, Skeleton } from '../components/ui/States';
+import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { EmptyState, ErrorState, Skeleton } from '../../../components/ui/States';
 import { addDays, endOfCenterDay, formatDate, formatTime, startOfCenterDay, todayInCenter } from '../format';
 import { useCoachSessions } from '../hooks/usePendingApis';
 

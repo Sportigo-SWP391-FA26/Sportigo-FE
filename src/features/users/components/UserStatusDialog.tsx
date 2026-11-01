@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { applyFieldErrors, parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
-import { describedBy, textareaClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, textareaClass } from '../../../components/ui/styles';
 import { useChangeUserStatus } from '../hooks/useUsers';
 import type { UserSummary } from '../types';
 
@@ -25,27 +25,29 @@ type Props = {
 
 // FR-06: hộp xác nhận khóa / mở khóa, bắt buộc nhập lý do
 export function UserStatusDialog({ user, onClose }: Props) {
-  const locking = user?.status !== 'LOCKED';
+  const mode = user?.status === 'INACTIVE' ? 'activate' : user?.status === 'LOCKED' ? 'unlock' : 'lock';
   return (
     <Dialog
       open={user !== null}
       onClose={onClose}
       size="sm"
-      title={locking ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+      title={mode === 'activate' ? 'Kích hoạt tài khoản' : mode === 'lock' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
       description={
         user &&
-        (locking
+        (mode === 'activate'
+          ? `${user.displayName} sẽ được xác nhận và có thể đăng nhập vào hệ thống.`
+          : mode === 'lock'
           ? `${user.displayName} sẽ bị đăng xuất khỏi mọi thiết bị và không đăng nhập được cho tới khi được mở khóa.`
           : `${user.displayName} sẽ đăng nhập lại được.`)
       }
     >
       {/* note: key theo id để form trống lại mỗi lần mở cho người khác */}
-      {user && <ReasonForm key={user.id} user={user} locking={locking} onClose={onClose} />}
+      {user && <ReasonForm key={user.id} user={user} mode={mode} onClose={onClose} />}
     </Dialog>
   );
 }
 
-function ReasonForm({ user, locking, onClose }: { user: UserSummary; locking: boolean; onClose: () => void }) {
+function ReasonForm({ user, mode, onClose }: { user: UserSummary; mode: 'activate' | 'unlock' | 'lock'; onClose: () => void }) {
   const id = useId();
   const change = useChangeUserStatus();
   const [formError, setFormError] = useState<string | null>(null);
@@ -55,8 +57,14 @@ function ReasonForm({ user, locking, onClose }: { user: UserSummary; locking: bo
   const onSubmit = async ({ reason }: ReasonValues) => {
     setFormError(null);
     try {
-      await change.mutateAsync({ userId: user.id, input: { status: locking ? 'LOCKED' : 'ACTIVE', reason } });
-      toast(locking ? `Đã khóa tài khoản ${user.displayName}.` : `Đã mở khóa tài khoản ${user.displayName}.`);
+      await change.mutateAsync({ userId: user.id, input: { status: mode === 'lock' ? 'LOCKED' : 'ACTIVE', reason } });
+      toast(
+        mode === 'activate'
+          ? `Đã kích hoạt tài khoản ${user.displayName}.`
+          : mode === 'lock'
+            ? `Đã khóa tài khoản ${user.displayName}.`
+            : `Đã mở khóa tài khoản ${user.displayName}.`,
+      );
       onClose();
     } catch (err) {
       const apiError = parseApiError(err);
@@ -80,8 +88,8 @@ function ReasonForm({ user, locking, onClose }: { user: UserSummary; locking: bo
         <Button variant="secondary" onClick={onClose} disabled={change.isPending}>
           Hủy
         </Button>
-        <Button type="submit" variant={locking ? 'danger' : 'primary'} loading={change.isPending}>
-          {locking ? 'Khóa tài khoản' : 'Mở khóa'}
+        <Button type="submit" variant={mode === 'lock' ? 'danger' : 'primary'} loading={change.isPending}>
+          {mode === 'activate' ? 'Kích hoạt' : mode === 'lock' ? 'Khóa tài khoản' : 'Mở khóa'}
         </Button>
       </div>
     </form>

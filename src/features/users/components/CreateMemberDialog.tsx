@@ -4,11 +4,11 @@ import { useForm, type Path } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
-import { describedBy, inputClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { InlineAlert } from '../../../components/ui/States';
+import { describedBy, inputClass } from '../../../components/ui/styles';
 import { useCreateMember } from '../hooks/useUsers';
 import type { CreateMemberInput } from '../types';
 

@@ -1,17 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState, type ReactNode } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { toast } from '../../../components/feedback/toast';
 // note: bộ UI và xử lý lỗi đang nằm trong feature training; khi chuyển ra src/components thì đổi đường dẫn import
 import { applyFieldErrors, parseApiError } from '../../training/errors';
-import { Button } from '../../training/components/ui/Button';
-import { Field } from '../../training/components/ui/Field';
-import { InlineAlert } from '../../training/components/ui/States';
+import { Button } from '../../../components/ui/Button';
+import { Field } from '../../../components/ui/Field';
+import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { InlineAlert } from '../../../components/ui/States';
 import {
   describedBy,
   inputClass,
   textareaClass,
-} from '../../training/components/ui/styles';
+} from '../../../components/ui/styles';
 import { useUpdateMyProfile } from '../hooks/useMyProfile';
 import { EmailChangeDialog } from './EmailChangeDialog';
 import {
@@ -55,6 +56,7 @@ export function ProfileForm({ profile }: Props) {
     defaultValues: toFormValues(profile),
   });
   const { errors, isDirty, dirtyFields } = form.formState;
+  const avatarUrl = useWatch({ control: form.control, name: 'avatarUrl' });
 
   const onSubmit = async (values: ProfileFormValues) => {
     setFormError(null);
@@ -85,7 +87,7 @@ export function ProfileForm({ profile }: Props) {
   };
 
   const textInput = (
-    name: 'displayName' | 'phone' | 'emergencyContact',
+    name: 'displayName' | 'avatarUrl' | 'phone' | 'emergencyContact',
     label: string,
     options: {
       required?: boolean;
@@ -163,6 +165,9 @@ export function ProfileForm({ profile }: Props) {
             placeholder: '0912345678',
             hint: 'Bắt đầu bằng 0 hoặc +84.',
           })}
+          <div className="sm:col-span-2">
+            <ImageUploadField label="Ảnh đại diện" value={avatarUrl} purpose="avatar" disabled={update.isPending} hint="Chọn ảnh từ máy. Ảnh cũ chỉ được thay sau khi upload thành công." onChange={(url) => form.setValue('avatarUrl', url, { shouldDirty: true, shouldValidate: true })} />
+          </div>
         </div>
 
         {kind === 'member' && (

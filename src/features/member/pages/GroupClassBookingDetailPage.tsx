@@ -2,19 +2,21 @@ import { ArrowLeft, CalendarBlank, MapPin } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
-import { Button, ButtonLink } from '../../training/components/ui/Button';
-import { Card, PageHeader, SectionHeading } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { ConfirmDialog, Dialog } from '../../training/components/ui/Dialog';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../training/components/ui/States';
-import { Field } from '../../training/components/ui/Field';
-import { inputClass } from '../../training/components/ui/styles';
+import { Button, ButtonLink } from '../../../components/ui/Button';
+import { Card, SectionHeading } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { Field } from '../../../components/ui/Field';
+import { inputClass } from '../../../components/ui/styles';
 import { formatDate, formatDateTime } from '../../training/format';
 import { parseApiError } from '../../training/errors';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
 import { useUserList } from '../../users/hooks/useUsers';
 import { useCancelClassRegistration, useJoinClassWaitlist, usePublicClass, useRegisterForClass, useRegisterMemberOnBehalf } from '../bookingHooks';
+import { isClassBookable } from '../bookingEligibility';
 import type { ClassRegistrationOrder, WaitlistEntry } from '../bookingTypes';
+import { sportImageUrl } from '../sportImages';
 
 const money = (value: string | number) => `${new Intl.NumberFormat('vi-VN').format(Number(value))} ₫`;
 
@@ -88,21 +90,34 @@ export function GroupClassBookingDetailPage() {
       // The confirmation dialog keeps the API error visible for correction or retry.
     }
   };
-  const registrationWindowOpen = now >= new Date(item.registrationOpenAt).getTime() &&
-    now <= new Date(item.registrationCloseAt).getTime() &&
-    now < new Date(item.startDate).getTime();
+  const registrationWindowOpen = isClassBookable(item, now);
   const canRegister = role === 'MEMBER' && registrationWindowOpen && item.remainingSeats > 0;
   const classListPath = role === 'RECEPTIONIST' ? '/app/class-bookings' : '/member/classes';
+  const coachInitials = item.coach.user.displayName.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join('').toUpperCase();
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
-      <PageHeader
-        eyebrow={item.sport.name}
-        title={item.name}
-        description={item.description ?? 'Thông tin lớp nhóm và các buổi học dự kiến.'}
-        back={<ButtonLink to={classListPath} className="mb-3"><ArrowLeft aria-hidden="true" /> Danh sách lớp</ButtonLink>}
-        actions={<Chip tone="success" dot>Đang mở đăng ký</Chip>}
-      />
+      <section className="class-booking-hero" aria-labelledby="class-booking-title">
+        <img className="class-booking-hero__image" src={sportImageUrl(item.sport)} alt={`Lớp ${item.name} · ${item.sport.name}`} />
+        <div className="class-booking-hero__shade" />
+        <div className="class-booking-hero__topbar">
+          <ButtonLink to={classListPath} className="class-booking-hero__back"><ArrowLeft aria-hidden="true" /> Danh sách lớp</ButtonLink>
+          <Chip tone={registrationWindowOpen ? 'success' : 'neutral'} dot>{registrationWindowOpen ? 'Đang mở đăng ký' : 'Đã đóng đăng ký'}</Chip>
+        </div>
+        <div className="class-booking-hero__content">
+          <div className="class-booking-hero__copy">
+            <span>{item.sport.name}</span>
+            <h1 id="class-booking-title">{item.name}</h1>
+            <p>{item.description ?? 'Thông tin lớp nhóm và các buổi học dự kiến.'}</p>
+          </div>
+          <aside className="class-booking-coach" aria-label={`Coach phụ trách: ${item.coach.user.displayName}`}>
+            {item.coach.user.avatarUrl
+              ? <img src={item.coach.user.avatarUrl} alt={`Coach ${item.coach.user.displayName}`} />
+              : <span className="class-booking-coach__initials" aria-hidden="true">{coachInitials}</span>}
+            <div><small>Coach phụ trách</small><strong>{item.coach.user.displayName}</strong><span>{item.sport.name}</span></div>
+          </aside>
+        </div>
+      </section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-5"><p className="text-xs font-bold text-muted">Coach</p><p className="mt-1 text-lg font-extrabold">{item.coach.user.displayName}</p></Card>
         <Card className="p-5"><p className="text-xs font-bold text-muted">Học phí</p><p className="mt-1 text-lg font-extrabold">{money(item.tuitionFee)}</p></Card>
@@ -131,8 +146,8 @@ export function GroupClassBookingDetailPage() {
 
       <Card className="mt-5 flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
-          <p className="font-extrabold">{item.remainingSeats > 0 ? 'Sẵn sàng tham gia lớp?' : 'Lớp hiện đã hết chỗ'}</p>
-          <p className="mt-1 text-sm text-muted">{item.remainingSeats > 0 ? 'Đăng ký sẽ giữ chỗ và tạo đơn chờ thanh toán. Lớp chỉ được xác nhận sau khi thanh toán thành công.' : 'Member có thể gửi yêu cầu vào danh sách chờ; tình trạng chỗ và điều kiện vẫn được backend xác nhận.'}</p>
+          <p className="font-extrabold">{!registrationWindowOpen ? 'Lớp không còn nhận đăng ký' : item.remainingSeats > 0 ? 'Sẵn sàng tham gia lớp?' : 'Lớp hiện đã hết chỗ'}</p>
+          <p className="mt-1 text-sm text-muted">{!registrationWindowOpen ? 'Chỉ những lớp chưa bắt đầu và còn trong thời hạn đăng ký mới có thể đặt chỗ.' : item.remainingSeats > 0 ? 'Đăng ký sẽ giữ chỗ và tạo đơn chờ thanh toán. Lớp chỉ được xác nhận sau khi thanh toán thành công.' : 'Member có thể gửi yêu cầu vào danh sách chờ; tình trạng chỗ và điều kiện vẫn được backend xác nhận.'}</p>
           {role === 'MEMBER' && waitlistEntry && <p role="status" className="mt-2 text-sm font-bold text-success">Đã vào danh sách chờ ({waitlistEntry.status === 'WAITING' ? 'đang chờ' : waitlistEntry.status}).</p>}
           {role === 'MEMBER' && waitlist.isError && <p role="alert" className="mt-2 text-sm text-danger">{parseApiError(waitlist.error).message}</p>}
         </div>

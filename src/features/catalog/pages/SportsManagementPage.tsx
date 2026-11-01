@@ -1,16 +1,17 @@
 import { Plus, Tag } from '@phosphor-icons/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
-import { Button } from '../../training/components/ui/Button';
-import { Card, PageHeader, SectionHeading } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { Dialog } from '../../training/components/ui/Dialog';
-import { Field } from '../../training/components/ui/Field';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass, textareaClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { Dialog } from '../../../components/ui/Dialog';
+import { Field } from '../../../components/ui/Field';
+import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { parseApiError } from '../../training/errors';
 import { useCreateSport, useSetSportActive, useSports, useUpdateSport } from '../hooks';
 import type { Sport, SportInput } from '../types';
@@ -51,7 +52,7 @@ export function SportsManagementPage() {
               <tbody className="divide-y divide-line">
                 {sports.data.map((sport) => (
                   <tr key={sport.id}>
-                    <td className="py-3 pr-3 font-bold">{sport.name}</td>
+                    <td className="py-3 pr-3 font-bold"><div className="flex items-center gap-3">{sport.imageUrl ? <img src={sport.imageUrl} alt="" className="size-11 rounded-lg object-cover" /> : <div className="flex size-11 items-center justify-center rounded-lg bg-primary/8 text-primary"><Tag aria-hidden="true" /></div>}<span>{sport.name}</span></div></td>
                     <td className="py-3 pr-3 text-muted">{sport.description || '—'}</td>
                     <td className="py-3 pr-3"><Chip tone={sport.isActive ? 'success' : 'neutral'} dot>{sport.isActive ? 'Đang hoạt động' : 'Đã ngừng'}</Chip></td>
                     <td className="py-3 text-right"><div className="flex justify-end gap-2">
@@ -90,6 +91,7 @@ function SportFormDialog({ sport, onClose }: { sport: Sport | null; onClose: () 
     },
   });
   const pending = form.formState.isSubmitting || create.isPending || update.isPending;
+  const imageUrl = useWatch({ control: form.control, name: 'imageUrl' });
   const submit = form.handleSubmit(async (values) => {
     const input: SportInput = {
       name: values.name.trim(),
@@ -119,7 +121,7 @@ function SportFormDialog({ sport, onClose }: { sport: Sport | null; onClose: () 
       <form className="space-y-4" onSubmit={submit} noValidate>
         <Field id="sport-name" label="Tên bộ môn" required error={errors.name?.message}><input id="sport-name" className={inputClass} aria-invalid={Boolean(errors.name)} {...form.register('name')} /></Field>
         <Field id="sport-description" label="Mô tả" error={errors.description?.message}><textarea id="sport-description" className={textareaClass} {...form.register('description')} /></Field>
-        <Field id="sport-image" label="Đường dẫn hình ảnh" hint="Không bắt buộc."><input id="sport-image" type="url" className={inputClass} {...form.register('imageUrl')} /></Field>
+        <ImageUploadField label="Ảnh bộ môn" value={imageUrl} purpose="sport" disabled={pending} hint="Ảnh hiện tại được giữ nguyên nếu bạn không chọn ảnh mới hoặc upload thất bại." onChange={(url) => form.setValue('imageUrl', url, { shouldDirty: true, shouldValidate: true })} />
         <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-4 accent-primary" {...form.register('isActive')} />Đang hoạt động</label>
         {errors.root?.server?.message && <InlineAlert>{errors.root.server.message}</InlineAlert>}
       </form>

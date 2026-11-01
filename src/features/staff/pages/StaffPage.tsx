@@ -1,13 +1,14 @@
 import { IdentificationBadge, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button } from '../../training/components/ui/Button';
-import { PageHeader } from '../../training/components/ui/Card';
-import { Chip } from '../../training/components/ui/Chip';
-import { Pagination } from '../../training/components/ui/Pagination';
-import { EmptyState, ErrorState, ListSkeleton } from '../../training/components/ui/States';
-import { inputClass } from '../../training/components/ui/styles';
+import { Button } from '../../../components/ui/Button';
+import { Card, PageHeader } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { Pagination } from '../../../components/ui/Pagination';
+import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { inputClass } from '../../../components/ui/styles';
 import { useDebouncedValue } from '../../training/hooks/useDebouncedValue';
+import { DeleteUserDialog } from '../../users/components/DeleteUserDialog';
 import { UserStatusDialog } from '../../users/components/UserStatusDialog';
 import { statusLabel, statusTone } from '../../users/labels';
 import type { UserSummary } from '../../users/types';
@@ -44,6 +45,8 @@ export function StaffPage() {
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const [form, setForm] = useState<FormState>({ open: false });
   const [statusTarget, setStatusTarget] = useState<UserSummary | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserSummary | null>(null);
+  const [mobileCards, setMobileCards] = useState(false);
 
   const update = (next: Record<string, string | undefined>) => {
     const merged = new URLSearchParams(params);
@@ -60,6 +63,15 @@ export function StaffPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ đồng bộ khi từ khóa đã debounce thay đổi
   }, [debouncedSearch]);
 
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(max-width: 639px)');
+    const updateLayout = () => setMobileCards(media.matches);
+    updateLayout();
+    media.addEventListener('change', updateLayout);
+    return () => media.removeEventListener('change', updateLayout);
+  }, []);
+
   const staffList = useStaffList({ q: debouncedSearch || undefined, role, page, pageSize: PAGE_SIZE });
   const items = staffList.data?.items ?? [];
 
@@ -68,7 +80,7 @@ export function StaffPage() {
       <PageHeader
         eyebrow="Nhân sự"
         title="Quản lý nhân sự"
-        description="Tạo và cập nhật tài khoản Coach, Receptionist. Mã nhân sự là duy nhất."
+        description="Tạo và quản lý tài khoản Coach, Receptionist. Mã nhân sự được hệ thống cấp tự động."
         actions={
           <Button icon={<Plus aria-hidden="true" />} onClick={() => setForm({ open: true, staff: null })}>
             Thêm nhân sự
@@ -76,7 +88,7 @@ export function StaffPage() {
         }
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px]">
+      <Card className="manager-filter-bar mb-5 grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_200px] sm:p-4">
         <label className="relative block">
           <span className="sr-only">Tìm kiếm nhân sự</span>
           <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -99,7 +111,7 @@ export function StaffPage() {
             ))}
           </select>
         </label>
-      </div>
+      </Card>
 
       {staffList.isPending ? (
         <ListSkeleton rows={5} label="Đang tải danh sách nhân sự…" />
@@ -109,7 +121,36 @@ export function StaffPage() {
         <EmptyState icon={<IdentificationBadge />} title="Chưa có nhân sự phù hợp" description="Thử từ khóa khác hoặc thêm nhân sự mới." />
       ) : (
         <div className={`transition-opacity ${staffList.isPlaceholderData ? 'opacity-60' : ''}`} aria-busy={staffList.isFetching}>
-          <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
+          {mobileCards ? <div className="grid gap-3">
+            {items.map((staff) => {
+              const work = staff.coachStatus ? coachStatusOption(staff.coachStatus) : undefined;
+              const statusAction = staff.status === 'INACTIVE' ? 'Kích hoạt' : staff.status === 'LOCKED' ? 'Mở khóa' : 'Khóa';
+              return (
+                <article key={staff.id} className="rounded-card border border-line bg-surface p-4 shadow-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="truncate text-base font-extrabold text-ink">{staff.displayName}</h2>
+                      <p className="mt-1 break-all text-xs text-muted">{staff.email}</p>
+                    </div>
+                    <Chip tone={statusTone(staff.status)} dot>{statusLabel(staff.status)}</Chip>
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-line py-4 text-sm">
+                    <div><dt className="text-xs text-muted">Vai trò</dt><dd className="mt-1 font-bold text-ink">{staffRoleLabel(staff.role)}</dd></div>
+                    <div><dt className="text-xs text-muted">Mã nhân sự</dt><dd className="mt-1 font-mono text-xs text-ink">{staff.staffCode ?? '—'}</dd></div>
+                    <div><dt className="text-xs text-muted">Ngày vào làm</dt><dd className="mt-1 text-ink">{staff.hiredAt ? staff.hiredAt.split('-').reverse().join('/') : '—'}</dd></div>
+                    <div><dt className="text-xs text-muted">Điện thoại</dt><dd className="mt-1 text-ink">{staff.phone ?? '—'}</dd></div>
+                  </dl>
+                  {work && work.value !== 'ACTIVE' && <Chip tone={work.tone} className="mt-3">{work.label}</Chip>}
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {staff.role === 'COACH' && <Link className="col-span-2 inline-flex min-h-11 items-center justify-center rounded-control bg-primary/8 px-3 text-[13px] font-bold text-primary-deep focus-visible:outline-2 focus-visible:outline-primary" to={`/app/coaches/${staff.id}`}>Hồ sơ Coach</Link>}
+                    <Button size="sm" variant="secondary" onClick={() => setForm({ open: true, staff })}>Sửa</Button>
+                    <Button size="sm" variant={staff.status === 'ACTIVE' ? 'ghost' : 'secondary'} onClick={() => setStatusTarget(toUserSummary(staff))}>{statusAction}</Button>
+                    <Button className="col-span-2" size="sm" variant="danger" onClick={() => setDeleteTarget(toUserSummary(staff))}>Xóa tài khoản</Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div> : <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
             <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="border-b border-line bg-canvas text-xs font-bold tracking-wide text-muted uppercase">
                 <tr>
@@ -126,7 +167,7 @@ export function StaffPage() {
               <tbody className="divide-y divide-line">
                 {items.map((staff) => {
                   const work = staff.coachStatus ? coachStatusOption(staff.coachStatus) : undefined;
-                  const locked = staff.status === 'LOCKED';
+                  const statusAction = staff.status === 'INACTIVE' ? 'Kích hoạt' : staff.status === 'LOCKED' ? 'Mở khóa' : 'Khóa';
                   return (
                     <tr key={staff.id} className="align-middle">
                       <td className="px-4 py-3">
@@ -155,7 +196,7 @@ export function StaffPage() {
                         <div className="flex justify-end gap-2">
                           {staff.role === 'COACH' && (
                             <Link
-                              className="inline-flex min-h-9 items-center rounded-control px-3 text-[13px] font-bold text-primary-deep hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary"
+                              className="inline-flex min-h-11 items-center rounded-control px-3 text-[13px] font-bold text-primary-deep hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary"
                               to={`/app/coaches/${staff.id}`}
                             >
                               Hồ sơ Coach
@@ -166,11 +207,14 @@ export function StaffPage() {
                           </Button>
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant={staff.status === 'ACTIVE' ? 'ghost' : 'secondary'}
                             onClick={() => setStatusTarget(toUserSummary(staff))}
-                            aria-label={`${locked ? 'Mở khóa' : 'Khóa'} ${staff.displayName}`}
+                            aria-label={`${statusAction} ${staff.displayName}`}
                           >
-                            {locked ? 'Mở khóa' : 'Khóa'}
+                            {statusAction}
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => setDeleteTarget(toUserSummary(staff))} aria-label={`Xóa ${staff.displayName}`}>
+                            Xóa
                           </Button>
                         </div>
                       </td>
@@ -179,7 +223,7 @@ export function StaffPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </div>}
           <Pagination
             page={staffList.data.page}
             pageSize={staffList.data.pageSize}
@@ -192,6 +236,7 @@ export function StaffPage() {
 
       <StaffFormDialog open={form.open} staff={form.open ? form.staff : null} onClose={() => setForm({ open: false })} />
       <UserStatusDialog user={statusTarget} onClose={() => setStatusTarget(null)} />
+      <DeleteUserDialog user={deleteTarget} onClose={() => setDeleteTarget(null)} />
     </div>
   );
 }

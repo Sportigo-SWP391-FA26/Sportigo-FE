@@ -2,8 +2,8 @@ import { ArrowLeft } from '@phosphor-icons/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
 import { AssessmentForm } from '../components/AssessmentForm';
-import { PageHeader } from '../components/ui/Card';
-import { ErrorState, InlineAlert, ListSkeleton } from '../components/ui/States';
+import { PageHeader } from '../../../components/ui/Card';
+import { ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { useCoachTrainees } from '../hooks/usePendingApis';
 
 // FR-52 · /coach/assessments/new

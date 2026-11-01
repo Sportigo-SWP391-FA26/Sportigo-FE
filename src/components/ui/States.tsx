@@ -1,7 +1,7 @@
 import { ArrowClockwise, HourglassMedium, LockKey, MagnifyingGlass, WarningCircle } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
-import { getSessionRole, roleHomePath } from '../../../../components/auth/session';
-import { parseApiError } from '../../errors';
+import { getSessionRole, roleHomePath } from '../auth/session';
+import { parseApiError } from '../../features/training/errors';
 import { Button, ButtonLink } from './Button';
 import { cardClass } from './styles';
 

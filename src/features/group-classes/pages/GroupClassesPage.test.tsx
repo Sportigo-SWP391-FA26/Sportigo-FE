@@ -41,7 +41,7 @@ test('creates a draft using active sport and coach data without sending a status
     { id: 4, name: 'Ngừng hoạt động', description: null, imageUrl: null, isActive: false },
   ]);
   vi.mocked(coachApi.getCoaches).mockResolvedValue([{
-    id: 8, email: 'coach@sportigo.vn', phone: null, displayName: 'Coach An', role: 'COACH', status: 'ACTIVE',
+    id: 8, email: 'coach@sportigo.vn', phone: null, displayName: 'Coach An', avatarUrl: null, role: 'COACH', status: 'ACTIVE',
     emailVerified: true, staffCode: 'COA-08', hiredAt: null, bio: null, coachStatus: 'ACTIVE', createdAt: '2029-01-01T00:00:00.000Z',
   }]);
   renderWithProviders(<GroupClassesPage />);
