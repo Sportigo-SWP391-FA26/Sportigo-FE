@@ -273,6 +273,20 @@ export type PrivateEnrollmentRow = {
 export type CoachClassRow = { id: number; name: string; sport: string | SportRef; status: string };
 export type CoachMemberRow = { id: number; classes: CoachClassRow[] };
 
+// GET /api/coaches/me/members (FR-11) dùng cho ô chọn học viên của form đánh giá
+export type CoachMemberListRow = { id: number; displayName: string | null; memberCode: string | null };
+
+// GET /api/members/:id (Coach chỉ thấy lớp/khóa của chính mình): nguồn ngữ cảnh lớp nhóm cho form đánh giá
+export type MemberProfileRow = {
+  classRegistrations: { id: number; status: string; class: { id: number; name: string; sport: string } }[];
+  privateEnrollments: { id: number; status: EnrollmentStatus; course: { id: number; name: string; sport: string } }[];
+};
+
+// Ngữ cảnh trong form đánh giá: hồ sơ học viên chỉ có tên môn nên không bắt buộc id môn
+export type AssessableContext =
+  | { type: 'GROUP_CLASS'; classRegistrationId: number; name: string; sport: { name: string } }
+  | { type: 'PRIVATE_COURSE'; privateEnrollmentId: number; name: string; sport: { name: string }; status: EnrollmentStatus };
+
 // GET /api/group-classes/:id/sessions (FR-17)
 export type ClassSessionRow = {
   id: number;

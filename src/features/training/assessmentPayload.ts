@@ -1,5 +1,5 @@
 import type { AssessmentFormOutput } from './schemas';
-import type { AssessmentInput, TraineeContext } from './types';
+import type { AssessableContext, AssessmentInput } from './types';
 
 export const METRIC_SUGGESTIONS = ['Cân nặng (kg)', 'Body fat (%)', 'Kỹ thuật (1–10)'];
 
@@ -7,11 +7,11 @@ export const METRIC_SUGGESTIONS = ['Cân nặng (kg)', 'Body fat (%)', 'Kỹ thu
 const ASSESSABLE_ENROLLMENT = new Set(['ACTIVE', 'COMPLETED']);
 
 /** Giá trị radio của ngữ cảnh: "GROUP_CLASS:31" hoặc "PRIVATE_COURSE:15" */
-export function contextValue(context: TraineeContext) {
+export function contextValue(context: AssessableContext) {
   return context.type === 'GROUP_CLASS' ? `GROUP_CLASS:${context.classRegistrationId}` : `PRIVATE_COURSE:${context.privateEnrollmentId}`;
 }
 
-export function isContextAssessable(context: TraineeContext) {
+export function isContextAssessable(context: AssessableContext) {
   return context.type === 'GROUP_CLASS' || ASSESSABLE_ENROLLMENT.has(context.status);
 }
 

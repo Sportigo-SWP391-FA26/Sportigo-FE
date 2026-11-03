@@ -24,8 +24,12 @@ const trainees: Trainee[] = [
   },
 ];
 
+const members = trainees.map((trainee) => trainee.member);
+
 function renderForm(onCreated = vi.fn()) {
-  renderWithProviders(<AssessmentForm trainees={trainees} onCreated={onCreated} onCancel={vi.fn()} />);
+  // Ngữ cảnh tải riêng theo học viên đang chọn (GET /members/:id)
+  vi.mocked(api.getMemberContexts).mockImplementation(async (memberId) => trainees.find((trainee) => trainee.member.id === memberId)?.contexts ?? []);
+  renderWithProviders(<AssessmentForm members={members} onCreated={onCreated} onCancel={vi.fn()} />);
   return onCreated;
 }
 
@@ -41,12 +45,12 @@ afterEach(() => {
 });
 
 describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
-  test('chỉ liệt kê ngữ cảnh của học viên đã chọn', () => {
+  test('chỉ liệt kê ngữ cảnh của học viên đã chọn', async () => {
     renderForm();
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    expect(screen.getByRole('radio', { name: /Bơi cơ bản/ })).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: /Bơi cơ bản/ })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Bơi 1-1/ })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /Cầu lông nâng cao/ })).not.toBeInTheDocument();
   });
@@ -56,7 +60,7 @@ describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
     const onCreated = renderForm();
 
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    const group = screen.getByRole('radio', { name: /Bơi cơ bản/ });
+    const group = await screen.findByRole('radio', { name: /Bơi cơ bản/ });
     const privateCourse = screen.getByRole('radio', { name: /Bơi 1-1/ });
     fireEvent.click(group);
     fireEvent.click(privateCourse);
@@ -82,9 +86,9 @@ describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
   test('đổi học viên thì bỏ ngữ cảnh đã chọn và bắt chọn lại', async () => {
     renderForm();
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(screen.getByRole('radio', { name: /Bơi cơ bản/ }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '4' } });
-    expect(screen.getByRole('radio', { name: /Cầu lông nâng cao/ })).not.toBeChecked();
+    expect(await screen.findByRole('radio', { name: /Cầu lông nâng cao/ })).not.toBeChecked();
 
     fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
@@ -95,7 +99,7 @@ describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
   test('không cho chọn ngày đánh giá ở tương lai', async () => {
     renderForm();
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(screen.getByRole('radio', { name: /Bơi cơ bản/ }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
     fillRequired();
     const date = screen.getByLabelText(/^Ngày đánh giá\s*\*?$/);
     expect(date).toHaveAttribute('max', todayInCenter());
@@ -114,7 +118,7 @@ describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
     );
     renderForm();
     fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(screen.getByRole('radio', { name: /Bơi cơ bản/ }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
     fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
 

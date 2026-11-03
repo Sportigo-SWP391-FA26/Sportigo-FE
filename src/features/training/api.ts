@@ -1,13 +1,16 @@
 import { apiClient } from '../../api/client';
 import type {
+  AssessableContext,
   AssessmentInput,
   AssessmentQuery,
   AttendanceHistoryItem,
   AttendanceQuery,
+  CoachMemberListRow,
   CoachSession,
   EditablePlanStatus,
   MarkAttendanceInput,
   MarkAttendanceResult,
+  MemberProfileRow,
   MemberTraining,
   Paginated,
   PlanAssignment,
@@ -18,6 +21,7 @@ import type {
   SessionRoster,
   Sport,
   Trainee,
+  TraineeMember,
   WorkoutPlan,
   WorkoutPlanDetail,
   WorkoutPlanInput,
@@ -180,6 +184,39 @@ export async function getCoachTrainees(): Promise<Trainee[]> {
     byMember.set(member.userId, trainee);
   }
   return [...byMember.values()];
+}
+
+// Mọi học viên Coach phụ trách (lớp nhóm + khóa 1-1), có tên. Đi hết các trang vì ô chọn cần đủ danh sách.
+export async function getCoachMembers(): Promise<TraineeMember[]> {
+  const members: TraineeMember[] = [];
+  for (let page = 1; ; page += 1) {
+    const { data } = await apiClient.get<Paginated<CoachMemberListRow>>('/coaches/me/members', { params: { page, pageSize: 100 } });
+    members.push(...data.items.map((row) => ({ id: row.id, memberCode: row.memberCode ?? `#${row.id}`, displayName: row.displayName })));
+    if (data.items.length === 0 || page * data.pageSize >= data.total) return members;
+  }
+}
+
+// Ngữ cảnh đánh giá của một học viên. /coaches/me/members chưa trả id lượt đăng ký lớp nên lấy từ hồ sơ học viên;
+// backend đã lọc chỉ lớp/khóa của Coach đang đăng nhập. Lớp nhóm chỉ lấy lượt CONFIRMED (BR-46).
+export async function getMemberContexts(memberId: number): Promise<AssessableContext[]> {
+  const { data } = await apiClient.get<MemberProfileRow>(`/members/${memberId}`);
+  return [
+    ...data.classRegistrations
+      .filter((registration) => registration.status === 'CONFIRMED')
+      .map((registration): AssessableContext => ({
+        type: 'GROUP_CLASS',
+        classRegistrationId: registration.id,
+        name: registration.class.name,
+        sport: { name: registration.class.sport },
+      })),
+    ...data.privateEnrollments.map((enrollment): AssessableContext => ({
+      type: 'PRIVATE_COURSE',
+      privateEnrollmentId: enrollment.id,
+      name: enrollment.course.name,
+      sport: { name: enrollment.course.sport },
+      status: enrollment.status,
+    })),
+  ];
 }
 
 // Một API tổng hợp thay cho chuỗi request Member → lớp → buổi → roster.

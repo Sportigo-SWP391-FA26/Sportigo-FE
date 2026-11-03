@@ -24,4 +24,6 @@ export const trainingKeys = {
   coachSessions: (range: { from?: string; to?: string }) =>
     [...trainingKeys.all, 'coach-sessions', range] as const,
   coachTrainees: () => [...trainingKeys.all, 'coach-trainees'] as const,
+  coachMembers: () => [...trainingKeys.all, 'coach-members'] as const,
+  memberContexts: (memberId: number) => [...trainingKeys.all, 'member-contexts', memberId] as const,
 };

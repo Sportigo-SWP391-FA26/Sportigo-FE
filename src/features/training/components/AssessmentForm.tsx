@@ -6,17 +6,18 @@ import { contextValue, isContextAssessable, METRIC_SUGGESTIONS, toAssessmentInpu
 import { parseApiError } from '../errors';
 import { addDays, todayInCenter } from '../format';
 import { useCreateAssessment } from '../hooks/useAssessments';
+import { useMemberContexts } from '../hooks/usePendingApis';
 import { enrollmentStatusLabels, traineeLabel } from '../labels';
 import { assessmentFormSchema, METRICS_MAX, type AssessmentFormOutput, type AssessmentFormValues } from '../schemas';
-import type { ProgressAssessment, Trainee } from '../types';
+import type { ProgressAssessment, TraineeMember } from '../types';
 import { Button } from '../../../components/ui/Button';
 import { Field } from '../../../components/ui/Field';
-import { InlineAlert } from '../../../components/ui/States';
+import { ErrorState, InlineAlert, Skeleton } from '../../../components/ui/States';
 import { describedBy, iconButtonClass, inputClass, textareaClass } from '../../../components/ui/styles';
 import { SelectInput } from './SelectInput';
 
 type Props = {
-  trainees: Trainee[];
+  members: TraineeMember[];
   onCreated: (assessment: ProgressAssessment) => void;
   onCancel: () => void;
 };
@@ -24,7 +25,7 @@ type Props = {
 const BACKEND_FIELDS = ['memberId', 'assessmentDate', 'coachComment', 'score', 'recommendation', 'nextAssessmentDate'] as const;
 
 // FR-52 · Form ghi đánh giá tiến độ
-export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
+export function AssessmentForm({ members, onCreated, onCancel }: Props) {
   const id = useId();
   const create = useCreateAssessment();
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,7 +51,8 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
     name: ['memberId', 'context', 'assessmentDate', 'metrics'],
   });
   const memberId = Number(watchedMember);
-  const trainee = trainees.find((entry) => entry.member.id === memberId);
+  const member = members.find((entry) => entry.id === memberId);
+  const contexts = useMemberContexts(member?.id);
   const metricNames = (watchedMetrics ?? []).map((metric) => (metric?.name ?? '').trim().toLowerCase());
   const pending = isSubmitting || create.isPending;
 
@@ -109,9 +111,9 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             })}
           >
             <option value="">Chọn học viên bạn phụ trách</option>
-            {trainees.map((entry) => (
-              <option key={entry.member.id} value={entry.member.id}>
-                {traineeLabel(entry.member)}
+            {members.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {traineeLabel(entry)}
               </option>
             ))}
           </SelectInput>
@@ -122,13 +124,21 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             Ngữ cảnh đánh giá <span className="text-danger" aria-hidden="true">*</span>
           </legend>
           <p className="mb-2 text-xs text-muted">Chọn đúng một lớp nhóm hoặc khóa 1-1 của học viên này.</p>
-          {!trainee ? (
+          {!member ? (
             <p className="rounded-xl bg-canvas px-4 py-3 text-sm text-muted">Chọn học viên để xem các lớp và khóa 1-1.</p>
-          ) : trainee.contexts.length === 0 ? (
+          ) : contexts.isPending ? (
+            <div className="grid gap-2 sm:grid-cols-2" role="status">
+              <span className="sr-only">Đang tải lớp và khóa 1-1 của học viên…</span>
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : contexts.isError ? (
+            <ErrorState compact error={contexts.error} onRetry={() => contexts.refetch()} retrying={contexts.isRefetching} pendingApi="GET /api/members/:id" />
+          ) : contexts.data.length === 0 ? (
             <p className="rounded-xl bg-canvas px-4 py-3 text-sm text-muted">Học viên này không có lớp hoặc khóa 1-1 nào do bạn phụ trách.</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
-              {trainee.contexts.map((context) => {
+              {contexts.data.map((context) => {
                 const value = contextValue(context);
                 const disabled = !isContextAssessable(context);
                 const checked = selectedContext === value;

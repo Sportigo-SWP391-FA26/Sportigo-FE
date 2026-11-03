@@ -16,7 +16,7 @@
 | C4 | Chi tiết giáo án | `/coach/workout-plans/:planId` | COACH | `GET /workout-plans/:id`, `POST`, `PATCH`, `DELETE /workout-plans/:id/items…`, `PATCH /workout-plans/:id/items/reorder` | 50 |
 | C5 | Giáo án của khóa 1-1 | `/coach/private-enrollments/:enrollmentId/plans` | COACH | `GET`, `POST /private-enrollments/:id/plans`, `GET /workout-plans?status=ACTIVE&sportId=`, `GET /private-courses/enrollments` | 51 |
 | C6 | Danh sách đánh giá | `/coach/assessments` | COACH | `GET /progress-assessments` | 52 |
-| C6 | Ghi đánh giá | `/coach/assessments/new` | COACH | `POST /progress-assessments`, `GET /private-courses/enrollments` (khóa 1-1), *học viên lớp nhóm (BE-3)* | 52 |
+| C6 | Ghi đánh giá (dialog trên C7) | `/coach/assessments/new` | COACH | `POST /progress-assessments`, `GET /coaches/me/members` (học viên), `GET /members/:id` (ngữ cảnh lớp nhóm + khóa 1-1) | 52 |
 
 API in nghiêng là API **backend chưa có** (xem mục 3). Mọi route đều có `RequireRole`, nhưng backend vẫn là nơi kiểm tra quyền chính.
 
@@ -76,7 +76,7 @@ Khi chưa có các API dưới đây, giao diện hiện **"Chức năng chưa s
 |---|---|---|---|
 | BE-1 | `GET /api/sports` (FR-12) | C3: chọn môn khi tạo giáo án, lọc theo môn | **Đã có** trên `develop` (module Bộ môn), trả `{ success, data: [...] }`. FE đọc được cả dạng này, mảng thuần và `{ items }`. |
 | BE-2 | Buổi dạy của Coach | C2: khối "Buổi dạy cần điểm danh" là lối vào chính của C1 | **Đã làm ở FE, không cần API mới** (backlog không có FR cho API này). FE ghép: `GET /coaches/me/members?type=CLASS` (FR-11) lấy lớp → `GET /group-classes/:id/sessions` (FR-17) lấy buổi hôm qua và hôm nay → `GET /class-sessions/:id/attendance` (FR-47) lấy sĩ số, số đã điểm danh, trạng thái khóa. Lớp chưa có học viên nào sẽ không hiện (không có ai để điểm danh). |
-| BE-3 | Học viên Coach phụ trách (gần FR-11) | C6: chọn học viên và ngữ cảnh; C5: tên khóa, học viên, môn; nút "Gán cho khóa 1-1" ở C4 | **Khóa 1-1 đã nối** qua `GET /api/private-courses/enrollments` (backend tự lọc theo Coach), FE gom thành danh sách học viên. **Còn thiếu:** học viên lớp nhóm của Coach (`GROUP_CLASS`), và tên học viên trong API khóa 1-1 (hiện chỉ có `memberCode`; FE đọc `member.user.displayName` nếu backend bổ sung). |
+| BE-3 | Học viên Coach phụ trách (gần FR-11) | C6: chọn học viên và ngữ cảnh; C5: tên khóa, học viên, môn; nút "Gán cho khóa 1-1" ở C4 | **C6 đã đủ lớp nhóm + khóa 1-1:** học viên lấy từ `GET /api/coaches/me/members` (có tên); khi chọn học viên, FE gọi `GET /api/members/:id` để lấy `classRegistrations[].id` (lượt `CONFIRMED`) và `privateEnrollments`. Có thể bỏ request thứ hai nếu `/coaches/me/members` trả thêm `registrationId` trong `classes`. **C4/C5 vẫn dùng** `GET /api/private-courses/enrollments`, API này chưa trả tên học viên (chỉ `memberCode`; FE đọc `member.user.displayName` nếu backend bổ sung). |
 | BE-4 | `GET /api/users?role=MEMBER&search=` (FR-09), `GET /api/group-classes` (FR-21) | C2 Manager: bộ chọn học viên và lớp | Tạm thời bấm vào tên lớp/học viên trong bảng để lọc (`?classId=`, `?memberId=`). |
 | BE-5 | Thêm `room { code, name }` vào `session` của `GET /class-sessions/:id/attendance` | C1: hiện phòng | FE đã hiển thị nếu trường này có. |
 | BE-6 | Thêm `schedules [{ dayOfWeek, startTime, endTime }]` vào `enrollment` của `GET /members/me/training` | M1: biết buổi nào là "hôm nay" | Hiện M1 hiển thị tuần hiện tại và cho chọn buổi. |
@@ -121,7 +121,7 @@ Các ý tưởng trong ảnh mẫu Dashboard **chưa làm** vì backend chưa c�
      - `/coach/attendance`: bấm thời gian buổi học, hoặc mở `/coach/sessions/<id buổi đang diễn ra>/attendance` (ID in ra khi chạy seed). Chọn trạng thái rồi lưu (FR-47). Mở buổi sắp tới để thấy chế độ chỉ xem.
      - `/coach/workout-plans`: mở giáo án demo, thêm/sửa/sắp xếp mục, thử thêm mục trùng thứ tự để thấy lỗi 409 tại ô "Thứ tự" (FR-49, FR-50).
      - `/coach/private-enrollments/<id enrollment>/plans`: gán giáo án demo (FR-51).
-     - `/coach/assessments`: xem đánh giá. Form `/new` ghi được đánh giá cho khóa 1-1; ngữ cảnh lớp nhóm chờ BE-3 (FR-52).
+     - `/coach/assessments`: xem đánh giá. Nút Ghi đánh giá mở dialog, ghi được cho cả lớp nhóm và khóa 1-1 (FR-52).
    - **Member** `member1.demo@sportcenter.local`: `/member/training-plan` (FR-53) và `/member/progress` (FR-53, FR-48).
    - **Manager** `manager@sportcenter.local`: `/manager/attendance` (FR-48). Cần xác minh email trước, xem câu hỏi 4.
 

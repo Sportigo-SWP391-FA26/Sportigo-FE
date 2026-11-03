@@ -740,8 +740,9 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
 
 // Giả lập RIÊNG danh sách khóa 1-1 của Coach (GET /api/private-courses/enrollments) để dựng ngữ cảnh sai.
 // Việc ghi đánh giá vẫn gọi backend thật.
-async function mockCoachEnrollments(page: Page, enrollments: unknown[]) {
-  await page.route('**/api/private-courses/enrollments', (route) => route.fulfill({ json: { success: true, data: enrollments } }));
+// Ngữ cảnh của form đánh giá lấy từ hồ sơ học viên (GET /api/members/:id)
+async function mockMemberContexts(page: Page, memberId: number, privateEnrollments: unknown[]) {
+  await page.route(`**/api/members/${memberId}`, (route) => route.fulfill({ json: { classRegistrations: [], privateEnrollments } }));
 }
 
 const swim = { id: SEED.sportId, name: 'Bơi lội' };
@@ -769,16 +770,39 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     for (const text of await page.locator('ol > li article').allTextContents()) expect(text).toContain(SEED.member1.name);
   });
 
-  test('G2 · FR-52: form chỉ liệt kê học viên khóa 1-1 Coach phụ trách (dữ liệu thật)', async ({ page, request }) => {
-    const enrollments = await api<{ data: { id: number; member: { userId: number } }[] }>(request, 'coach', 'GET', '/private-courses/enrollments');
-    const memberIds = [...new Set(enrollments.body.data.map((enrollment) => enrollment.member.userId))];
+  test('G2 · FR-52: form liệt kê mọi học viên Coach phụ trách, có tên, và đủ ngữ cảnh lớp nhóm + khóa 1-1 (dữ liệu thật)', async ({ page, request }) => {
+    const members = await api<Paginated<{ id: number }>>(request, 'coach', 'GET', '/coaches/me/members?pageSize=100');
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    await expect(page.getByText('Hiện chỉ chọn được học viên khóa 1-1.')).toBeVisible({ timeout: 15_000 });
-    const options = await page.getByRole('combobox', { name: 'Học viên' }).locator('option:not([value=""])').evaluateAll((nodes) =>
-      nodes.map((node) => Number((node as HTMLOptionElement).value)),
+    const select = page.getByRole('combobox', { name: 'Học viên' });
+    await expect(select.locator('option', { hasText: SEED.member1.name })).toHaveCount(1, { timeout: 15_000 });
+    const options = await select.locator('option:not([value=""])').evaluateAll((nodes) => nodes.map((node) => Number((node as HTMLOptionElement).value)));
+    expect(options.sort()).toEqual(members.body.items.map((member) => member.id).sort());
+
+    await select.selectOption(String(SEED.member1.id));
+    await expect(page.getByRole('radio', { name: new RegExp(SEED.className) })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('label', { hasText: 'Khóa 1-1' }).first()).toBeVisible();
+  });
+
+  test('G5 · FR-52: ghi đánh giá cho lớp nhóm (dữ liệu thật, lưu vào backend thật)', async ({ page, request }) => {
+    const comment = `Kiểm thử E2E lớp nhóm ${Date.now()}: giữ nhịp thở đều.`;
+    await signIn(page, request, 'coach');
+    await page.goto('/coach/assessments/new');
+    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
+    await page.getByRole('radio', { name: new RegExp(SEED.className) }).check();
+    await page.getByRole('textbox', { name: 'Nhận xét' }).fill(comment);
+    await page.getByRole('button', { name: 'Kỹ thuật (1–10)' }).click();
+    await page.getByLabel('Giá trị chỉ số 1').fill('6');
+    await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
+
+    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible({ timeout: 15_000 });
+    const saved = await api<Paginated<{ coachComment: string; context: { type: string } }>>(
+      request,
+      'coach',
+      'GET',
+      `/progress-assessments?memberId=${SEED.member1.id}&pageSize=100`,
     );
-    expect(options.sort()).toEqual(memberIds.sort());
+    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('GROUP_CLASS');
   });
 
   test('G3 · FR-52: ghi đánh giá cho khóa 1-1 (dữ liệu thật, lưu vào backend thật)', async ({ page, request }) => {
@@ -808,15 +832,8 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
   });
 
   test('G4 · BR-46: đánh giá sai ngữ cảnh (khóa 1-1 không thuộc học viên) bị từ chối tại ô Ngữ cảnh', async ({ page, request }) => {
-    // Gắn khóa 1-1 của Member 1 cho Member 2 để backend phải từ chối
-    await mockCoachEnrollments(page, [
-      {
-        id: SEED.enrollmentId,
-        status: 'ACTIVE',
-        member: { userId: SEED.member2.id, memberCode: 'MEM-DEMO-02' },
-        privateCourse: { name: 'Bơi 1-1 – 12 buổi (demo)', sport: swim },
-      },
-    ]);
+    // Gắn khóa 1-1 của Member 1 vào hồ sơ Member 2 để backend phải từ chối
+    await mockMemberContexts(page, SEED.member2.id, [{ id: SEED.enrollmentId, status: 'ACTIVE', course: { id: 1, name: 'Bơi 1-1 – 12 buổi (demo)', sport: swim.name } }]);
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
     await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member2.id));

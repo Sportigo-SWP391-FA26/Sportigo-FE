@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { getCoachSessions, getCoachTrainees, getSports } from './api';
+import { getCoachMembers, getCoachSessions, getCoachTrainees, getMemberContexts, getSports } from './api';
 import { traineeLabel, traineeName } from './labels';
 
 // Dữ liệu theo đúng dạng module Bộ môn và Khóa 1-1 của backend trả về: { success, data }
@@ -134,5 +134,35 @@ describe('buổi dạy của Coach (ghép FR-11 + FR-17 + FR-47)', () => {
     expect(get).toHaveBeenCalledWith('/coaches/me/sessions', {
       params: { from: '2026-10-24T17:00:00.000Z', to: '2026-10-26T16:59:59.999Z' },
     });
+  });
+});
+
+describe('form đánh giá: học viên và ngữ cảnh (FR-52)', () => {
+  test('GET /api/coaches/me/members đi hết các trang, giữ tên học viên', async () => {
+    const get = vi
+      .spyOn(apiClient, 'get')
+      .mockResolvedValueOnce({ data: { items: [{ id: 3, displayName: 'Trần Thị Bình', memberCode: 'MEM-01' }], page: 1, pageSize: 1, total: 2 } })
+      .mockResolvedValueOnce({ data: { items: [{ id: 4, displayName: null, memberCode: 'MEM-02' }], page: 2, pageSize: 1, total: 2 } });
+    await expect(getCoachMembers()).resolves.toEqual([
+      { id: 3, memberCode: 'MEM-01', displayName: 'Trần Thị Bình' },
+      { id: 4, memberCode: 'MEM-02', displayName: null },
+    ]);
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(get).toHaveBeenLastCalledWith('/coaches/me/members', { params: { page: 2, pageSize: 100 } });
+  });
+
+  test('GET /api/members/:id: lớp nhóm chỉ lấy lượt CONFIRMED, khóa 1-1 giữ trạng thái để form khóa lựa chọn', async () => {
+    const get = mockGet({
+      classRegistrations: [
+        { id: 31, status: 'CONFIRMED', class: { id: 1, name: 'Bơi cơ bản', sport: 'Bơi lội' } },
+        { id: 32, status: 'CANCELLED', class: { id: 2, name: 'Bơi nâng cao', sport: 'Bơi lội' } },
+      ],
+      privateEnrollments: [{ id: 15, status: 'PENDING_PAYMENT', course: { id: 7, name: 'Bơi 1-1', sport: 'Bơi lội' } }],
+    });
+    await expect(getMemberContexts(3)).resolves.toEqual([
+      { type: 'GROUP_CLASS', classRegistrationId: 31, name: 'Bơi cơ bản', sport: { name: 'Bơi lội' } },
+      { type: 'PRIVATE_COURSE', privateEnrollmentId: 15, name: 'Bơi 1-1', sport: { name: 'Bơi lội' }, status: 'PENDING_PAYMENT' },
+    ]);
+    expect(get).toHaveBeenCalledWith('/members/3');
   });
 });

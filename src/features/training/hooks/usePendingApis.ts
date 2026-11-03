@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCoachSessions, getCoachTrainees, getSports } from '../api';
+import { getCoachMembers, getCoachSessions, getCoachTrainees, getMemberContexts, getSports } from '../api';
 import { retryServerErrors } from '../errors';
 import { trainingKeys } from '../queryKeys';
 
@@ -28,6 +28,25 @@ export function useCoachTrainees() {
   return useQuery({
     queryKey: trainingKeys.coachTrainees(),
     queryFn: getCoachTrainees,
+    retry: retryServerErrors,
+  });
+}
+
+// FR-52 · Học viên cho ô chọn của form đánh giá (lớp nhóm + khóa 1-1)
+export function useCoachMembers() {
+  return useQuery({
+    queryKey: trainingKeys.coachMembers(),
+    queryFn: getCoachMembers,
+    retry: retryServerErrors,
+  });
+}
+
+// FR-52 · Ngữ cảnh đánh giá của học viên đang chọn; chỉ gọi khi đã chọn học viên
+export function useMemberContexts(memberId: number | undefined) {
+  return useQuery({
+    queryKey: trainingKeys.memberContexts(memberId ?? 0),
+    queryFn: () => getMemberContexts(memberId as number),
+    enabled: Boolean(memberId),
     retry: retryServerErrors,
   });
 }
