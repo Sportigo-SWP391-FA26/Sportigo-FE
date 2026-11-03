@@ -27,6 +27,7 @@ const AttendanceHistoryPage = lazy(() => import('../features/training/pages/Atte
 const SessionAttendancePage = lazy(() => import('../features/training/pages/SessionAttendancePage').then((module) => ({ default: module.SessionAttendancePage })));
 const WorkoutPlansPage = lazy(() => import('../features/training/pages/WorkoutPlansPage').then((module) => ({ default: module.WorkoutPlansPage })));
 const WorkoutPlanDetailPage = lazy(() => import('../features/training/pages/WorkoutPlanDetailPage').then((module) => ({ default: module.WorkoutPlanDetailPage })));
+const PrivateEnrollmentsPage = lazy(() => import('../features/training/pages/PrivateEnrollmentsPage').then((module) => ({ default: module.PrivateEnrollmentsPage })));
 const EnrollmentPlansPage = lazy(() => import('../features/training/pages/EnrollmentPlansPage').then((module) => ({ default: module.EnrollmentPlansPage })));
 const AssessmentsPage = lazy(() => import('../features/training/pages/AssessmentsPage').then((module) => ({ default: module.AssessmentsPage })));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
@@ -150,6 +151,7 @@ export const router = createBrowserRouter([
           { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
           { path: 'workout-plans', element: <WorkoutPlansPage /> },
           { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },
+          { path: 'private-enrollments', element: <PrivateEnrollmentsPage /> },
           { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
           { path: 'assessments/new', element: <AssessmentsPage /> },

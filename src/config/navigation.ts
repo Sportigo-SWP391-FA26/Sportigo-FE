@@ -66,5 +66,7 @@ export const coachNavigation: NavigationItem[] = [
   { label: 'Lịch của tôi', path: '/coach/schedule' },
   { label: 'Điểm danh', path: '/coach/attendance' },
   { label: 'Giáo án', path: '/coach/workout-plans' },
+  // FR-51
+  { label: 'Khóa 1-1', path: '/coach/private-enrollments' },
   { label: 'Đánh giá tiến độ', path: '/coach/assessments' },
 ];

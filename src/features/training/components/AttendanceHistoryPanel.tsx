@@ -119,11 +119,23 @@ export function AttendanceHistoryPanel({ scope, heading }: { scope: AttendanceSc
     </div>
   );
 
+  const clearButton = (
+    <Button variant="ghost" className="ml-auto" onClick={clearFilters} disabled={!hasFilters && !search} icon={<X aria-hidden="true" />}>
+      Xóa bộ lọc
+    </Button>
+  );
+  // Có tiêu đề: chip ngày nằm cạnh tiêu đề nên nút Xóa bộ lọc lên cùng hàng ô lọc; không thì nằm ở hàng chip bên dưới
+  const showBottomRow = !heading || Boolean(isStaff && classId) || Boolean(memberId);
+
   return (
     <div>
       {heading && <SectionHeading id={heading.id} title={heading.title} description={heading.description} actions={presetGroup} />}
       <div className={`${cardClass} p-4 sm:p-5`}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:items-end">
+        <div
+          className={`grid gap-3 sm:grid-cols-2 lg:items-end ${
+            heading ? 'lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto]' : 'lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]'
+          }`}
+        >
           <Field id={`${id}-search`} label="Tìm kiếm" className="sm:col-span-2 lg:col-span-1">
             <div className="relative">
               <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -161,9 +173,11 @@ export function AttendanceHistoryPanel({ scope, heading }: { scope: AttendanceSc
               ))}
             </SelectInput>
           </Field>
+          {heading && clearButton}
         </div>
 
         {/* Hàng dưới: chip chọn nhanh và bộ lọc đang áp dụng bên trái, nút Xóa bộ lọc bên phải */}
+        {showBottomRow && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {!heading && presetGroup}
@@ -174,10 +188,9 @@ export function AttendanceHistoryPanel({ scope, heading }: { scope: AttendanceSc
               <ActiveFilter label={`Học viên: ${memberName ?? `#${memberId}`}`} onRemove={() => updateParams({ memberId: undefined })} />
             )}
           </div>
-          <Button variant="ghost" className="ml-auto" onClick={clearFilters} disabled={!hasFilters && !search} icon={<X aria-hidden="true" />}>
-            Xóa bộ lọc
-          </Button>
+          {!heading && clearButton}
         </div>
+        )}
       </div>
 
       <div className="mt-4">

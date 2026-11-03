@@ -202,9 +202,10 @@ type ListProps = {
   onChangeStatus: (plan: WorkoutPlan) => void;
 };
 
-function RowActions({ plan, onEdit, onChangeStatus }: { plan: WorkoutPlan } & Omit<ListProps, 'items'>) {
+// className mặc định flex-wrap (thẻ trên điện thoại); bảng truyền flex-nowrap để 2 nút luôn cùng hàng
+function RowActions({ plan, onEdit, onChangeStatus, className = 'flex-wrap' }: { plan: WorkoutPlan; className?: string } & Omit<ListProps, 'items'>) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={`flex items-center gap-1.5 ${className}`}>
       <Button size="sm" variant="secondary" icon={<NotePencil aria-hidden="true" />} onClick={() => onEdit(plan)} aria-label={`Sửa ${plan.name}`}>
         Sửa
       </Button>
@@ -251,8 +252,9 @@ function PlanTable({ items, onEdit, onChangeStatus }: ListProps) {
                   {planStatusLabels[plan.status]}
                 </Chip>
               </td>
-              <td className="px-4 py-3">
-                <RowActions plan={plan} onEdit={onEdit} onChangeStatus={onChangeStatus} />
+              {/* Cột thao tác co vừa nội dung và căn sát mép phải bảng */}
+              <td className="w-px px-4 py-3 whitespace-nowrap">
+                <RowActions plan={plan} onEdit={onEdit} onChangeStatus={onChangeStatus} className="flex-nowrap justify-end" />
               </td>
             </tr>
           ))}

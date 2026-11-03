@@ -26,9 +26,8 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
             {formatDate(assessment.assessmentDate)}
             {showMember && ` · ${assessment.member.displayName}`}
           </p>
-          <p className="mt-0.5 text-xs text-muted">
-            {showMember ? `${assessment.member.memberCode} · ` : ''}Coach {assessment.coach.displayName}
-          </p>
+          {/* Trang Coach chỉ có đánh giá của chính Coach nên không cần tên Coach; Member vẫn cần biết ai đánh giá */}
+          {!showMember && <p className="mt-0.5 text-xs text-muted">Coach {assessment.coach.displayName}</p>}
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           <ContextChip context={assessment.context} />

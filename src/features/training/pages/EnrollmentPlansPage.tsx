@@ -33,12 +33,12 @@ export function EnrollmentPlansPage() {
   const summaryFailed = trainees.isError;
 
   return (
-    <div className="mx-auto w-full max-w-[960px]">
+    <div className="mx-auto w-full max-w-[1240px]">
       <Link
-        to="/coach/workout-plans"
+        to="/coach/private-enrollments"
         className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-control text-sm font-bold text-primary-deep hover:underline"
       >
-        <ArrowLeft aria-hidden="true" /> Giáo án
+        <ArrowLeft aria-hidden="true" /> Khóa 1-1
       </Link>
       <PageHeader
         eyebrow="Khóa 1-1"
