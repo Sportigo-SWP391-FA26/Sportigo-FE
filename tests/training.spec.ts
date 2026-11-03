@@ -469,6 +469,9 @@ test.describe('D. Lịch sử điểm danh', () => {
     await expect(today.locator(`a[href="/coach/sessions/${SEED.upcomingSessionId}/attendance"]`)).toHaveCount(0);
     await expect(page.getByText('Chức năng chưa sẵn sàng')).toHaveCount(0);
 
+    // Lịch sử nằm ở tab riêng; tab được lưu trên URL
+    await page.getByRole('tab', { name: 'Lịch sử điểm danh' }).click();
+    await expect(page).toHaveURL(/tab=history/);
     await page.getByRole('button', { name: `Lọc theo lớp ${SEED.className}` }).first().click();
     await expect(page).toHaveURL(/classId=\d+/);
     await expect(page.getByText(`Lớp: ${SEED.className}`)).toBeVisible();

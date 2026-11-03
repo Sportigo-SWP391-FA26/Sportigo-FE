@@ -75,11 +75,8 @@ export function WorkoutPlansPage() {
         eyebrow="Giáo án"
         title="Giáo án dùng chung"
         description={
-          <>
-            Giáo án theo môn, dùng chung cho mọi Coach.
-            <br />
-            Chỉ giáo án Đang dùng mới gán được cho khóa 1-1.
-          </>
+          // Màn hình rộng: mô tả nằm trên một dòng; màn hình hẹp vẫn xuống dòng để không tràn ngang
+          <span className="lg:whitespace-nowrap">Giáo án theo môn, dùng chung cho mọi Coach. Chỉ giáo án Đang dùng mới gán được cho khóa 1-1.</span>
         }
         actions={
           <Button icon={<Plus weight="bold" aria-hidden="true" />} onClick={() => setFormPlan('new')}>

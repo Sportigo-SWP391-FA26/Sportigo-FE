@@ -185,39 +185,63 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
 
   return (
     <div>
-      <header className={`${cardClass} sticky top-16 z-20 p-4 sm:p-5 lg:top-4`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">Điểm danh buổi học</p>
-            <h1 className="mt-1 text-xl leading-snug font-extrabold tracking-[-.02em] text-ink sm:text-2xl">{session.class.name}</h1>
-            <p className="mt-1 text-[13px] text-muted">
-              {formatWeekday(session.startsAt)}, {formatDate(session.startsAt)} · {formatTime(session.startsAt)}–{formatTime(session.endsAt)}
-              {session.room && ` · ${session.room.name}`} · {students.length} học viên
-            </p>
+      {/* Tiêu đề và thanh thao tác ghim cùng nhau để nút Lưu luôn nhìn thấy khi cuộn danh sách dài */}
+      <div className="sticky top-16 z-20 space-y-3 lg:top-4">
+        <header className={`${cardClass} p-4 sm:p-5`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">Điểm danh buổi học</p>
+              <h1 className="mt-1 text-xl leading-snug font-extrabold tracking-[-.02em] text-ink sm:text-2xl">{session.class.name}</h1>
+              <p className="mt-1 text-[13px] text-muted">
+                {formatWeekday(session.startsAt)}, {formatDate(session.startsAt)} · {formatTime(session.startsAt)}–{formatTime(session.endsAt)}
+                {session.room && ` · ${session.room.name}`} · {students.length} học viên
+              </p>
+            </div>
+            {locked ? (
+              <Chip tone="warning" dot>
+                Đã khóa
+              </Chip>
+            ) : (
+              <Chip tone="success" dot>
+                Đang mở điểm danh
+              </Chip>
+            )}
           </div>
-          {locked ? (
-            <Chip tone="warning" dot>
-              Đã khóa
-            </Chip>
-          ) : (
-            <Chip tone="success" dot>
-              Đang mở điểm danh
-            </Chip>
-          )}
-        </div>
-        {students.length > 0 && (
-          <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-[13px] text-muted" aria-live="polite">
-            {attendanceStatuses.map((status) => (
-              <span key={status}>
-                {attendanceStatusLabels[status]} <b className="text-ink">{counts[status]}</b>
+          {students.length > 0 && (
+            <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-[13px] text-muted" aria-live="polite">
+              {attendanceStatuses.map((status) => (
+                <span key={status}>
+                  {attendanceStatusLabels[status]} <b className="text-ink">{counts[status]}</b>
+                </span>
+              ))}
+              <span>
+                Chưa chọn <b className="text-ink">{unmarked.length}</b>
               </span>
-            ))}
-            <span>
-              Chưa chọn <b className="text-ink">{unmarked.length}</b>
-            </span>
-          </p>
+            </p>
+          )}
+        </header>
+
+        {!locked && students.length > 0 && (
+          <div className={`${cardClass} flex flex-wrap items-center justify-between gap-3 p-3 sm:px-4`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" onClick={markAllPresent} icon={<CheckSquare aria-hidden="true" />} disabled={mark.isPending}>
+                Tất cả có mặt
+              </Button>
+              <Button variant="ghost" onClick={onReload} loading={reloading} icon={<ArrowClockwise aria-hidden="true" />}>
+                Tải lại danh sách
+              </Button>
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              <p className="text-[13px] text-muted" aria-live="polite">
+                {dirty ? (unmarked.length > 0 ? `Còn ${unmarked.length} học viên chưa chọn` : 'Có thay đổi chưa lưu') : 'Không có thay đổi'}
+              </p>
+              <Button onClick={requestSave} loading={mark.isPending} disabled={!dirty || unmarked.length === students.length}>
+                {mark.isPending ? 'Đang lưu…' : 'Lưu điểm danh'}
+              </Button>
+            </div>
+          </div>
         )}
-      </header>
+      </div>
 
       {locked && (
         <div className="mt-4">
@@ -240,14 +264,16 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
         </div>
       ) : (
         <>
-          {!locked && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <Button variant="secondary" onClick={markAllPresent} icon={<CheckSquare aria-hidden="true" />} disabled={mark.isPending}>
-                Tất cả có mặt
-              </Button>
-              <Button variant="ghost" onClick={onReload} loading={reloading} icon={<ArrowClockwise aria-hidden="true" />}>
-                Tải lại danh sách
-              </Button>
+          {saveError && (
+            <div className="mt-4">
+              <InlineAlert>
+                {saveError}
+                {invalidIds.length > 0 && (
+                  <button type="button" onClick={onReload} className="ml-1 font-bold underline">
+                    Tải lại danh sách mới nhất
+                  </button>
+                )}
+              </InlineAlert>
             </div>
           )}
 
@@ -275,32 +301,6 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
               />
             ))}
           </ul>
-
-          {saveError && (
-            <div className="mt-4">
-              <InlineAlert>
-                {saveError}
-                {invalidIds.length > 0 && (
-                  <button type="button" onClick={onReload} className="ml-1 font-bold underline">
-                    Tải lại danh sách mới nhất
-                  </button>
-                )}
-              </InlineAlert>
-            </div>
-          )}
-
-          {!locked && (
-            <div className="sticky bottom-0 z-20 -mx-4 mt-5 border-t border-line bg-surface/95 px-4 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:mx-0 sm:rounded-card sm:border sm:shadow-raised">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] text-muted" aria-live="polite">
-                  {dirty ? (unmarked.length > 0 ? `Còn ${unmarked.length} học viên chưa chọn` : 'Có thay đổi chưa lưu') : 'Không có thay đổi'}
-                </p>
-                <Button onClick={requestSave} loading={mark.isPending} disabled={!dirty || unmarked.length === students.length}>
-                  {mark.isPending ? 'Đang lưu…' : 'Lưu điểm danh'}
-                </Button>
-              </div>
-            </div>
-          )}
         </>
       )}
 

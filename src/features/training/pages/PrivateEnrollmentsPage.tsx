@@ -46,13 +46,14 @@ export function PrivateEnrollmentsPage() {
       ) : rows.length === 0 ? (
         <EmptyState icon={<Student />} title="Chưa có khóa 1-1" description="Bạn chưa phụ trách khóa 1-1 nào." />
       ) : (
-        <Card className="p-2 sm:p-3">
+        <Card className="overflow-hidden">
+          {/* Hàng tự có khoảng đệm để vùng hover phủ kín thẻ (overflow-hidden cắt theo góc bo) */}
           <ul className="divide-y divide-line">
             {rows.map((row) => (
               <li key={row.privateEnrollmentId}>
                 <Link
                   to={`/coach/private-enrollments/${row.privateEnrollmentId}/plans`}
-                  className="group flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none"
+                  className="group flex min-h-16 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-canvas focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary sm:px-6 motion-reduce:transition-none"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold text-ink">{row.name}</p>
