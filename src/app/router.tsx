@@ -29,7 +29,6 @@ const WorkoutPlansPage = lazy(() => import('../features/training/pages/WorkoutPl
 const WorkoutPlanDetailPage = lazy(() => import('../features/training/pages/WorkoutPlanDetailPage').then((module) => ({ default: module.WorkoutPlanDetailPage })));
 const EnrollmentPlansPage = lazy(() => import('../features/training/pages/EnrollmentPlansPage').then((module) => ({ default: module.EnrollmentPlansPage })));
 const AssessmentsPage = lazy(() => import('../features/training/pages/AssessmentsPage').then((module) => ({ default: module.AssessmentsPage })));
-const NewAssessmentPage = lazy(() => import('../features/training/pages/NewAssessmentPage').then((module) => ({ default: module.NewAssessmentPage })));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
 const UsersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })));
 const MembersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.MembersPage })));
@@ -153,7 +152,7 @@ export const router = createBrowserRouter([
           { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },
           { path: 'private-enrollments/:enrollmentId/plans', element: <EnrollmentPlansPage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
-          { path: 'assessments/new', element: <NewAssessmentPage /> },
+          { path: 'assessments/new', element: <AssessmentsPage /> },
           { path: 'profile', element: <ProfilePage /> },
           // FR-11: học viên của Coach + hồ sơ tổng hợp (FR-10, backend tự giới hạn theo Coach)
           { path: 'members', element: <CoachMembersPage /> },

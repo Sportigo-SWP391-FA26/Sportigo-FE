@@ -29,7 +29,10 @@ export function MemberTrainingPlanPage() {
       <PageHeader
         eyebrow="Tập luyện"
         title="Kế hoạch tập luyện"
-        description="Giáo án do Coach phụ trách khóa 1-1 gán cho bạn. Nội dung chỉ để xem; hãy trao đổi với Coach nếu cần điều chỉnh."
+        description={
+          // Màn hình rộng: mô tả nằm trên một dòng; màn hình hẹp vẫn xuống dòng để không tràn ngang
+          <span className="lg:whitespace-nowrap">Giáo án do Coach phụ trách khóa 1-1 gán cho bạn. Nội dung chỉ để xem; hãy trao đổi với Coach nếu cần điều chỉnh.</span>
+        }
       />
 
       {isPending ? (

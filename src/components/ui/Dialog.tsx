@@ -43,7 +43,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
       ref={ref}
       aria-labelledby={titleId}
       onClose={onClose}
-      className={`bg-surface p-0 text-ink backdrop:bg-ink/45 open:flex open:flex-col ${sizeClasses[size]}`}
+      className={`overflow-hidden bg-surface p-0 text-ink backdrop:bg-ink/45 open:flex open:flex-col ${sizeClasses[size]}`}
     >
       {open && (
         <>
@@ -59,7 +59,8 @@ export function Dialog({ open, onClose, title, description, children, footer, si
             </div>
             {description && <div className="mt-1 text-[13px] leading-relaxed text-muted">{description}</div>}
           </header>
-          <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+          {/* min-h-0: cho phần thân co lại trong flex để chỉ phần này cuộn, tránh 2 thanh cuộn */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
           {footer && (
             <footer className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
               {footer}

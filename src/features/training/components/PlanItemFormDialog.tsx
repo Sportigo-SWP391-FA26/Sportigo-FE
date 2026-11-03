@@ -12,6 +12,7 @@ import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
+import { SelectInput } from './SelectInput';
 
 export type PlanItemDraft = { weekNumber: number; sessionNumber: number };
 
@@ -172,7 +173,7 @@ function ItemForm({ planId, durationWeeks, target, onClose }: Omit<Props, 'targe
         {numberField('sets', 'Số hiệp', { min: 1, max: 100 })}
         {numberField('repetitions', 'Số lần', { min: 1, max: 1000 })}
         <Field id={`${id}-intensity`} label="Cường độ" error={errors.intensity?.message}>
-          <select id={`${id}-intensity`} className={inputClass} {...form.register('intensity')}>
+          <SelectInput id={`${id}-intensity`} {...form.register('intensity')}>
             <option value="">Không ghi</option>
             {intensityOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -180,7 +181,7 @@ function ItemForm({ planId, durationWeeks, target, onClose }: Omit<Props, 'targe
               </option>
             ))}
             {customIntensity && <option value={customIntensity}>{intensityLabel(customIntensity)}</option>}
-          </select>
+          </SelectInput>
         </Field>
       </div>
 

@@ -10,10 +10,10 @@ import { enrollmentStatusLabels, traineeLabel } from '../labels';
 import { assessmentFormSchema, METRICS_MAX, type AssessmentFormOutput, type AssessmentFormValues } from '../schemas';
 import type { ProgressAssessment, Trainee } from '../types';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
 import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { describedBy, iconButtonClass, inputClass, textareaClass } from '../../../components/ui/styles';
+import { SelectInput } from './SelectInput';
 
 type Props = {
   trainees: Trainee[];
@@ -96,12 +96,11 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <Card className="space-y-5 p-5 sm:p-6">
+      <section className="space-y-5">
         <h2 className="text-base font-extrabold text-ink">1. Học viên và ngữ cảnh</h2>
         <Field id={`${id}-member`} label="Học viên" required error={errors.memberId?.message}>
-          <select
+          <SelectInput
             id={`${id}-member`}
-            className={inputClass}
             aria-invalid={errors.memberId ? true : undefined}
             aria-describedby={describedBy(`${id}-member`, { error: errors.memberId })}
             {...form.register('memberId', {
@@ -115,7 +114,7 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
                 {traineeLabel(entry.member)}
               </option>
             ))}
-          </select>
+          </SelectInput>
         </Field>
 
         <fieldset aria-describedby={errors.context ? `${id}-context-error` : undefined}>
@@ -163,9 +162,9 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             </p>
           )}
         </fieldset>
-      </Card>
+      </section>
 
-      <Card className="space-y-5 p-5 sm:p-6">
+      <section className="space-y-5 border-t border-line pt-5">
         <h2 className="text-base font-extrabold text-ink">2. Nội dung đánh giá</h2>
         <Field id={`${id}-date`} label="Ngày đánh giá" required error={errors.assessmentDate?.message} className="sm:w-60">
           <input
@@ -271,9 +270,9 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             ))}
           </div>
         </fieldset>
-      </Card>
+      </section>
 
-      <Card className="space-y-5 p-5 sm:p-6">
+      <section className="space-y-5 border-t border-line pt-5">
         <h2 className="text-base font-extrabold text-ink">3. Tùy chọn</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id={`${id}-score`} label="Điểm tổng" error={errors.score?.message} hint="Từ 0 đến 100">
@@ -312,7 +311,7 @@ export function AssessmentForm({ trainees, onCreated, onCancel }: Props) {
             {...form.register('recommendation')}
           />
         </Field>
-      </Card>
+      </section>
 
       {formError && <InlineAlert>{formError}</InlineAlert>}
 

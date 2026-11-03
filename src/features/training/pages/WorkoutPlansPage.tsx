@@ -1,11 +1,12 @@
-import { ArrowsClockwise, MagnifyingGlass, NotePencil, Plus } from '@phosphor-icons/react';
+import { ArrowsClockwise, MagnifyingGlass, NotePencil, Plus, X } from '@phosphor-icons/react';
 import { useEffect, useId, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PlanStatusDialog } from '../components/PlanStatusDialog';
+import { SelectInput } from '../components/SelectInput';
 import { Button } from '../../../components/ui/Button';
 import { PageHeader } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { Field, SegmentedControl } from '../../../components/ui/Field';
+import { Field } from '../../../components/ui/Field';
 import { Pagination } from '../../../components/ui/Pagination';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { cardClass, inputClass } from '../../../components/ui/styles';
@@ -19,13 +20,7 @@ import { levelLabel, planLevels, planStatusLabels, planStatusTones } from '../la
 import type { PlanLevel, PlanStatus, WorkoutPlan } from '../types';
 
 const PAGE_SIZE = 20;
-const statusFilters = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'DRAFT', label: planStatusLabels.DRAFT },
-  { value: 'ACTIVE', label: planStatusLabels.ACTIVE },
-  { value: 'INACTIVE', label: planStatusLabels.INACTIVE },
-] as const;
-type StatusFilter = (typeof statusFilters)[number]['value'];
+const planStatuses: PlanStatus[] = ['DRAFT', 'ACTIVE', 'INACTIVE'];
 
 // FR-49 · /coach/workout-plans
 export function WorkoutPlansPage() {
@@ -40,7 +35,7 @@ export function WorkoutPlansPage() {
 
   const sportId = Number(params.get('sportId')) || undefined;
   const level = (planLevels as string[]).includes(params.get('level') ?? '') ? (params.get('level') as PlanLevel) : undefined;
-  const status = (['DRAFT', 'ACTIVE', 'INACTIVE'] as string[]).includes(params.get('status') ?? '')
+  const status = (planStatuses as string[]).includes(params.get('status') ?? '')
     ? (params.get('status') as PlanStatus)
     : undefined;
   const page = Math.max(1, Number(params.get('page')) || 1);
@@ -94,8 +89,8 @@ export function WorkoutPlansPage() {
       />
 
       <div className={`${cardClass} p-4 sm:p-5`}>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <Field id={`${id}-search`} label="Tìm kiếm">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto] lg:items-end">
+          <Field id={`${id}-search`} label="Tìm kiếm" className="sm:col-span-2 lg:col-span-1">
             <div className="relative">
               <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
               <input
@@ -113,9 +108,8 @@ export function WorkoutPlansPage() {
             label="Môn"
             hint={sports.isError ? (parseApiError(sports.error).kind === 'not-ready' ? 'Chưa sẵn sàng (cần API GET /api/sports)' : 'Không tải được danh sách môn') : undefined}
           >
-            <select
+            <SelectInput
               id={`${id}-sport`}
-              className={inputClass}
               value={sportId ?? ''}
               disabled={!sports.data}
               aria-describedby={sports.isError ? `${id}-sport-hint` : undefined}
@@ -127,29 +121,29 @@ export function WorkoutPlansPage() {
                   {sport.name}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </Field>
           <Field id={`${id}-level`} label="Cấp độ">
-            <select id={`${id}-level`} className={inputClass} value={level ?? ''} onChange={(event) => updateParams({ level: event.target.value })}>
+            <SelectInput id={`${id}-level`} value={level ?? ''} onChange={(event) => updateParams({ level: event.target.value })}>
               <option value="">Tất cả cấp độ</option>
               {planLevels.map((value) => (
                 <option key={value} value={value}>
                   {levelLabel(value)}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </Field>
-        </div>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-          <SegmentedControl<StatusFilter>
-            name={`${id}-status`}
-            legend="Trạng thái"
-            className="w-full sm:w-[440px]"
-            options={statusFilters}
-            value={(status ?? 'ALL') as StatusFilter}
-            onChange={(value) => updateParams({ status: value === 'ALL' ? undefined : value })}
-          />
-          <Button variant="ghost" onClick={clearFilters} disabled={!hasFilters}>
+          <Field id={`${id}-status`} label="Trạng thái">
+            <SelectInput id={`${id}-status`} value={status ?? ''} onChange={(event) => updateParams({ status: event.target.value })}>
+              <option value="">Tất cả trạng thái</option>
+              {planStatuses.map((value) => (
+                <option key={value} value={value}>
+                  {planStatusLabels[value]}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+          <Button variant="ghost" onClick={clearFilters} disabled={!hasFilters} icon={<X aria-hidden="true" />}>
             Xóa bộ lọc
           </Button>
         </div>

@@ -74,7 +74,7 @@ function StatusForm({ plan, onClose }: { plan: WorkoutPlan; onClose: () => void 
             value={target}
             onChange={setTarget}
           />
-          <p className="text-muted">{consequences[target]}</p>
+          <InlineAlert tone={target === 'ACTIVE' ? 'info' : 'warning'}>{consequences[target]}</InlineAlert>
         </>
       }
       error={

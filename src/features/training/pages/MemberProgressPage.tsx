@@ -9,12 +9,13 @@ import { Card, PageHeader, SectionHeading, StatTile } from '../../../components/
 import { Chip } from '../../../components/ui/Chip';
 import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton, Skeleton } from '../../../components/ui/States';
-import { inputClass, tabPanelProps } from '../../../components/ui/styles';
+import { tabPanelProps } from '../../../components/ui/styles';
 import { Tabs } from '../../../components/ui/Tabs';
 import { formatDate, formatNumber, formatPercent, monthRange, toScore, todayInCenter, weekRange } from '../format';
 import { useAttendanceSummary } from '../hooks/useAttendance';
 import { useMyTraining } from '../hooks/useMemberTraining';
 import type { ProgressAssessment } from '../types';
+import { SelectInput } from '../components/SelectInput';
 
 const MetricTrendChart = lazy(() => import('../components/MetricTrendChart'));
 
@@ -38,7 +39,10 @@ export function MemberProgressPage() {
       <PageHeader
         eyebrow="Tiến độ"
         title="Kết quả & Tiến độ"
-        description="Theo dõi chuyên cần và các lần Coach đánh giá. Số liệu lấy trực tiếp từ hệ thống điểm danh và đánh giá."
+        description={
+          // Màn hình rộng: mô tả nằm trên một dòng; màn hình hẹp vẫn xuống dòng để không tràn ngang
+          <span className="lg:whitespace-nowrap">Theo dõi chuyên cần và các lần Coach đánh giá. Số liệu lấy trực tiếp từ hệ thống điểm danh và đánh giá.</span>
+        }
       />
 
       <AttendanceStats latest={assessments[0]} trainingPending={training.isPending} />
@@ -217,15 +221,15 @@ function TrendCard({ assessments }: { assessments: ProgressAssessment[] }) {
         <EmptyState compact title="Chưa có chỉ số dạng số" description="Các lần đánh giá hiện chưa ghi chỉ số nào để vẽ biểu đồ." />
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-end gap-3">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <Field id={selectId} label="Chỉ số" className="w-full sm:w-72">
-              <select id={selectId} className={inputClass} value={metric.key} onChange={(event) => setSelected(event.target.value)}>
+              <SelectInput id={selectId} value={metric.key} onChange={(event) => setSelected(event.target.value)}>
                 {options.map((option) => (
                   <option key={option.key} value={option.key}>
                     {option.label} ({option.count} lần)
                   </option>
                 ))}
-              </select>
+              </SelectInput>
             </Field>
             <Button
               variant="secondary"

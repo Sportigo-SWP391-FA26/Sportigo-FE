@@ -1,12 +1,14 @@
-import { Funnel, X } from '@phosphor-icons/react';
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { MagnifyingGlass, X } from '@phosphor-icons/react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, endOfCenterDay, formatDateTime, formatTime, monthRange, startOfCenterDay, todayInCenter } from '../format';
 import { useAttendanceHistory } from '../hooks/useAttendance';
 import { attendanceStatuses, attendanceStatusLabels } from '../labels';
 import type { AttendanceHistoryItem, AttendanceQuery, AttendanceStatus } from '../types';
 import { AttendanceStatusChip } from './AttendanceStatusChip';
+import { SelectInput } from './SelectInput';
 import { Button } from '../../../components/ui/Button';
+import { SectionHeading } from '../../../components/ui/Card';
 import { Field } from '../../../components/ui/Field';
 import { Pagination } from '../../../components/ui/Pagination';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
@@ -26,9 +28,24 @@ function presets(today: string) {
   ];
 }
 
+// Bỏ dấu tiếng Việt để tìm "binh" vẫn ra "Bình"
+function normalize(text: string) {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+}
+
+function matchesSearch(item: AttendanceHistoryItem, keyword: string) {
+  const haystack = [item.class.name, item.class.sport.name, item.member.displayName, item.member.memberCode, item.note]
+    .filter(Boolean)
+    .join(' ');
+  return normalize(haystack).includes(keyword);
+}
+
+type Heading = { id: string; title: string; description?: ReactNode };
+
 /** FR-48 · Lịch sử điểm danh dùng chung cho Member, Coach và Center Manager */
-export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
+export function AttendanceHistoryPanel({ scope, heading }: { scope: AttendanceScope; heading?: Heading }) {
   const id = useId();
+  const [search, setSearch] = useState('');
   const [params, setParams] = useSearchParams();
   const latestParams = useRef(params);
   useEffect(() => {
@@ -69,16 +86,57 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
     setParams(next, { replace: true });
   };
 
-  const clearFilters = () => updateParams(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])));
+  const clearFilters = () => {
+    setSearch('');
+    updateParams(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])));
+  };
   const today = todayInCenter();
   const activeItems = history.data?.items ?? [];
+  // API lịch sử điểm danh chưa có tham số tìm kiếm nên chỉ lọc trong trang đang xem
+  const keyword = normalize(search.trim());
+  const visibleItems = keyword ? activeItems.filter((item) => matchesSearch(item, keyword)) : activeItems;
   const className = activeItems.find((item) => item.class.id === classId)?.class.name;
   const memberName = activeItems.find((item) => item.member.id === memberId)?.member.displayName;
 
+  const presetGroup = (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Chọn nhanh khoảng thời gian">
+      {presets(today).map((preset) => {
+        const active = preset.from === from && preset.to === to;
+        return (
+          <button
+            key={preset.label}
+            type="button"
+            aria-pressed={active}
+            onClick={() => updateParams({ from: preset.from, to: preset.to })}
+            className={`min-h-11 rounded-full border px-3.5 text-[13px] font-bold whitespace-nowrap transition-colors ${
+              active ? 'border-primary bg-primary/10 text-primary-deep' : 'border-line bg-surface text-ink hover:border-primary/40'
+            }`}
+          >
+            {preset.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div>
+      {heading && <SectionHeading id={heading.id} title={heading.title} description={heading.description} actions={presetGroup} />}
       <div className={`${cardClass} p-4 sm:p-5`}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-end">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:items-end">
+          <Field id={`${id}-search`} label="Tìm kiếm" className="sm:col-span-2 lg:col-span-1">
+            <div className="relative">
+              <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
+              <input
+                id={`${id}-search`}
+                type="search"
+                className={`${inputClass} pl-9`}
+                value={search}
+                placeholder={isStaff ? 'Lớp, học viên, ghi chú (trang này)' : 'Lớp, ghi chú (trang này)'}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </Field>
           <Field id={`${id}-from`} label="Từ ngày">
             <input id={`${id}-from`} type="date" className={inputClass} value={from} onChange={(event) => updateParams({ from: event.target.value })} />
           </Field>
@@ -94,55 +152,32 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
             />
           </Field>
           <Field id={`${id}-status`} label="Trạng thái">
-            <select id={`${id}-status`} className={inputClass} value={status ?? ''} onChange={(event) => updateParams({ status: event.target.value })}>
+            <SelectInput id={`${id}-status`} value={status ?? ''} onChange={(event) => updateParams({ status: event.target.value })}>
               <option value="">Tất cả trạng thái</option>
               {attendanceStatuses.map((value) => (
                 <option key={value} value={value}>
                   {attendanceStatusLabels[value]}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </Field>
-          <Button variant="ghost" onClick={clearFilters} disabled={!hasFilters} icon={<X aria-hidden="true" />}>
+        </div>
+
+        {/* Hàng dưới: chip chọn nhanh và bộ lọc đang áp dụng bên trái, nút Xóa bộ lọc bên phải */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {!heading && presetGroup}
+            {isStaff && classId && (
+              <ActiveFilter label={`Lớp: ${className ?? `#${classId}`}`} onRemove={() => updateParams({ classId: undefined })} />
+            )}
+            {memberId && (
+              <ActiveFilter label={`Học viên: ${memberName ?? `#${memberId}`}`} onRemove={() => updateParams({ memberId: undefined })} />
+            )}
+          </div>
+          <Button variant="ghost" className="ml-auto" onClick={clearFilters} disabled={!hasFilters && !search} icon={<X aria-hidden="true" />}>
             Xóa bộ lọc
           </Button>
         </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Chọn nhanh khoảng thời gian">
-          {presets(today).map((preset) => {
-            const active = preset.from === from && preset.to === to;
-            return (
-              <button
-                key={preset.label}
-                type="button"
-                aria-pressed={active}
-                onClick={() => updateParams({ from: preset.from, to: preset.to })}
-                className={`min-h-11 rounded-full border px-3.5 text-[13px] font-bold whitespace-nowrap transition-colors ${
-                  active ? 'border-primary bg-primary/10 text-primary-deep' : 'border-line bg-surface text-ink hover:border-primary/40'
-                }`}
-              >
-                {preset.label}
-              </button>
-            );
-          })}
-          {isStaff && classId && (
-            <ActiveFilter label={`Lớp: ${className ?? `#${classId}`}`} onRemove={() => updateParams({ classId: undefined })} />
-          )}
-          {memberId && (
-            <ActiveFilter label={`Học viên: ${memberName ?? `#${memberId}`}`} onRemove={() => updateParams({ memberId: undefined })} />
-          )}
-        </div>
-
-        {isStaff && (
-          <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted">
-            <Funnel className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>
-              Bộ chọn danh sách {scope === 'manager' ? 'lớp và hội viên' : 'lớp'} chưa sẵn sàng (cần API{' '}
-              {scope === 'manager' ? 'GET /api/group-classes, GET /api/users' : 'GET /api/coaches/me/sessions'}). Tạm thời bấm vào tên{' '}
-              {scope === 'manager' ? 'lớp hoặc học viên' : 'lớp'} trong bảng để lọc.
-            </span>
-          </p>
-        )}
       </div>
 
       <div className="mt-4">
@@ -164,16 +199,22 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
             }
             action={hasFilters ? <Button variant="secondary" onClick={clearFilters}>Xóa bộ lọc</Button> : undefined}
           />
+        ) : visibleItems.length === 0 ? (
+          <EmptyState
+            title="Không tìm thấy kết quả"
+            description={`Không có dòng nào khớp "${search.trim()}" trong trang này.`}
+            action={<Button variant="secondary" onClick={() => setSearch('')}>Xóa tìm kiếm</Button>}
+          />
         ) : (
           <div aria-busy={history.isFetching} className={`transition-opacity ${history.isPlaceholderData ? 'opacity-60' : ''}`}>
             <HistoryTable
-              items={activeItems}
+              items={visibleItems}
               scope={scope}
               onFilterClass={(value) => updateParams({ classId: String(value) })}
               onFilterMember={(value) => updateParams({ memberId: String(value) })}
             />
             <HistoryCards
-              items={activeItems}
+              items={visibleItems}
               scope={scope}
               onFilterClass={(value) => updateParams({ classId: String(value) })}
               onFilterMember={(value) => updateParams({ memberId: String(value) })}

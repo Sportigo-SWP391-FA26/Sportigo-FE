@@ -554,7 +554,7 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
     await expect(page.getByRole('link', { name: SEED.demoPlanName })).toHaveCount(0);
     await search.fill('');
 
-    await page.getByRole('group', { name: 'Trạng thái' }).locator('label', { hasText: 'Nháp' }).click();
+    await page.getByLabel('Trạng thái', { exact: true }).selectOption('DRAFT');
     await expect(page).toHaveURL(/status=DRAFT/);
     await expect(page.getByRole('link', { name: E2E_PLAN })).toBeVisible();
     await expect(page.getByRole('link', { name: SEED.demoPlanName })).toHaveCount(0);

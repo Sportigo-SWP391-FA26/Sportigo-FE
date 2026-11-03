@@ -28,15 +28,19 @@ export function AttendanceHistoryPage({ scope }: { scope: 'coach' | 'manager' })
       />
       {scope === 'coach' && <CoachSessionsToday />}
       <section aria-labelledby="attendance-history-heading" className={scope === 'coach' ? 'mt-8' : undefined}>
-        {scope === 'coach' && (
-          <SectionHeading id="attendance-history-heading" title="Lịch sử điểm danh" description="Chỉ gồm các lớp bạn phụ trách." />
-        )}
         {scope === 'manager' && (
           <h2 id="attendance-history-heading" className="sr-only">
             Lịch sử điểm danh
           </h2>
         )}
-        <AttendanceHistoryPanel scope={scope} />
+        <AttendanceHistoryPanel
+          scope={scope}
+          heading={
+            scope === 'coach'
+              ? { id: 'attendance-history-heading', title: 'Lịch sử điểm danh', description: 'Chỉ gồm các lớp bạn phụ trách.' }
+              : undefined
+          }
+        />
       </section>
     </div>
   );
@@ -76,7 +80,7 @@ function CoachSessionsToday() {
             <li key={session.id}>
               <Link
                 to={`/coach/sessions/${session.id}/attendance`}
-                className="flex min-h-16 items-center gap-3 py-3 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-primary"
+                className="group -mx-3 flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none"
               >
                 <div className="w-24 shrink-0 text-sm">
                   <p className="font-extrabold text-ink">{formatTime(session.startsAt)}</p>
@@ -90,7 +94,10 @@ function CoachSessionsToday() {
                   </p>
                 </div>
                 {session.isLocked ? <Chip tone="neutral">Đã khóa</Chip> : <Chip tone="success" dot>Đang mở</Chip>}
-                <ArrowRight className="shrink-0 text-muted" aria-hidden="true" />
+                <ArrowRight
+                  className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-ink motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
               </Link>
             </li>
           ))}

@@ -72,7 +72,7 @@ export function SessionAttendancePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[880px]">
+    <div className="mx-auto w-full max-w-[1240px]">
       <Link
         to="/coach/attendance"
         className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-control text-sm font-bold text-primary-deep hover:underline"
@@ -378,8 +378,8 @@ function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote,
 
       <div className="mt-2">
         {noteOpen ? (
-          <div className="mt-1">
-            <label htmlFor={noteId} className="mb-1 block text-xs font-bold text-ink">
+          <div className="mt-4">
+            <label htmlFor={noteId} className="mb-1.5 block text-xs font-bold text-ink">
               Ghi chú cho {name}
             </label>
             <textarea

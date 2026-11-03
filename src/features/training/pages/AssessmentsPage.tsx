@@ -1,6 +1,7 @@
 import { ChartLineUp, Funnel, Plus, X } from '@phosphor-icons/react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
 import { AssessmentCard } from '../components/AssessmentCard';
+import { NewAssessmentDialog } from '../components/NewAssessmentDialog';
 import { Button, ButtonLink } from '../../../components/ui/Button';
 import { PageHeader } from '../../../components/ui/Card';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -9,9 +10,14 @@ import { useAssessments } from '../hooks/useAssessments';
 
 const PAGE_SIZE = 10;
 
-// FR-52 · /coach/assessments: đánh giá do chính Coach ghi, mới nhất trước
+// FR-52 · /coach/assessments: đánh giá do chính Coach ghi, mới nhất trước.
+// /coach/assessments/new hiển thị cùng trang với dialog Ghi đánh giá đang mở (giữ được link cũ và nút Back).
 export function AssessmentsPage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  const creating = useMatch('/coach/assessments/new') !== null;
+  const newAssessmentPath = `/coach/assessments/new${search}`;
   const memberId = Number(params.get('memberId')) || undefined;
   const page = Math.max(1, Number(params.get('page')) || 1);
   const assessments = useAssessments({ page, pageSize: PAGE_SIZE, memberId });
@@ -26,17 +32,19 @@ export function AssessmentsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[960px]">
+    <div className="mx-auto w-full max-w-[1240px]">
       <PageHeader
         eyebrow="Đánh giá"
         title="Đánh giá tiến độ"
         description="Các đánh giá bạn đã ghi cho học viên lớp nhóm và khóa 1-1, mới nhất trước."
         actions={
-          <ButtonLink to="/coach/assessments/new" variant="primary" icon={<Plus weight="bold" aria-hidden="true" />}>
+          <ButtonLink to={newAssessmentPath} variant="primary" icon={<Plus weight="bold" aria-hidden="true" />}>
             Ghi đánh giá
           </ButtonLink>
         }
       />
+
+      <NewAssessmentDialog open={creating} onClose={() => navigate({ pathname: '/coach/assessments', search })} />
 
       {memberId ? (
         <p className="mb-4 flex flex-wrap items-center gap-2 text-sm">
@@ -74,7 +82,7 @@ export function AssessmentsPage() {
                 Xem tất cả
               </Button>
             ) : (
-              <ButtonLink to="/coach/assessments/new" variant="primary">
+              <ButtonLink to={newAssessmentPath} variant="primary">
                 Ghi đánh giá
               </ButtonLink>
             )

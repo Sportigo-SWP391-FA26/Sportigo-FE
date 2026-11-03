@@ -13,6 +13,7 @@ import { Dialog } from '../../../components/ui/Dialog';
 import { Field, SegmentedControl } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
+import { SelectInput } from './SelectInput';
 
 type Props = {
   open: boolean;
@@ -112,9 +113,8 @@ function PlanForm({ plan, onClose, onCreated }: Omit<Props, 'open'>) {
       );
     }
     return (
-      <select
+      <SelectInput
         id={`${id}-sport`}
-        className={inputClass}
         disabled={sports.isPending || sports.isError}
         aria-invalid={errors.sportId ? true : undefined}
         aria-describedby={describedBy(`${id}-sport`, { error: errors.sportId, hint: sports.isError })}
@@ -127,7 +127,7 @@ function PlanForm({ plan, onClose, onCreated }: Omit<Props, 'open'>) {
             {sport.name}
           </option>
         ))}
-      </select>
+      </SelectInput>
     );
   };
 
