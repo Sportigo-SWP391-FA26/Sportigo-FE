@@ -65,9 +65,9 @@ test('shows detail and submits registration for authenticated Member', async () 
   const dialog = screen.getByRole('dialog', { name: 'Xác nhận đăng ký' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Xác nhận đăng ký' }));
   await waitFor(() => expect(bookingApi.registerForClass).toHaveBeenCalledWith(8));
-  expect(await screen.findByRole('dialog', { name: 'Đã tạo đơn đăng ký' })).toBeInTheDocument();
+  expect(await screen.findByRole('dialog', { name: 'Đăng ký thành công' })).toBeInTheDocument();
   expect(screen.getByText('ORD-GC-102')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Tiếp tục thanh toán' })).toHaveAttribute('href', '/member/payments?orderId=102');
+  expect(screen.getByRole('link', { name: 'Thanh toán ngay' })).toHaveAttribute('href', '/member/payments?orderId=102');
 });
 
 test('keeps API conflict visible and does not retry registration automatically', async () => {

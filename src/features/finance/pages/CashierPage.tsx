@@ -1,11 +1,11 @@
-import { CheckCircle, Money, Receipt } from '@phosphor-icons/react';
+import { CheckCircle, MagnifyingGlass, Money, Receipt } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
 import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
-import { financeApi } from '../api';
+import { financeApi, type CashOrderResult } from '../api';
 
 export function CashierPage() {
   const [id, setId] = useState('');
@@ -13,6 +13,28 @@ export function CashierPage() {
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<CashOrderResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const search = async () => {
+    if (query.trim().length < 2) return;
+    setSearching(true);
+    setMessage('');
+    try {
+      setResults(await financeApi.searchCashOrders(query.trim()));
+    } catch {
+      setIsSuccess(false);
+      setMessage('Không thể tra cứu đơn hàng lúc này.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectOrder = (order: CashOrderResult) => {
+    setId(String(order.id));
+    setAmount(String(order.remainingAmount));
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -41,9 +63,25 @@ export function CashierPage() {
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card className="p-5 sm:p-6">
           <SectionHeading title="Thông tin thanh toán" description="Hệ thống sẽ kiểm tra số tiền còn thiếu trước khi xác nhận giao dịch." />
+          <Field id="cash-order-search" label="Tìm đơn chờ thanh toán" hint="Nhập mã đơn, họ tên hoặc mã hội viên mà khách cung cấp.">
+            <div className="flex gap-2">
+              <input id="cash-order-search" className={inputClass} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void search(); }} placeholder="Mã đơn, tên hội viên hoặc mã hội viên" />
+              <Button variant="secondary" loading={searching} icon={<MagnifyingGlass weight="bold" />} onClick={search}>Tra cứu</Button>
+            </div>
+          </Field>
+          {results.length > 0 && (
+            <div className="mb-5 grid gap-2">
+              {results.map((order) => (
+                <button key={order.id} type="button" className={`cash-order-result ${id === String(order.id) ? 'is-selected' : ''}`} onClick={() => selectOrder(order)}>
+                  <span><strong>{order.memberName}</strong><small>{order.memberCode} · {order.orderNumber}</small></span>
+                  <span><strong>{order.remainingAmount.toLocaleString('vi-VN')} đ</strong><small>{order.itemNames.join(', ')}</small></span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="cash-order-id" label="Mã đơn hàng" required>
-              <input id="cash-order-id" className={inputClass} value={id} onChange={(event) => setId(event.target.value)} inputMode="numeric" placeholder="Ví dụ: 1024" />
+              <input id="cash-order-id" className={inputClass} value={id} onChange={(event) => setId(event.target.value)} inputMode="numeric" placeholder="Tự điền sau khi chọn đơn" />
             </Field>
             <Field id="cash-amount" label="Số tiền đã nhận" required hint="Nhập số tiền bằng VND, không dùng dấu chấm.">
               <input id="cash-amount" className={inputClass} value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" placeholder="Ví dụ: 1200000" />

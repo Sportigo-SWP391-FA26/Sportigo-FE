@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Barbell, Clock, Globe, Phone, SealCheck, UsersThree } from '@phosphor-icons/react'
+import { Clock, Globe, Phone } from '@phosphor-icons/react'
 import { usePublicLanding } from '../../content/hooks'
 
 type AuthShellProps = { children: ReactNode; variant: 'login' | 'register' }
@@ -14,7 +14,6 @@ export function AuthShell({ children, variant }: AuthShellProps) {
   }, [slides.length])
   const visibleSlide = slides.length ? activeSlide % slides.length : 0
   const settings = landing.data?.settings
-  const stats = landing.data?.stats
   return (
     <main className={`auth-page auth-page--${variant}`}>
       <section className="auth-visual" aria-label="Không gian tập luyện Sportigo">
@@ -26,12 +25,6 @@ export function AuthShell({ children, variant }: AuthShellProps) {
               <h2>{settings?.authPromotionTitle ?? 'Chào mừng đến Sportigo'}</h2>
               <p>{settings?.authPromotionDescription ?? 'Thông tin trung tâm đang được cập nhật.'}</p>
             </div>
-            <div className="auth-highlights" aria-label="Điểm nổi bật của Sportigo">
-              <span><UsersThree /><strong>{stats?.activeMembers.toLocaleString('vi-VN') ?? '—'}</strong><small>Hội viên hoạt động</small></span>
-              <span><Barbell /><strong>{stats?.sessionsThisWeek.toLocaleString('vi-VN') ?? '—'}</strong><small>Buổi học tuần này</small></span>
-              <span><SealCheck /><strong>{stats?.activeCoaches.toLocaleString('vi-VN') ?? '—'}</strong><small>Coach hoạt động</small></span>
-            </div>
-            <div className="auth-slide-controls">{slides.map((slide, index) => <button type="button" className={index === visibleSlide ? 'active' : ''} onClick={() => setActiveSlide(index)} key={slide.label}><span>{String(index + 1).padStart(2, '0')} {slide.label}</span><i /></button>)}</div>
           </div>
         </div>
       </section>

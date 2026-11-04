@@ -19,7 +19,7 @@ const items = [
   // Nhãn ngắn để navbar 7 mục không tràn ở màn 1170–1280px; tiêu đề trang dùng tên đầy đủ
   ['Kế hoạch', '/member/training-plan'],
   ['Tiến độ', '/member/progress'],
-  ['Thanh toán', '/member/payments'],
+  ['Thanh toán & ví', '/member/payments'],
 ] as const;
 
 export function MemberNavbar() {
@@ -76,7 +76,9 @@ export function MemberNavbar() {
             <Headset aria-hidden="true" />
           </Link>
           <Link to="/member/profile" className="member-nav__profile" aria-label={`Hồ sơ của ${displayName}`}>
-            <strong className="member-nav__avatar" aria-hidden="true">{initials(displayName)}</strong>
+            {profile.data?.avatarUrl
+              ? <img className="member-nav__avatar" src={profile.data.avatarUrl} alt="" aria-hidden="true" />
+              : <strong className="member-nav__avatar" aria-hidden="true">{initials(displayName)}</strong>}
             <span>{displayName}</span>
           </Link>
           <button className="member-nav__logout" type="button" onClick={handleLogout} disabled={isLoggingOut} aria-label="Đăng xuất">

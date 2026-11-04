@@ -1,12 +1,18 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderWithProviders } from '../../training/testing/renderWithProviders';
 import { axiosError } from '../../training/testing/axiosError';
 import * as api from '../api';
+import * as bookingApi from '../../member/bookingApi';
 import type { PrivateEnrollment } from '../types';
 import { MemberPrivateSchedulePage } from './MemberPrivateSchedulePage';
 
 vi.mock('../api');
+vi.mock('../../member/bookingApi');
+
+beforeEach(() => {
+  vi.mocked(bookingApi.getMyClassRegistrations).mockResolvedValue([]);
+});
 
 afterEach(() => {
   cleanup();
@@ -47,10 +53,10 @@ test('shows loading and empty states from the enrollment API', async () => {
   let resolve!: (value: PrivateEnrollment[]) => void;
   vi.mocked(api.getMyPrivateEnrollments).mockReturnValue(new Promise((done) => { resolve = done; }));
   renderWithProviders(<MemberPrivateSchedulePage />);
-  expect(screen.getByText('Đang tải lịch khóa học…')).toBeInTheDocument();
+  expect(screen.getByText('Đang tải lịch học của bạn…')).toBeInTheDocument();
 
   resolve([]);
-  expect(await screen.findByText('Không có occurrence sắp tới')).toBeInTheDocument();
+  expect(await screen.findByText('Chưa có buổi học sắp tới')).toBeInTheDocument();
 });
 
 test('shows authorization errors from GET enrollments', async () => {
@@ -75,7 +81,7 @@ describe('FR63 single occurrence update', () => {
       reason: 'Có lịch khác',
     });
     renderWithProviders(<MemberPrivateSchedulePage />);
-    await screen.findByRole('heading', { name: 'Lịch khóa học 1–1 của tôi' });
+    await screen.findByRole('heading', { name: 'Lịch học của tôi' });
     fireEvent.click(screen.getAllByRole('button', { name: 'Đổi / hủy buổi này' })[0]!);
     const dialog = screen.getByRole('dialog', { name: 'Thay đổi một buổi học' });
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Đổi lịch buổi' }));
@@ -96,7 +102,7 @@ describe('FR63 single occurrence update', () => {
   test('requires a cancellation reason and preserves the dialog without sending a request', async () => {
     vi.mocked(api.getMyPrivateEnrollments).mockResolvedValue([enrollment()]);
     renderWithProviders(<MemberPrivateSchedulePage />);
-    await screen.findByRole('heading', { name: 'Lịch khóa học 1–1 của tôi' });
+    await screen.findByRole('heading', { name: 'Lịch học của tôi' });
     fireEvent.click(screen.getAllByRole('button', { name: 'Đổi / hủy buổi này' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận hủy buổi' }));
 
@@ -110,7 +116,7 @@ describe('FR63 single occurrence update', () => {
       axiosError(409, { code: 'PRIVATE_SESSION_CANCELLATION_CUTOFF', message: 'Chỉ được đổi hoặc hủy buổi học trước ít nhất 24 giờ.' }),
     );
     renderWithProviders(<MemberPrivateSchedulePage />);
-    await screen.findByRole('heading', { name: 'Lịch khóa học 1–1 của tôi' });
+    await screen.findByRole('heading', { name: 'Lịch học của tôi' });
     fireEvent.click(screen.getAllByRole('button', { name: 'Đổi / hủy buổi này' })[0]!);
     const dialog = screen.getByRole('dialog', { name: 'Thay đổi một buổi học' });
     fireEvent.change(within(dialog).getByLabelText(/Lý do/), { target: { value: 'Lịch phát sinh' } });

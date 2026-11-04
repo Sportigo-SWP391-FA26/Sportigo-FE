@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { ClassRegistrationOrder, PublicClassDetail, PublicClassFilters, PublicClassPage, WaitlistEntry } from './bookingTypes';
+import type { ClassRegistrationOrder, MyClassRegistration, PublicClassDetail, PublicClassFilters, PublicClassPage, WaitlistEntry } from './bookingTypes';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -10,6 +10,11 @@ export async function getPublicClasses(filters: PublicClassFilters) {
 
 export async function getPublicClass(classId: number) {
   const { data } = await apiClient.get<DataResponse<PublicClassDetail>>(`/bookings/classes/${classId}`);
+  return data.data;
+}
+
+export async function getMyClassRegistrations() {
+  const { data } = await apiClient.get<DataResponse<MyClassRegistration[]>>('/bookings/registrations/me');
   return data.data;
 }
 

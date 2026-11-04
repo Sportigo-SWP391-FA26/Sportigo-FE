@@ -1,13 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../training/errors';
-import { cancelClassRegistration, getPublicClass, getPublicClasses, joinClassWaitlist, registerForClass, registerMemberOnBehalf } from './bookingApi';
+import { cancelClassRegistration, getMyClassRegistrations, getPublicClass, getPublicClasses, joinClassWaitlist, registerForClass, registerMemberOnBehalf } from './bookingApi';
 import type { PublicClassFilters } from './bookingTypes';
 
 export const bookingKeys = {
   all: ['class-bookings'] as const,
   list: (filters: PublicClassFilters) => [...bookingKeys.all, 'list', filters] as const,
   detail: (classId: number) => [...bookingKeys.all, 'detail', classId] as const,
+  mine: () => [...bookingKeys.all, 'mine'] as const,
 };
+
+export function useMyClassRegistrations() {
+  return useQuery({
+    queryKey: bookingKeys.mine(),
+    queryFn: getMyClassRegistrations,
+    retry: retryServerErrors,
+  });
+}
 
 export function usePublicClasses(filters: PublicClassFilters) {
   return useQuery({

@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { cancelClassRegistration, getPublicClass, getPublicClasses, joinClassWaitlist, registerForClass, registerMemberOnBehalf } from './bookingApi';
+import { cancelClassRegistration, getMyClassRegistrations, getPublicClass, getPublicClasses, joinClassWaitlist, registerForClass, registerMemberOnBehalf } from './bookingApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -38,4 +38,11 @@ test('cancels a registration through the booking cancellation endpoint', async (
   const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { success: true, data: { status: 'CANCELLED' } } });
   await cancelClassRegistration(55);
   expect(post).toHaveBeenCalledWith('/bookings/registrations/55/cancel');
+});
+
+test('loads the signed-in Member class registrations for the unified schedule', async () => {
+  const registrations = [{ id: 55, status: 'PENDING_PAYMENT', groupClass: { id: 8, name: 'Bơi cơ bản' } }];
+  const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { success: true, data: registrations } });
+  expect(await getMyClassRegistrations()).toEqual(registrations);
+  expect(get).toHaveBeenCalledWith('/bookings/registrations/me');
 });

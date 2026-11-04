@@ -51,6 +51,38 @@ export type ClassRegistrationOrder = {
   status: 'PENDING_PAYMENT';
 };
 
+export type MyClassRegistration = {
+  id: number;
+  memberId: number;
+  classId: number;
+  status: 'PENDING_PAYMENT' | 'CONFIRMED';
+  registeredAt: string;
+  price: string | number;
+  groupClass: {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    sport: { id: number; name: string; imageUrl: string | null };
+    coach: { user: { id: number; displayName: string; avatarUrl: string | null } };
+    sessions: Array<{
+      id: number;
+      startsAt: string;
+      endsAt: string;
+      status: 'SCHEDULED';
+      room: { id: number; code: string; name: string } | null;
+    }>;
+  };
+  order: {
+    id: number;
+    orderNumber: string;
+    status: string;
+    finalAmount: string | number;
+    expiresAt: string | null;
+  } | null;
+};
+
 export type WaitlistEntry = {
   id: number;
   memberId: number;

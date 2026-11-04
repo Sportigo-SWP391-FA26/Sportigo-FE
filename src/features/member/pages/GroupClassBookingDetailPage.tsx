@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarBlank, MapPin } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, CalendarBlank, CheckCircle, Clock, CurrencyCircleDollar, MapPin, Receipt, ShieldCheck, UserCircle, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
@@ -175,22 +175,66 @@ export function GroupClassBookingDetailPage() {
         <Dialog
           open={confirmOpen || registration.isError || Boolean(order)}
           onClose={() => { if (!registration.isPending) { setConfirmOpen(false); registration.reset(); setOrder(null); } }}
-          title={cancelledRegistrationId === order?.registrationId ? 'Đã gửi yêu cầu hủy đăng ký' : order ? 'Đã tạo đơn đăng ký' : registration.isError ? 'Không thể đăng ký lớp' : 'Xác nhận đăng ký'}
-          description={cancelledRegistrationId === order?.registrationId ? 'Backend đã xử lý yêu cầu hủy đăng ký. Tình trạng hoàn tiền hoặc đơn thanh toán tùy theo chính sách áp dụng.' : order ? 'Chỗ đang được giữ trong thời hạn hiển thị. Hoàn tất thanh toán để xác nhận đăng ký.' : !registration.isError ? `Bạn sẽ đăng ký ${item.name} với học phí ${money(item.tuitionFee)}. Hệ thống tạo đơn chờ thanh toán và chỉ xác nhận chỗ sau khi thanh toán thành công.` : undefined}
+          title={cancelledRegistrationId === order?.registrationId ? 'Đã gửi yêu cầu hủy đăng ký' : order ? 'Đăng ký thành công' : registration.isError ? 'Không thể đăng ký lớp' : 'Xác nhận đăng ký'}
+          description={cancelledRegistrationId === order?.registrationId ? 'Backend đã xử lý yêu cầu hủy đăng ký. Tình trạng hoàn tiền hoặc đơn thanh toán tùy theo chính sách áp dụng.' : order ? 'Chỗ đang được giữ trong thời hạn hiển thị. Hoàn tất thanh toán để xác nhận đăng ký.' : !registration.isError ? 'Kiểm tra thông tin lớp trước khi tạo đơn thanh toán.' : undefined}
+          size="lg"
           footer={order
             ? cancelledRegistrationId === order.registrationId
               ? <Button variant="secondary" onClick={() => { setConfirmOpen(false); setOrder(null); }}>Đóng</Button>
-              : <><Button variant="danger" onClick={() => setCancelTarget(order)} disabled={cancelRegistration.isPending}>Hủy đăng ký</Button><ButtonLink to={`/member/payments?orderId=${order.orderId}`}>Tiếp tục thanh toán</ButtonLink></>
+              : <><Button variant="danger" onClick={() => setCancelTarget(order)} disabled={cancelRegistration.isPending}>Hủy đăng ký</Button><ButtonLink to={`/member/payments?orderId=${order.orderId}`}>Thanh toán ngay <ArrowRight aria-hidden="true" /></ButtonLink></>
             : <><Button variant="secondary" onClick={() => { setConfirmOpen(false); registration.reset(); }}>Đóng</Button>{!registration.isError && <Button onClick={submitRegistration} loading={registration.isPending}>Xác nhận đăng ký</Button>}</>}
         >
           {order ? (
-            <div className="space-y-2 text-sm">
-              <p>Mã đơn: <strong>{order.orderNumber}</strong></p>
-              <p>Số tiền: <strong>{money(order.amount)}</strong></p>
-              <p>Giữ chỗ đến: <strong>{formatDateTime(order.expiresAt)}</strong></p>
-              <p className="text-muted">Trạng thái hiện tại: Chờ thanh toán. Thanh toán thành công mới xác nhận chỗ học.</p>
+            <div className="registration-success">
+              <div className="registration-success__hero">
+                <span><CheckCircle weight="fill" aria-hidden="true" /></span>
+                <div><strong>Yêu cầu đăng ký đã được ghi nhận</strong><p>Sportigo đang tạm giữ chỗ cho bạn trong thời hạn thanh toán.</p></div>
+              </div>
+              <ol className="registration-success__steps" aria-label="Tiến trình đăng ký lớp">
+                <li className="is-complete"><span><CheckCircle weight="fill" /></span><div><strong>Đăng ký</strong><small>Hoàn tất</small></div></li>
+                <li className="is-current"><span>2</span><div><strong>Thanh toán</strong><small>Đang chờ</small></div></li>
+                <li><span>3</span><div><strong>Xác nhận lớp</strong><small>Sau thanh toán</small></div></li>
+              </ol>
+              <div className="registration-success__receipt">
+                <div className="registration-success__receipt-head"><Receipt aria-hidden="true" /><span>Thông tin đơn đăng ký</span></div>
+                <dl>
+                  <div><dt>Lớp học</dt><dd>{item.name}</dd></div>
+                  <div><dt>Mã đơn</dt><dd>{order.orderNumber}</dd></div>
+                  <div><dt>Trạng thái</dt><dd><span className="registration-success__status">Chờ thanh toán</span></dd></div>
+                  <div className="registration-success__total"><dt>Tổng thanh toán</dt><dd>{money(order.amount)}</dd></div>
+                </dl>
+              </div>
+              <div className="registration-success__expiry">
+                <Clock weight="fill" aria-hidden="true" />
+                <div><span>Hoàn tất thanh toán trước</span><strong>{formatDateTime(order.expiresAt)}</strong><p>Đơn có thể tự động hết hạn và chỗ sẽ được mở lại nếu bạn thanh toán trễ.</p></div>
+              </div>
             </div>
-          ) : registration.isError ? <InlineAlert>{parseApiError(registration.error).message}</InlineAlert> : <p className="text-sm text-muted">Bạn có thể hủy trước khi gửi yêu cầu.</p>}
+          ) : registration.isError ? <InlineAlert>{parseApiError(registration.error).message}</InlineAlert> : (
+            <div className="registration-confirm">
+              <div className="registration-confirm__summary">
+                <img src={sportImageUrl(item.sport)} alt={`Minh họa lớp ${item.name}`} />
+                <div>
+                  <span>{item.sport.name}</span>
+                  <strong>{item.name}</strong>
+                  <p>{item.description ?? 'Lớp nhóm có lịch học cố định tại trung tâm Sportigo.'}</p>
+                </div>
+              </div>
+              <dl className="registration-confirm__details">
+                <div><dt><UserCircle aria-hidden="true" /> Coach</dt><dd>{item.coach.user.displayName}</dd></div>
+                <div><dt><CalendarBlank aria-hidden="true" /> Thời gian khóa</dt><dd>{formatDate(item.startDate)} – {formatDate(item.endDate)}</dd></div>
+                <div><dt><UsersThree aria-hidden="true" /> Chỗ còn lại</dt><dd>{item.remainingSeats} / {item.capacity} học viên</dd></div>
+                <div><dt><CurrencyCircleDollar aria-hidden="true" /> Học phí</dt><dd className="registration-confirm__price">{money(item.tuitionFee)}</dd></div>
+              </dl>
+              <div className="registration-confirm__deadline">
+                <CalendarBlank aria-hidden="true" />
+                <div><span>Hạn đăng ký</span><strong>{formatDateTime(item.registrationCloseAt)}</strong></div>
+              </div>
+              <div className="registration-confirm__notice">
+                <ShieldCheck weight="fill" aria-hidden="true" />
+                <div><strong>Chưa phát sinh thanh toán ở bước này</strong><p>Sau khi xác nhận, hệ thống tạo đơn chờ thanh toán. Chỗ học chỉ được xác nhận khi thanh toán thành công trước thời hạn giữ chỗ.</p></div>
+              </div>
+            </div>
+          )}
         </Dialog>
       )}
       {role === 'RECEPTIONIST' && (

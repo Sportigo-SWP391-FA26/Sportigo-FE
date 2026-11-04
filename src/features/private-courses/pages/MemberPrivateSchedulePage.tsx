@@ -1,15 +1,16 @@
-import { CalendarBlank } from '@phosphor-icons/react';
+import { ArrowRight, CalendarBlank, CalendarCheck, Clock, CurrencyCircleDollar, MapPin, Receipt, ShieldCheck, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { toast } from '../../../components/feedback/toast';
-import { Button } from '../../../components/ui/Button';
-import { Card, PageHeader } from '../../../components/ui/Card';
+import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
-import { addDays, formatDate, formatTime, fromCenterDateTimeInput, todayInCenter } from '../../training/format';
+import { addDays, formatDate, formatDateTime, formatTime, fromCenterDateTimeInput, todayInCenter } from '../../training/format';
 import { parseApiError } from '../../training/errors';
+import { useMyClassRegistrations } from '../../member/bookingHooks';
+import type { MyClassRegistration } from '../../member/bookingTypes';
 import { useChangePrivateOccurrence, useMyPrivateEnrollments } from '../hooks/usePrivateCourses';
 import type { OccurrenceChange, PrivateEnrollment, PrivateSchedule } from '../types';
 
@@ -21,6 +22,19 @@ type Occurrence = {
   endsAt: string;
   action: 'SCHEDULED' | 'CANCELLED' | 'RESCHEDULED';
 };
+
+type GroupOccurrence = {
+  registration: MyClassRegistration;
+  session: MyClassRegistration['groupClass']['sessions'][number];
+  startsAt: string;
+  endsAt: string;
+};
+
+type TimelineItem =
+  | { kind: 'PRIVATE'; occurrence: Occurrence; startsAt: string }
+  | { kind: 'GROUP'; occurrence: GroupOccurrence; startsAt: string };
+
+const money = (value: string | number) => `${new Intl.NumberFormat('vi-VN').format(Number(value))} ₫`;
 
 const weekday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
 const hour = (value: string) => value.slice(11, 16);
@@ -58,6 +72,7 @@ function applyChange(occurrence: Occurrence, change: OccurrenceChange): Occurren
 
 export function MemberPrivateSchedulePage() {
   const enrollments = useMyPrivateEnrollments();
+  const classRegistrations = useMyClassRegistrations();
   const changeOccurrence = useChangePrivateOccurrence();
   const [now, setNow] = useState(() => Date.now());
   const [changes, setChanges] = useState<Record<string, OccurrenceChange>>({});
@@ -71,8 +86,9 @@ export function MemberPrivateSchedulePage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  if (enrollments.isPending) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ListSkeleton label="Đang tải lịch khóa học…" /></div>;
+  if (enrollments.isPending || classRegistrations.isPending) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ListSkeleton label="Đang tải lịch học của bạn…" /></div>;
   if (enrollments.isError) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ErrorState error={enrollments.error} onRetry={() => enrollments.refetch()} retrying={enrollments.isRefetching} pendingApi="GET /api/private-courses/enrollments" /></div>;
+  if (classRegistrations.isError) return <div className="mx-auto max-w-[1100px] px-4 py-8"><ErrorState error={classRegistrations.error} onRetry={() => classRegistrations.refetch()} retrying={classRegistrations.isRefetching} pendingApi="GET /api/bookings/registrations/me" /></div>;
 
   const rawOccurrences = enrollments.data.flatMap((enrollment) => enrollment.schedules.flatMap((schedule) => nextOccurrences(enrollment, schedule, now)));
   const occurrences = rawOccurrences
@@ -81,6 +97,16 @@ export function MemberPrivateSchedulePage() {
       return saved ? applyChange(occurrence, saved) : occurrence;
     })
     .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+  const pendingRegistrations = classRegistrations.data.filter((registration) => registration.status === 'PENDING_PAYMENT');
+  const groupOccurrences: GroupOccurrence[] = classRegistrations.data
+    .filter((registration) => registration.status === 'CONFIRMED')
+    .flatMap((registration) => registration.groupClass.sessions
+      .filter((session) => new Date(session.endsAt).getTime() > now)
+      .map((session) => ({ registration, session, startsAt: session.startsAt, endsAt: session.endsAt })));
+  const timeline: TimelineItem[] = [
+    ...occurrences.map((occurrence): TimelineItem => ({ kind: 'PRIVATE', occurrence, startsAt: occurrence.startsAt })),
+    ...groupOccurrences.map((occurrence): TimelineItem => ({ kind: 'GROUP', occurrence, startsAt: occurrence.startsAt })),
+  ].sort((left, right) => left.startsAt.localeCompare(right.startsAt));
 
   const submit = async () => {
     if (!target || changeOccurrence.isPending) return;
@@ -109,29 +135,66 @@ export function MemberPrivateSchedulePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
-      <PageHeader eyebrow="Lịch hội viên" title="Lịch khóa học 1–1 của tôi" description="Thao tác chỉ áp dụng cho một occurrence. Các buổi lặp ở tuần khác không bị thay đổi." />
-      <Card className="mb-5 p-4"><p className="text-sm leading-relaxed text-ink"><strong>Chính sách 24 giờ:</strong> chỉ gửi yêu cầu hủy/đổi khi còn ít nhất 24 giờ trước buổi gốc. Backend kiểm tra điều kiện cuối cùng và có thể từ chối nếu đã quá hạn, đã hoàn thành hoặc occurrence đã được thay đổi.</p></Card>
-      {occurrences.length === 0 ? (
-        <EmptyState icon={<CalendarBlank />} title="Không có occurrence sắp tới" description="Lịch các buổi đã đăng ký sẽ xuất hiện tại đây khi enrollment đang hoạt động." />
+    <div className="member-schedule-hub">
+      <section className="schedule-hub-hero">
+        <div className="schedule-hub-hero__copy">
+          <h1>Lịch học của tôi</h1>
+          <p>Mọi lớp nhóm, khóa huấn luyện 1–1 và khoản thanh toán cần hoàn tất trong cùng một lịch trình.</p>
+        </div>
+        <div className="schedule-hub-stats" aria-label="Tổng quan lịch học">
+          <span><CalendarCheck /><b>{timeline.length} buổi</b> sắp tới</span>
+          <span><Receipt /><b>{pendingRegistrations.length} đăng ký</b> cần xử lý</span>
+          <span><ShieldCheck />Đổi hoặc hủy 1–1 trước <b>24 giờ</b></span>
+        </div>
+      </section>
+      {pendingRegistrations.length > 0 && (
+        <section className="schedule-action-zone" aria-labelledby="pending-payment-heading">
+          <div className="schedule-section-heading"><div><h2 id="pending-payment-heading">Đăng ký cần hoàn tất</h2><p>Thanh toán trước thời hạn để giữ chỗ và đưa các buổi học vào lịch.</p></div><Chip tone="warning">{pendingRegistrations.length} cần xử lý</Chip></div>
+          <div className="pending-registration-list">
+            {pendingRegistrations.map((registration) => (
+              <article key={registration.id} className="pending-registration">
+                <div className="pending-registration__identity"><h3>{registration.groupClass.name}</h3><p>{registration.groupClass.sport.name} · Lớp nhóm · Coach {registration.groupClass.coach.user.displayName}</p></div>
+                <div className="pending-registration__detail"><CurrencyCircleDollar /><span>Học phí</span><strong>{money(registration.order?.finalAmount ?? registration.price)}</strong></div>
+                <div className="pending-registration__detail"><Clock /><span>Giữ chỗ đến</span><strong>{registration.order?.expiresAt ? formatDateTime(registration.order.expiresAt) : 'Theo thời hạn đơn'}</strong></div>
+                <div className="pending-registration__action"><small>{registration.order?.orderNumber ?? `Đăng ký #${registration.id}`}</small>{registration.order && <ButtonLink size="sm" to={`/member/payments?orderId=${registration.order.id}`}>Thanh toán ngay <ArrowRight /></ButtonLink>}</div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="schedule-timeline-section">
+      <div className="schedule-section-heading"><div><h2>Buổi học sắp tới</h2><p>Lịch đã xác nhận, sắp xếp theo thời gian gần nhất.</p></div>{timeline.length > 0 && <Chip tone="success">{timeline.length} buổi</Chip>}</div>
+      {timeline.length === 0 ? (
+        <EmptyState icon={<CalendarBlank />} title="Chưa có buổi học sắp tới" description={pendingRegistrations.length ? 'Hoàn tất thanh toán các đăng ký phía trên để xác nhận lịch học.' : 'Các buổi lớp nhóm và khóa 1–1 đã xác nhận sẽ xuất hiện tại đây.'} />
       ) : (
-        <div className="space-y-3">
-          {occurrences.map((occurrence) => {
+        <div className="schedule-timeline">
+          {timeline.map((item) => {
+            if (item.kind === 'GROUP') {
+              const { registration, session } = item.occurrence;
+              return (
+                <article key={`group-${session.id}`} className="schedule-timeline-item">
+                  <time><b>{formatTime(session.startsAt)}</b><span>{formatDate(session.startsAt)}</span><small>đến {formatTime(session.endsAt)}</small></time>
+                  <div className="schedule-timeline-item__marker"><UsersThree /></div>
+                  <div className="schedule-timeline-item__content"><div><Chip tone="success" dot>Lớp nhóm</Chip><h3>{registration.groupClass.name}</h3><p>{registration.groupClass.sport.name} · Coach {registration.groupClass.coach.user.displayName}</p></div>{session.room && <span className="schedule-location"><MapPin /> {session.room.name}</span>}</div>
+                </article>
+              );
+            }
+            const occurrence = item.occurrence;
             const key = occurrenceKey(occurrence.schedule.id, occurrence.originalDate);
             const canChange = occurrence.action === 'SCHEDULED' &&
               new Date(occurrence.startsAt).getTime() - now >= 24 * 60 * 60 * 1000;
             return (
-              <Card key={key} className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
-                <div className="min-w-[155px]"><p className="font-extrabold text-ink">{formatDate(occurrence.startsAt)}</p><p className="text-sm text-muted">{formatTime(occurrence.startsAt)}–{formatTime(occurrence.endsAt)}</p></div>
-                <div className="min-w-0 flex-1"><p className="font-bold text-ink">{occurrence.enrollment.privateCourse.name}</p><p className="text-xs text-muted">{occurrence.enrollment.privateCourse.sport.name} · Coach {occurrence.enrollment.coach.user.displayName}{occurrence.schedule.room ? ` · ${occurrence.schedule.room.name}` : ''}</p>{occurrence.action === 'RESCHEDULED' && <p className="text-xs font-semibold text-accent-energy">Đổi từ buổi gốc {formatDate(occurrence.originalDate)}</p>}</div>
-                <Chip tone={occurrence.action === 'CANCELLED' ? 'danger' : occurrence.action === 'RESCHEDULED' ? 'warning' : 'success'} dot>{occurrence.action === 'CANCELLED' ? 'Đã hủy' : occurrence.action === 'RESCHEDULED' ? 'Đã đổi lịch' : 'Đã lên lịch'}</Chip>
-                {canChange && <Button size="sm" variant="secondary" onClick={() => { setTarget(occurrence); setAction('CANCELLED'); setReason(''); setNewStartsAt(''); setValidationError(''); changeOccurrence.reset(); }}>Đổi / hủy buổi này</Button>}
-                {occurrence.action === 'SCHEDULED' && !canChange && <p className="text-xs text-muted">Còn dưới 24 giờ — không thể gửi yêu cầu đổi/hủy.</p>}
-              </Card>
+              <article key={key} className={`schedule-timeline-item ${occurrence.action === 'CANCELLED' ? 'is-cancelled' : ''}`}>
+                <time><b>{formatTime(occurrence.startsAt)}</b><span>{formatDate(occurrence.startsAt)}</span><small>đến {formatTime(occurrence.endsAt)}</small></time>
+                <div className="schedule-timeline-item__marker"><CalendarBlank /></div>
+                <div className="schedule-timeline-item__content"><div><Chip tone={occurrence.action === 'CANCELLED' ? 'danger' : occurrence.action === 'RESCHEDULED' ? 'warning' : 'success'} dot>{occurrence.action === 'CANCELLED' ? 'Đã hủy' : occurrence.action === 'RESCHEDULED' ? 'Đã đổi lịch' : 'Khóa 1–1'}</Chip><h3>{occurrence.enrollment.privateCourse.name}</h3><p>{occurrence.enrollment.privateCourse.sport.name} · Coach {occurrence.enrollment.coach.user.displayName}</p>{occurrence.action === 'RESCHEDULED' && <small>Đổi từ buổi gốc {formatDate(occurrence.originalDate)}</small>}</div><div className="schedule-timeline-item__tools">{occurrence.schedule.room && <span className="schedule-location"><MapPin /> {occurrence.schedule.room.name}</span>}{canChange && <Button size="sm" variant="secondary" onClick={() => { setTarget(occurrence); setAction('CANCELLED'); setReason(''); setNewStartsAt(''); setValidationError(''); changeOccurrence.reset(); }}>Đổi / hủy buổi này</Button>}{occurrence.action === 'SCHEDULED' && !canChange && <span className="schedule-cutoff">Đã qua hạn đổi/hủy</span>}</div></div>
+              </article>
             );
           })}
         </div>
       )}
+      <div className="schedule-policy-note"><ShieldCheck /><p><strong>Lưu ý về thay đổi lịch:</strong> khóa 1–1 chỉ nhận yêu cầu đổi hoặc hủy trước buổi gốc ít nhất 24 giờ. Lớp nhóm áp dụng chính sách hủy riêng của lớp.</p></div>
+      </section>
       <OccurrenceDialog
         target={target}
         action={action}

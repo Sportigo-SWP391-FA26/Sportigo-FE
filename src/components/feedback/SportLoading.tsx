@@ -1,4 +1,4 @@
-import { Barbell, Basketball, PersonSimpleRun, TennisBall } from '@phosphor-icons/react';
+import { PersonSimpleSwim } from '@phosphor-icons/react';
 
 type SportLoadingProps = {
   title?: string;
@@ -14,22 +14,20 @@ export function SportLoading({
 }: SportLoadingProps) {
   return (
     <section className={`sport-loading ${fullPage ? 'sport-loading--page' : ''}`} role="status" aria-live="polite" aria-busy="true">
-      <div className="sport-loading__arena" aria-hidden="true">
-        <div className="sport-loading__lane">
-          <span className="sport-loading__runner"><PersonSimpleRun weight="fill" /></span>
-          <span className="sport-loading__finish" />
+      <div className="sport-loading__pool" aria-hidden="true">
+        <div className="sport-loading__swim-lane">
+          <span className="sport-loading__swimmer">
+            <PersonSimpleSwim weight="fill" />
+          </span>
+          <span className="sport-loading__wake" />
         </div>
-        <div className="sport-loading__sports">
-          <span><Basketball weight="fill" /></span>
-          <span><TennisBall weight="fill" /></span>
-          <span><Barbell weight="bold" /></span>
-        </div>
+        <span className="sport-loading__wave sport-loading__wave--near" />
+        <span className="sport-loading__wave sport-loading__wave--far" />
       </div>
       <div className="sport-loading__copy">
         <strong>{title}</strong>
         <p>{description}</p>
       </div>
-      <div className="sport-loading__skeleton" aria-hidden="true"><span /><span /><span /></div>
     </section>
   );
 }

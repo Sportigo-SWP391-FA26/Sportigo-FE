@@ -54,7 +54,7 @@ function LandingInitialShell() {
 export function LandingPage() {
   const landing = usePublicLanding()
   const newsletter = useNewsletter()
-  const [heroIndex, setHeroIndex] = useAutoAdvance(landing.data?.heroSlides.length ?? 0)
+  const [heroIndex] = useAutoAdvance(landing.data?.heroSlides.length ?? 0)
   const coachGroups = Math.max(1, Math.ceil((landing.data?.coaches.length ?? 0) / 3))
   const [coachGroup, setCoachGroup] = useAutoAdvance(coachGroups)
   const [navScrolled, setNavScrolled] = useState(false)
@@ -137,7 +137,6 @@ export function LandingPage() {
           <h1>Bứt phá giới hạn.<br />Cùng Sportigo.</h1>
           <p>{settings?.brandDescription ?? 'Thông tin thương hiệu đang được cập nhật.'}</p>
           <div className="landing-hero__buttons"><Link className="button button--primary" to="/register">Đăng ký tài khoản <ArrowRight /></Link><a className="button button--glass" href="#facilities">Khám phá không gian</a></div>
-          <div className="hero-controls" role="group" aria-label="Chọn ảnh giới thiệu">{data.heroSlides.map((slide, index) => <button type="button" className={index === heroIndex ? 'active' : ''} aria-pressed={index === heroIndex} onClick={() => setHeroIndex(index)} key={slide.id}><span>{String(index + 1).padStart(2, '0')}</span>{slide.sport?.name ?? slide.title}</button>)}</div>
         </div></div>
         <div className="hero-stats"><span><b>{data.stats.activeMembers.toLocaleString('vi-VN')}</b>Hội viên hoạt động</span><span><b>{data.stats.sessionsThisWeek.toLocaleString('vi-VN')}</b>Buổi học tuần này</span><span><b>{data.stats.activeCoaches.toLocaleString('vi-VN')}</b>Coach đang hoạt động</span><span><b>{data.stats.activeSports.toLocaleString('vi-VN')}</b>Bộ môn đang mở</span></div>
       </section>
