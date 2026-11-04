@@ -482,6 +482,26 @@ test.describe('D. Lịch sử điểm danh', () => {
     await expect(page).toHaveURL(/\/coach\/sessions\/\d+\/attendance$/);
   });
 
+  test('D3 · FR-48: Coach xuất Excel lịch sử điểm danh theo bộ lọc đang chọn', async ({ page, request }) => {
+    await signIn(page, request, 'coach');
+    await page.goto('/coach/attendance?tab=history');
+    const exportButton = page.getByRole('button', { name: 'Xuất Excel' });
+    await expect(exportButton).toBeEnabled({ timeout: 15_000 });
+
+    const [download] = await Promise.all([page.waitForEvent('download'), exportButton.click()]);
+    expect(download.suggestedFilename()).toMatch(/^sportigo-diem-danh-\d{4}-\d{2}-\d{2}\.xlsx$/);
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    const file = Buffer.concat(chunks);
+    // File .xlsx là gói zip: bắt đầu bằng "PK"
+    expect(file.subarray(0, 2).toString()).toBe('PK');
+    await expect(toast(page, 'Đã tải báo cáo điểm danh.')).toBeVisible();
+
+    // Member không có nút xuất, và API chặn ở backend
+    expect((await api(request, 'member1', 'GET', '/attendance/export')).status).toBe(403);
+  });
+
   test('D2 · FR-48: Manager xem toàn trung tâm, lọc theo học viên và trạng thái', async ({ page, request }) => {
     await signIn(page, request, 'manager');
     await page.goto('/manager/attendance');

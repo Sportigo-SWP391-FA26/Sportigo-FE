@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { getCoachMembers, getCoachSessions, getCoachTrainees, getMemberContexts, getSports } from './api';
+import { AxiosError, type AxiosResponse } from 'axios';
+import { exportAttendance, getCoachMembers, getCoachSessions, getCoachTrainees, getMemberContexts, getSports } from './api';
+import { parseApiError } from './errors';
 import { traineeLabel, traineeName } from './labels';
 
 // Dữ liệu theo đúng dạng module Bộ môn và Khóa 1-1 của backend trả về: { success, data }
@@ -164,5 +166,23 @@ describe('form đánh giá: học viên và ngữ cảnh (FR-52)', () => {
       { type: 'PRIVATE_COURSE', privateEnrollmentId: 15, name: 'Bơi 1-1', sport: { name: 'Bơi lội' }, status: 'PENDING_PAYMENT' },
     ]);
     expect(get).toHaveBeenCalledWith('/members/3');
+  });
+});
+
+describe('xuất Excel lịch sử điểm danh', () => {
+  test('gọi GET /api/attendance/export dạng blob, bỏ tham số rỗng', async () => {
+    const file = new Blob(['xlsx']);
+    const get = mockGet(file);
+    await expect(exportAttendance({ status: 'LATE', classId: undefined })).resolves.toBe(file);
+    expect(get).toHaveBeenCalledWith('/attendance/export', { params: { status: 'LATE' }, responseType: 'blob' });
+  });
+
+  test('lỗi trả về dạng Blob được đọc lại để hiện đúng thông báo của backend', async () => {
+    const body = new Blob([JSON.stringify({ code: 'EXPORT_TOO_LARGE', message: 'Có 6000 bản ghi, vượt giới hạn 5000 dòng mỗi file.' })]);
+    const error = new AxiosError('Bad Request', 'ERR_BAD_REQUEST', undefined, undefined, { status: 400, data: body } as AxiosResponse);
+    vi.spyOn(apiClient, 'get').mockRejectedValue(error);
+
+    const thrown = await exportAttendance({}).catch((caught: unknown) => caught);
+    expect(parseApiError(thrown)).toMatchObject({ code: 'EXPORT_TOO_LARGE', message: 'Có 6000 bản ghi, vượt giới hạn 5000 dòng mỗi file.' });
   });
 });

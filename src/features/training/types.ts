@@ -87,6 +87,9 @@ export type AttendanceHistoryItem = {
   member: MemberRef;
 };
 
+// Xuất Excel dùng cùng bộ lọc, không phân trang
+export type AttendanceExportQuery = Omit<AttendanceQuery, 'page' | 'pageSize'>;
+
 export type AttendanceQuery = PageQuery & {
   classId?: number;
   memberId?: number;
