@@ -19,6 +19,7 @@ export const centerManagerNavigation: NavigationEntry[] = [
       { label: 'Hội viên', path: '/app/members' },
       { label: 'Nhân sự', path: '/app/staff' },
       { label: 'Coach', path: '/app/coaches' },
+      { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
     ],
   },
   {
@@ -64,6 +65,7 @@ export const coachNavigation: NavigationItem[] = [
   // FR-11
   { label: 'Học viên của tôi', path: '/coach/members' },
   { label: 'Lịch của tôi', path: '/coach/schedule' },
+  { label: 'Đăng ký lịch dạy', path: '/coach/availability' },
   { label: 'Điểm danh', path: '/coach/attendance' },
   { label: 'Giáo án', path: '/coach/workout-plans' },
   // FR-51

@@ -10,6 +10,15 @@ import {
   getCoaches,
   removeCoachSport,
   updateCoachAvailability,
+  getMyAvailabilityCalendar,
+  saveMyAvailabilityDraft,
+  submitMyAvailability,
+  createAvailabilityChangeRequest,
+  getMyAvailabilityChangeRequests,
+  getAvailabilitySubmissions,
+  reviewAvailabilitySubmission,
+  getAvailabilityChangeRequests,
+  reviewAvailabilityChangeRequest,
 } from '../api';
 import type { AvailabilityInput } from '../types';
 
@@ -19,6 +28,10 @@ export const coachKeys = {
   availability: (coachId: number) => [...coachKeys.all, coachId, 'availability'] as const,
   schedule: (coachId: number, from: string, to: string) => [...coachKeys.all, coachId, 'schedule', from, to] as const,
   list: () => [...coachKeys.all, 'list'] as const,
+  myCalendar: (month: string) => [...coachKeys.all, 'me', 'availability-calendar', month] as const,
+  myChanges: () => [...coachKeys.all, 'me', 'availability-changes'] as const,
+  submissions: (month?: string, status?: string) => [...coachKeys.all, 'availability-submissions', month, status] as const,
+  changes: (status?: string) => [...coachKeys.all, 'availability-change-requests', status] as const,
 };
 
 export function useCoachSports(coachId: number) {
@@ -89,4 +102,45 @@ export function useDeleteAvailability(coachId: number) {
     mutationFn: (availabilityId: number) => deleteCoachAvailability(coachId, availabilityId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: coachKeys.availability(coachId) }),
   });
+}
+
+export function useMyAvailabilityCalendar(month: string) {
+  return useQuery({ queryKey: coachKeys.myCalendar(month), queryFn: () => getMyAvailabilityCalendar(month), retry: retryServerErrors });
+}
+
+export function useSaveMyAvailabilityDraft(month: string) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (selections: Array<{ dayOfWeek: number; shiftCode: string }>) => saveMyAvailabilityDraft(month, selections), onSuccess: () => queryClient.invalidateQueries({ queryKey: coachKeys.myCalendar(month) }) });
+}
+
+export function useSubmitMyAvailability(month: string) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: () => submitMyAvailability(month), onSuccess: () => queryClient.invalidateQueries({ queryKey: coachKeys.myCalendar(month) }) });
+}
+
+export function useCreateAvailabilityChangeRequest(month: string) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (input: { month: string; oldDayOfWeek: number; oldShiftCode: string; newDayOfWeek: number; newShiftCode: string; reason: string }) => createAvailabilityChangeRequest(input), onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: coachKeys.myCalendar(month) }), queryClient.invalidateQueries({ queryKey: coachKeys.myChanges() })]) });
+}
+
+export function useMyAvailabilityChangeRequests() {
+  return useQuery({ queryKey: coachKeys.myChanges(), queryFn: getMyAvailabilityChangeRequests, retry: retryServerErrors });
+}
+
+export function useAvailabilitySubmissions(month?: string, status?: string) {
+  return useQuery({ queryKey: coachKeys.submissions(month, status), queryFn: () => getAvailabilitySubmissions({ month, status }), retry: retryServerErrors });
+}
+
+export function useReviewAvailabilitySubmission(month?: string, status?: string) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: ({ id, input }: { id: number; input: { decision: 'APPROVE' | 'REJECT'; reason?: string } }) => reviewAvailabilitySubmission(id, input), onSuccess: () => queryClient.invalidateQueries({ queryKey: coachKeys.submissions(month, status) }) });
+}
+
+export function useAvailabilityChangeRequests(status?: string) {
+  return useQuery({ queryKey: coachKeys.changes(status), queryFn: () => getAvailabilityChangeRequests({ status }), retry: retryServerErrors });
+}
+
+export function useReviewAvailabilityChangeRequest(status?: string) {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: ({ id, input }: { id: number; input: { decision: 'APPROVE' | 'REJECT'; reason?: string } }) => reviewAvailabilityChangeRequest(id, input), onSuccess: () => queryClient.invalidateQueries({ queryKey: coachKeys.changes(status) }) });
 }

@@ -48,7 +48,7 @@ test('shows course, sport, price, Coach and availability without enrollment deta
   renderWithProviders(<PrivateCourseDetailPage />, { path: '/member/private-courses/:courseId', route: '/member/private-courses/9' });
 
   expect(await screen.findByRole('heading', { name: 'Bơi cơ bản' })).toBeInTheDocument();
-  expect(screen.getByText('Bơi lội')).toBeInTheDocument();
+  expect(screen.getAllByText('Bơi lội').length).toBeGreaterThan(0);
   expect(screen.getByText('Coach An')).toBeInTheDocument();
   expect(screen.getByText('09:00–11:00')).toBeInTheDocument();
   expect(screen.queryByText(/enrollment/i)).not.toBeInTheDocument();

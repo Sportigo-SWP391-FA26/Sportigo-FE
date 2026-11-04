@@ -1,9 +1,10 @@
-import { ArrowLeft, ArrowRight, CalendarBlank, CheckCircle, Clock, CurrencyCircleDollar, MapPin, Receipt, ShieldCheck, UserCircle, UsersThree } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, CalendarBlank, CheckCircle, Clock, CurrencyCircleDollar, Receipt, ShieldCheck, UserCircle, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
 import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Card, SectionHeading } from '../../../components/ui/Card';
+import { WeeklyTimetable } from '../../../components/schedule/WeeklyTimetable';
 import { Chip } from '../../../components/ui/Chip';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
@@ -94,15 +95,19 @@ export function GroupClassBookingDetailPage() {
   const canRegister = role === 'MEMBER' && registrationWindowOpen && item.remainingSeats > 0;
   const classListPath = role === 'RECEPTIONIST' ? '/app/class-bookings' : '/member/classes';
   const coachInitials = item.coach.user.displayName.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join('').toUpperCase();
+  const coachSpecialties = item.coach.coachSports?.map(({ sport }) => sport.name) ?? [];
+  const coachActive = !item.coach.status || item.coach.status === 'ACTIVE';
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:py-10">
-      <section className="class-booking-hero" aria-labelledby="class-booking-title">
+    <div className="mx-auto w-full max-w-[1480px] px-3 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <main className="grid min-w-0 gap-5">
+      <section className="class-booking-hero !mb-0" aria-labelledby="class-booking-title">
         <img className="class-booking-hero__image" src={sportImageUrl(item.sport)} alt={`Lớp ${item.name} · ${item.sport.name}`} />
         <div className="class-booking-hero__shade" />
         <div className="class-booking-hero__topbar">
           <ButtonLink to={classListPath} className="class-booking-hero__back"><ArrowLeft aria-hidden="true" /> Danh sách lớp</ButtonLink>
-          <Chip tone={registrationWindowOpen ? 'success' : 'neutral'} dot>{registrationWindowOpen ? 'Đang mở đăng ký' : 'Đã đóng đăng ký'}</Chip>
+          <Chip tone={registrationWindowOpen ? 'success' : 'neutral'} dot className="class-booking-status">{registrationWindowOpen ? 'Đang mở đăng ký' : 'Đã đóng đăng ký'}</Chip>
         </div>
         <div className="class-booking-hero__content">
           <div className="class-booking-hero__copy">
@@ -110,66 +115,78 @@ export function GroupClassBookingDetailPage() {
             <h1 id="class-booking-title">{item.name}</h1>
             <p>{item.description ?? 'Thông tin lớp nhóm và các buổi học dự kiến.'}</p>
           </div>
-          <aside className="class-booking-coach" aria-label={`Coach phụ trách: ${item.coach.user.displayName}`}>
-            {item.coach.user.avatarUrl
-              ? <img src={item.coach.user.avatarUrl} alt={`Coach ${item.coach.user.displayName}`} />
-              : <span className="class-booking-coach__initials" aria-hidden="true">{coachInitials}</span>}
-            <div><small>Coach phụ trách</small><strong>{item.coach.user.displayName}</strong><span>{item.sport.name}</span></div>
-          </aside>
         </div>
       </section>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-5"><p className="text-xs font-bold text-muted">Coach</p><p className="mt-1 text-lg font-extrabold">{item.coach.user.displayName}</p></Card>
-        <Card className="p-5"><p className="text-xs font-bold text-muted">Học phí</p><p className="mt-1 text-lg font-extrabold">{money(item.tuitionFee)}</p></Card>
-        <Card className="p-5"><p className="text-xs font-bold text-muted">Chỗ còn lại</p><p className="mt-1 text-lg font-extrabold">{item.remainingSeats} / {item.capacity}</p><p className="text-xs text-muted">{item.confirmedCount} đã xác nhận</p></Card>
-        <Card className="p-5"><p className="text-xs font-bold text-muted">Thời gian lớp</p><p className="mt-1 text-sm font-extrabold">{formatDate(item.startDate)} – {formatDate(item.endDate)}</p></Card>
+        <Card className="min-w-0 p-5 sm:p-6">
+          <SectionHeading title="Lịch các buổi học" description="Hai buổi mỗi tuần, kèm giờ học và phòng tập cụ thể." />
+          {item.sessions.length === 0 ? (
+            <EmptyState compact icon={<CalendarBlank />} title="Chưa có buổi học" description="Trung tâm chưa tạo lịch buổi cho lớp này." />
+          ) : (
+            <WeeklyTimetable items={item.sessions.map((session) => ({
+              id: session.id,
+              dayOfWeek: new Date(session.startsAt).getDay(),
+              date: session.startsAt,
+              time: `${formatDateTime(session.startsAt).split(' ')[1]}–${formatDateTime(session.endsAt).split(' ')[1]}`,
+              title: formatDateTime(session.startsAt).split(' ')[0],
+              subtitle: `${session.room?.name ?? 'Chưa có phòng'}${session.note ? ` · ${session.note}` : ''}`,
+              tone: session.status === 'CANCELLED' ? 'danger' as const : session.status === 'COMPLETED' ? 'neutral' as const : 'success' as const,
+              content: session.status === 'CANCELLED'
+                ? <Chip tone="danger">Đã hủy</Chip>
+                : session.status === 'COMPLETED'
+                  ? <Chip tone="neutral">Đã hoàn thành</Chip>
+                  : undefined,
+            }))} />
+          )}
+        </Card>
+      </main>
+
+        <aside className="grid gap-4 xl:sticky xl:top-24" aria-label="Thông tin lớp và Coach">
+          <Card className="overflow-hidden p-0">
+            <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4 p-4">
+              {item.coach.user.avatarUrl
+                ? <img className="h-36 w-28 rounded-xl object-cover object-top" src={item.coach.user.avatarUrl} alt={`Coach ${item.coach.user.displayName}`} />
+                : <span className="grid h-36 w-28 place-items-center rounded-xl bg-primary text-2xl font-extrabold text-white" aria-hidden="true">{coachInitials}</span>}
+              <div className="min-w-0 self-center">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-primary">Coach phụ trách</p>
+                <h2 className="mt-1 text-xl font-extrabold leading-tight text-ink">{item.coach.user.displayName}</h2>
+                <p className="mt-1 text-xs font-bold text-muted">{item.coach.coachCode ?? 'Coach Sportigo'}</p>
+                <Chip tone={coachActive ? 'success' : 'neutral'} dot>{coachActive ? 'Đang hoạt động' : item.coach.status === 'ON_LEAVE' ? 'Đang nghỉ phép' : 'Tạm ngưng'}</Chip>
+              </div>
+            </div>
+            <div className="border-t border-line px-4 py-4">
+              <p className="text-xs font-bold text-muted">Chuyên môn</p>
+              <div className="mt-2 flex flex-wrap gap-2">{(coachSpecialties.length ? coachSpecialties : [item.sport.name]).map((name) => <span key={name} className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-bold text-primary-deep">{name}</span>)}</div>
+              <p className="mt-4 text-sm leading-relaxed text-muted">{item.coach.bio ?? `Coach phụ trách chương trình ${item.sport.name}, theo dõi kỹ thuật và tiến độ của học viên trong suốt khóa học.`}</p>
+              {item.coach.hiredAt && <p className="mt-3 text-xs text-muted">Tham gia Sportigo từ <strong className="text-ink">{formatDate(item.coach.hiredAt)}</strong></p>}
+            </div>
+          </Card>
+
+          <Card className="order-3 p-5">
+            <h2 className="text-base font-extrabold text-ink">Thông tin lớp</h2>
+            <dl className="mt-4 divide-y divide-line text-sm">
+              <div className="flex items-center justify-between gap-4 py-3 first:pt-0"><dt className="text-muted">Học phí</dt><dd className="font-extrabold text-primary-deep">{money(item.tuitionFee)}</dd></div>
+              <div className="flex items-center justify-between gap-4 py-3"><dt className="text-muted">Chỗ còn lại</dt><dd className="text-right font-extrabold">{item.remainingSeats} / {item.capacity}<small className="block font-medium text-muted">{item.confirmedCount} đã xác nhận</small></dd></div>
+              <div className="py-3"><dt className="text-muted">Thời gian khóa</dt><dd className="mt-1 font-bold">{formatDate(item.startDate)} – {formatDate(item.endDate)}</dd></div>
+              <div className="py-3 last:pb-0"><dt className="text-muted">Thời hạn đăng ký</dt><dd className="mt-1 font-bold">Đến {formatDateTime(item.registrationCloseAt)}</dd></div>
+            </dl>
+          </Card>
+
+          <Card className="order-2 p-5">
+            <p className="font-extrabold">{!registrationWindowOpen ? 'Lớp không còn nhận đăng ký' : item.remainingSeats > 0 ? 'Sẵn sàng tham gia lớp?' : 'Lớp hiện đã hết chỗ'}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{!registrationWindowOpen ? 'Chỉ lớp chưa bắt đầu và còn trong thời hạn mới có thể đặt chỗ.' : item.remainingSeats > 0 ? 'Tạo đơn và hoàn tất thanh toán để xác nhận chỗ.' : 'Bạn có thể tham gia danh sách chờ của lớp.'}</p>
+            {role === 'MEMBER' && waitlistEntry && <p role="status" className="mt-3 text-sm font-bold text-success">Đã vào danh sách chờ ({waitlistEntry.status === 'WAITING' ? 'đang chờ' : waitlistEntry.status}).</p>}
+            {role === 'MEMBER' && waitlist.isError && <p role="alert" className="mt-3 text-sm text-danger">{parseApiError(waitlist.error).message}</p>}
+            <div className="mt-4 grid gap-2">
+              {role === 'MEMBER' ? <>
+                {item.remainingSeats > 0 && <Button onClick={() => { registration.reset(); setConfirmOpen(true); }} disabled={!canRegister}>{!registrationWindowOpen ? 'Ngoài thời gian đăng ký' : 'Đăng ký lớp'}</Button>}
+                {item.remainingSeats <= 0 && <Button onClick={submitWaitlist} loading={waitlist.isPending} disabled={!registrationWindowOpen || Boolean(waitlistEntry)}>{waitlistEntry ? 'Đã vào danh sách chờ' : !registrationWindowOpen ? 'Ngoài thời gian đăng ký' : 'Vào danh sách chờ'}</Button>}
+              </> : role === 'RECEPTIONIST' ? (
+                <Button onClick={() => { setMemberSearch(''); setSelectedMemberId(''); setStaffOrder(null); setStaffDialogOpen(true); }} disabled={!registrationWindowOpen || item.remainingSeats <= 0}>Đăng ký hộ hội viên</Button>
+              ) : role ? <span className="text-sm text-muted">Chỉ Member được đăng ký lớp.</span> : <ButtonLink to="/login">Đăng nhập để đăng ký</ButtonLink>}
+            </div>
+          </Card>
+        </aside>
       </div>
-      <Card className="mt-4 p-5"><p className="text-sm font-bold">Cửa sổ đăng ký</p><p className="mt-1 text-sm text-muted">{formatDateTime(item.registrationOpenAt)} – {formatDateTime(item.registrationCloseAt)}</p></Card>
-
-      <Card className="mt-5 p-5 sm:p-6">
-        <SectionHeading title="Lịch các buổi học" description="Lịch và phòng được hiển thị theo dữ liệu hiện có của lớp." />
-        {item.sessions.length === 0 ? (
-          <EmptyState compact icon={<CalendarBlank />} title="Chưa có buổi học" description="Trung tâm chưa tạo lịch buổi cho lớp này." />
-        ) : (
-          <ul className="divide-y divide-line">
-            {item.sessions.map((session) => (
-              <li key={session.id} className="flex flex-wrap items-center gap-3 py-3">
-                <CalendarBlank className="size-5 text-primary-deep" aria-hidden="true" />
-                <div className="min-w-0 flex-1"><p className="font-bold">{formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt).split(' ')[1]}</p>{session.note && <p className="text-xs text-muted">{session.note}</p>}</div>
-                <span className="inline-flex items-center gap-1 text-sm text-muted"><MapPin aria-hidden="true" />{session.room?.name ?? 'Chưa có phòng'}</span>
-                <Chip tone={session.status === 'CANCELLED' ? 'danger' : session.status === 'COMPLETED' ? 'neutral' : 'success'}>{session.status === 'CANCELLED' ? 'Đã hủy' : session.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đã lên lịch'}</Chip>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <Card className="mt-5 flex flex-wrap items-center justify-between gap-3 p-5">
-        <div>
-          <p className="font-extrabold">{!registrationWindowOpen ? 'Lớp không còn nhận đăng ký' : item.remainingSeats > 0 ? 'Sẵn sàng tham gia lớp?' : 'Lớp hiện đã hết chỗ'}</p>
-          <p className="mt-1 text-sm text-muted">{!registrationWindowOpen ? 'Chỉ những lớp chưa bắt đầu và còn trong thời hạn đăng ký mới có thể đặt chỗ.' : item.remainingSeats > 0 ? 'Đăng ký sẽ giữ chỗ và tạo đơn chờ thanh toán. Lớp chỉ được xác nhận sau khi thanh toán thành công.' : 'Member có thể gửi yêu cầu vào danh sách chờ; tình trạng chỗ và điều kiện vẫn được backend xác nhận.'}</p>
-          {role === 'MEMBER' && waitlistEntry && <p role="status" className="mt-2 text-sm font-bold text-success">Đã vào danh sách chờ ({waitlistEntry.status === 'WAITING' ? 'đang chờ' : waitlistEntry.status}).</p>}
-          {role === 'MEMBER' && waitlist.isError && <p role="alert" className="mt-2 text-sm text-danger">{parseApiError(waitlist.error).message}</p>}
-        </div>
-        {role === 'MEMBER' ? (
-          <div className="flex flex-wrap gap-2">
-            {item.remainingSeats > 0 && <Button onClick={() => { registration.reset(); setConfirmOpen(true); }} disabled={!canRegister}>
-              {!registrationWindowOpen ? 'Ngoài thời gian đăng ký' : 'Đăng ký lớp'}
-            </Button>}
-            {item.remainingSeats <= 0 && <Button onClick={submitWaitlist} loading={waitlist.isPending} disabled={!registrationWindowOpen || Boolean(waitlistEntry)}>
-              {waitlistEntry ? 'Đã vào danh sách chờ' : !registrationWindowOpen ? 'Ngoài thời gian đăng ký' : 'Vào danh sách chờ'}
-            </Button>}
-          </div>
-        ) : role === 'RECEPTIONIST' ? (
-          <Button onClick={() => { setMemberSearch(''); setSelectedMemberId(''); setStaffOrder(null); setStaffDialogOpen(true); }} disabled={!registrationWindowOpen || item.remainingSeats <= 0}>
-            Đăng ký hộ hội viên
-          </Button>
-        ) : role ? (
-          <span className="text-sm text-muted">Chỉ Member được đăng ký lớp.</span>
-        ) : (
-          <ButtonLink to="/login">Đăng nhập để đăng ký</ButtonLink>
-        )}
-      </Card>
 
       {role === 'MEMBER' && (
         <Dialog

@@ -29,7 +29,15 @@ export type PublicClassPage = {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
-export type PublicClassDetail = PublicGroupClass & {
+export type PublicClassDetail = Omit<PublicGroupClass, 'coach'> & {
+  coach: {
+    coachCode?: string;
+    bio?: string | null;
+    status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
+    hiredAt?: string | null;
+    user: { id: number; displayName: string; avatarUrl?: string | null };
+    coachSports?: Array<{ sport: { id: number; name: string } }>;
+  };
   confirmedCount: number;
   remainingSeats: number;
   sessions: Array<{

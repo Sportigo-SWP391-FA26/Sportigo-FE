@@ -78,6 +78,7 @@ export type MemberHomeData = {
   nextSession: MemberHomeSession | null;
   weekSchedule: MemberHomeSession[];
   recommendations: FeaturedGroupClass[];
+  privateRecommendations?: FeaturedPrivateCourse[];
   activities: Array<{ id: string; type: 'NOTIFICATION' | 'PAYMENT'; title: string; description: string; occurredAt: string }>;
 };
 

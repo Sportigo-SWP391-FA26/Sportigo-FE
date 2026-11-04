@@ -12,7 +12,7 @@ export function MemberHomePage() {
   const home = useMemberHome();
   const [recommendationGroup, setRecommendationGroup] = useState(0);
 
-  const recommendationCount = home.data?.recommendations.length ?? 0;
+  const recommendationCount = (home.data?.recommendations.length ?? 0) + (home.data?.privateRecommendations?.length ?? 0);
   // Mỗi nhịp dịch một lớp lên vị trí nổi bật, nhưng luôn giữ nguyên bố cục 3 lớp.
   const recommendationGroups = Math.max(1, recommendationCount);
   useEffect(() => {
@@ -24,11 +24,33 @@ export function MemberHomePage() {
   if (home.isPending) return <SportLoading title="Đang chuẩn bị lịch của bạn" description="Các buổi học, Coach và hoạt động mới nhất đang được đồng bộ." />;
   if (home.isError) return <section className="member-data-state"><h1>Chưa thể tải trang chủ</h1><p>Dữ liệu hội viên chưa sẵn sàng.</p><button type="button" onClick={() => home.refetch()}>Thử lại</button></section>;
 
-  const { profile, nextSession, weekSchedule, recommendations, activities } = home.data;
-  const visibleRecommendations = recommendations.length
-    ? Array.from({ length: Math.min(3, recommendations.length) }, (_, offset) => recommendations[(recommendationGroup + offset) % recommendations.length])
+  const { profile, nextSession, weekSchedule, recommendations, privateRecommendations = [], activities } = home.data;
+  const catalog = [
+    ...recommendations.map((item) => ({
+      key: `group-${item.id}`,
+      type: 'Lớp nhóm',
+      name: item.name,
+      sport: item.sport,
+      coach: item.coach.user.displayName,
+      detail: `${item._count.registrations}/${item.capacity} học viên`,
+      schedule: time(item.sessions[0]?.startsAt ?? item.startDate),
+      href: `/member/classes/${item.id}`,
+    })),
+    ...privateRecommendations.map((item) => ({
+      key: `private-${item.id}`,
+      type: 'Khóa 1–1',
+      name: item.name,
+      sport: item.sport,
+      coach: item.coaches[0]?.coach.user.displayName ?? 'Đội ngũ Coach Sportigo',
+      detail: `${item.totalSessions} buổi cá nhân`,
+      schedule: 'Lịch cố định cùng Coach',
+      href: `/member/private-courses/${item.id}`,
+    })),
+  ];
+  const visibleRecommendations = catalog.length
+    ? Array.from({ length: Math.min(3, catalog.length) }, (_, offset) => catalog[(recommendationGroup + offset) % catalog.length])
     : [];
-  const emptyHeroImage = sportImageUrl(recommendations[0]?.sport ?? { name: 'Bơi lội' });
+  const emptyHeroImage = sportImageUrl(catalog[0]?.sport ?? { name: 'Bơi lội' });
   return (
     <div className="member-home member-home--landing">
       {nextSession ? <section className={`member-home-hero ${nextSession.sport.imageUrl ? '' : 'member-home-hero--no-image'}`}>
@@ -65,15 +87,15 @@ export function MemberHomePage() {
       </section>
 
       <section className="member-home-showcase" aria-labelledby="discovery-heading">
-        <header><div><h2 id="discovery-heading">Lớp đang mở dành cho bạn</h2><p>Đề xuất được lấy từ lịch lớp hiện tại của trung tâm.</p></div><Link to="/member/classes">Xem toàn bộ lịch <ArrowRight /></Link></header>
+        <header><div><h2 id="discovery-heading">Lớp & khóa 1–1 đang mở</h2><p>Khám phá lớp nhóm và chương trình cá nhân đang nhận đăng ký.</p></div><Link to="/member/classes">Xem toàn bộ chương trình <ArrowRight /></Link></header>
         {visibleRecommendations.length ? <div className="member-home-showcase__carousel">
           {recommendationGroups > 1 && <button className="member-home-showcase__arrow member-home-showcase__arrow--previous" type="button" aria-label="Xem các lớp trước" onClick={() => setRecommendationGroup((recommendationGroup - 1 + recommendationGroups) % recommendationGroups)}><CaretLeft /></button>}
           <div className="member-home-showcase__grid" aria-live="polite">
           <article className="member-home-showcase__featured">
-            <img src={sportImageUrl(visibleRecommendations[0].sport)} alt={visibleRecommendations[0].sport.name} loading="lazy" /><div className="member-home-showcase__shade" /><div><span>{visibleRecommendations[0].sport.name}</span><h3>{visibleRecommendations[0].name}</h3><p>{visibleRecommendations[0].coach.user.displayName} · {time(visibleRecommendations[0].sessions[0]?.startsAt ?? visibleRecommendations[0].startDate)}</p><Link to={`/member/classes/${visibleRecommendations[0].id}`}>Xem lớp <ArrowRight /></Link></div>
+            <img src={sportImageUrl(visibleRecommendations[0].sport)} alt={visibleRecommendations[0].sport.name} loading="lazy" /><div className="member-home-showcase__shade" /><div><span>{visibleRecommendations[0].type} · {visibleRecommendations[0].sport.name}</span><h3>{visibleRecommendations[0].name}</h3><p>{visibleRecommendations[0].coach} · {visibleRecommendations[0].schedule}</p><Link to={visibleRecommendations[0].href}>Xem chi tiết <ArrowRight /></Link></div>
           </article>
           <div className="member-home-showcase__compact">{visibleRecommendations.slice(1).map((item) => (
-            <article key={item.id}><img src={sportImageUrl(item.sport)} alt={item.sport.name} loading="lazy" /><div><span>{item.sport.name}</span><h3>{item.name}</h3><p>{item.coach.user.displayName}</p><small><UsersThree /> {item._count.registrations}/{item.capacity} chỗ</small></div><Link to={`/member/classes/${item.id}`} aria-label={`Xem ${item.name}`}><ArrowRight /></Link></article>
+            <article key={item.key}><img src={sportImageUrl(item.sport)} alt={item.sport.name} loading="lazy" /><div><span>{item.type} · {item.sport.name}</span><h3>{item.name}</h3><p>{item.coach}</p><small><UsersThree /> {item.detail}</small></div><Link to={item.href} aria-label={`Xem ${item.name}`}><ArrowRight /></Link></article>
           ))}</div>
           </div>
           {recommendationGroups > 1 && <button className="member-home-showcase__arrow member-home-showcase__arrow--next" type="button" aria-label="Xem các lớp tiếp theo" onClick={() => setRecommendationGroup((recommendationGroup + 1) % recommendationGroups)}><CaretRight /></button>}

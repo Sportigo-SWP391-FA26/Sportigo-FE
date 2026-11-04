@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { OccurrenceActionInput, OccurrenceChange, PrivateCourse, PrivateEnrollment } from './types';
+import type { OccurrenceActionInput, OccurrenceChange, PrivateCourse, PrivateEnrollment, UpdatePrivateCourseInput } from './types';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -10,6 +10,11 @@ export async function getPrivateCourses() {
 
 export async function getPrivateCourse(courseId: number) {
   const { data } = await apiClient.get<DataResponse<PrivateCourse>>(`/private-courses/${courseId}`);
+  return data.data;
+}
+
+export async function updatePrivateCourse(courseId: number, input: UpdatePrivateCourseInput) {
+  const { data } = await apiClient.patch<DataResponse<PrivateCourse>>(`/private-courses/${courseId}`, input);
   return data.data;
 }
 

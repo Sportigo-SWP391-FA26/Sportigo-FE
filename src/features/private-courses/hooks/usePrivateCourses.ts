@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changePrivateOccurrence, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses } from '../api';
-import type { OccurrenceActionInput } from '../types';
+import { changePrivateOccurrence, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses, updatePrivateCourse } from '../api';
+import type { OccurrenceActionInput, UpdatePrivateCourseInput } from '../types';
 
 export const privateCourseKeys = {
   all: ['private-courses'] as const,
@@ -25,6 +25,17 @@ export function usePrivateCourse(courseId: number) {
     queryFn: () => getPrivateCourse(courseId),
     retry: retryServerErrors,
     enabled: Number.isInteger(courseId) && courseId > 0,
+  });
+}
+
+export function useUpdatePrivateCourse(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdatePrivateCourseInput) => updatePrivateCourse(courseId, input),
+    onSuccess: (course) => {
+      queryClient.setQueryData(privateCourseKeys.detail(courseId), course);
+      queryClient.invalidateQueries({ queryKey: privateCourseKeys.list() });
+    },
   });
 }
 

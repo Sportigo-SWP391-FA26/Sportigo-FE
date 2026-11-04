@@ -3,6 +3,9 @@ import axios from 'axios';
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api',
   withCredentials: true,
+  // Không để một request bị treo vô hạn khi Supabase hoặc Render đang khởi động.
+  // 30 giây vẫn đủ cho cold start của Render Free.
+  timeout: 30_000,
 });
 
 apiClient.interceptors.request.use((config) => {

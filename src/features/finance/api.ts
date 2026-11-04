@@ -55,7 +55,7 @@ export const financeApi = {
   revenue: () => apiClient.get<Revenue>('/reports/revenue').then((r) => r.data),
   audit: (params: AuditQuery) => apiClient.get<AuditPage>('/audit-logs', { params }).then((r) => r.data),
   classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),
-  verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; confirmed: boolean; paymentStatus: string; responseCode?: string; reference?: string }>(`/payments/vnpay/verify?${query}`).then((r) => r.data),
+  verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; confirmed: boolean; paymentStatus: string; responseCode?: string; transactionStatus?: string; reference?: string }>(`/payments/vnpay/verify?${query}`).then((r) => r.data),
   invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),
   revenueExcel: () => apiClient.get<Blob>('/reports/revenue/export', { responseType: 'blob' }).then((r) => r.data),
   reportFile: (kind: 'revenue'|'classes', format: 'xlsx'|'pdf') => apiClient.get<Blob>(`/reports/${kind}/export`, { params: { format }, responseType: 'blob' }).then((r) => r.data),

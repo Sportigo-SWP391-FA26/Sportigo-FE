@@ -17,6 +17,7 @@ import { parseApiError, retryServerErrors } from '../../training/errors';
 import { trainingKeys } from '../../training/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
+import { WeeklyTimetable } from '../../../components/schedule/WeeklyTimetable';
 import { useCoaches } from '../../coaches/hooks/useCoachManagement';
 import { useRooms } from '../../catalog/hooks';
 import { useGroupClassSessions, useGroupClasses, useCancelClassSession, useChangeClassSession, useCreateClassSession, useCreateRecurringClassSessions, useUpdateGroupClass, useUpdateGroupClassStatus } from '../hooks/useGroupClasses';
@@ -128,15 +129,16 @@ export function GroupClassDetailPage() {
         ) : sessions.data.length === 0 ? (
           <EmptyState compact icon={<CalendarBlank />} title="Lớp chưa có buổi học" description="Chưa có ClassSession nào được tạo cho lớp này." />
         ) : (
-          <ul className="divide-y divide-line">
-            {sessions.data.map((session) => (
-              <li key={session.id} className="flex flex-wrap items-center gap-3 py-3">
-                <div className="min-w-0 flex-1"><p className="font-bold text-ink">{formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt).split(' ')[1]}</p><p className="text-xs text-muted">{session.room?.name ?? 'Chưa có phòng'}{session.note ? ` · ${session.note}` : ''}</p></div>
-                <Chip tone={session.status === 'CANCELLED' ? 'danger' : session.status === 'COMPLETED' ? 'neutral' : 'success'} dot>{session.status === 'SCHEDULED' ? 'Đã lên lịch' : session.status === 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'}</Chip>
-                {session.status === 'SCHEDULED' && <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={() => setChangeTarget({ id: session.id, startsAt: session.startsAt, roomId: session.roomId })}>Đổi lịch</Button><Button size="sm" variant="danger" onClick={() => setCancelTarget({ id: session.id, title: formatDateTime(session.startsAt) })}>Hủy buổi học</Button></div>}
-              </li>
-            ))}
-          </ul>
+          <WeeklyTimetable items={sessions.data.map((session) => ({
+            id: session.id,
+            dayOfWeek: new Date(session.startsAt).getDay(),
+            date: session.startsAt,
+            time: `${formatDateTime(session.startsAt).split(' ')[1]}–${formatDateTime(session.endsAt).split(' ')[1]}`,
+            title: formatDateTime(session.startsAt).split(' ')[0],
+            subtitle: `${session.room?.name ?? 'Chưa có phòng'}${session.note ? ` · ${session.note}` : ''}`,
+            tone: session.status === 'CANCELLED' ? 'danger' as const : session.status === 'COMPLETED' ? 'neutral' as const : 'success' as const,
+            content: <div className="space-y-2"><Chip tone={session.status === 'CANCELLED' ? 'danger' : session.status === 'COMPLETED' ? 'neutral' : 'success'} dot>{session.status === 'SCHEDULED' ? 'Đã lên lịch' : session.status === 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'}</Chip>{session.status === 'SCHEDULED' && <div className="grid gap-1.5"><Button size="sm" variant="secondary" onClick={() => setChangeTarget({ id: session.id, startsAt: session.startsAt, roomId: session.roomId })}>Đổi lịch</Button><Button size="sm" variant="danger" onClick={() => setCancelTarget({ id: session.id, title: formatDateTime(session.startsAt) })}>Hủy buổi học</Button></div>}</div>,
+          }))} />
         )}
       </Card>
       {editing && <EditGroupClassDialog groupClass={groupClass} onClose={() => setEditing(false)} />}

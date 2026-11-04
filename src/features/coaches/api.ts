@@ -1,6 +1,6 @@
 import { apiClient } from '../../api/client';
 import type { StaffListPage } from '../staff/types';
-import type { CoachAvailability, CoachScheduleItem, CoachSport, AvailabilityInput } from './types';
+import type { CoachAvailability, CoachScheduleItem, CoachSport, AvailabilityInput, AvailabilityCalendar, AvailabilityChangeRequest, AvailabilitySubmission } from './types';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -69,4 +69,49 @@ export async function getCoaches() {
     ),
   );
   return [first.data, ...rest.map((response) => response.data)].flatMap((page) => page.items);
+}
+
+export async function getMyAvailabilityCalendar(month: string) {
+  const { data } = await apiClient.get<AvailabilityCalendar>('/coaches/me/availability-calendar', { params: { month } });
+  return data;
+}
+
+export async function saveMyAvailabilityDraft(month: string, selections: Array<{ dayOfWeek: number; shiftCode: string }>) {
+  const { data } = await apiClient.put<AvailabilitySubmission>(`/coaches/me/availability-submissions/${month}/draft`, { selections });
+  return data;
+}
+
+export async function submitMyAvailability(month: string) {
+  const { data } = await apiClient.post<AvailabilitySubmission>(`/coaches/me/availability-submissions/${month}/submit`);
+  return data;
+}
+
+export async function createAvailabilityChangeRequest(input: { month: string; oldDayOfWeek: number; oldShiftCode: string; newDayOfWeek: number; newShiftCode: string; reason: string }) {
+  const { data } = await apiClient.post<AvailabilityChangeRequest>('/coaches/me/availability-change-requests', input);
+  return data;
+}
+
+export async function getMyAvailabilityChangeRequests() {
+  const { data } = await apiClient.get<AvailabilityChangeRequest[]>('/coaches/me/availability-change-requests');
+  return data;
+}
+
+export async function getAvailabilitySubmissions(params?: { month?: string; status?: string; coachId?: number }) {
+  const { data } = await apiClient.get<AvailabilitySubmission[]>('/coach-availability-submissions', { params });
+  return data;
+}
+
+export async function reviewAvailabilitySubmission(id: number, input: { decision: 'APPROVE' | 'REJECT'; reason?: string }) {
+  const { data } = await apiClient.post<AvailabilitySubmission>(`/coach-availability-submissions/${id}/review`, input);
+  return data;
+}
+
+export async function getAvailabilityChangeRequests(params?: { status?: string; coachId?: number }) {
+  const { data } = await apiClient.get<AvailabilityChangeRequest[]>('/coach-availability-change-requests', { params });
+  return data;
+}
+
+export async function reviewAvailabilityChangeRequest(id: number, input: { decision: 'APPROVE' | 'REJECT'; reason?: string }) {
+  const { data } = await apiClient.post<AvailabilityChangeRequest>(`/coach-availability-change-requests/${id}/review`, input);
+  return data;
 }

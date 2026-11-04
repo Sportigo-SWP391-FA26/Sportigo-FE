@@ -18,17 +18,28 @@ export type PrivateCourse = {
   validityDays: number;
   price: string | number;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-  sport: { id: number; name: string; isActive: boolean };
+  sport: { id: number; name: string; imageUrl?: string | null; isActive: boolean };
   coaches: {
     coachId: number;
     privateCourseId: number;
     customPrice: string | number | null;
     isActive: boolean;
     coach: {
-      user: { id: number; displayName: string };
+      user: { id: number; displayName: string; avatarUrl?: string | null };
       availabilities: CourseAvailability[];
     };
   }[];
+};
+
+export type UpdatePrivateCourseInput = {
+  sportId?: number;
+  name?: string;
+  description?: string | null;
+  totalSessions?: number;
+  sessionDurationMinutes?: number;
+  validityDays?: number;
+  price?: number;
+  status?: PrivateCourse['status'];
 };
 
 export type PrivateSchedule = {

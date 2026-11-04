@@ -43,6 +43,8 @@ const CoachMembersPage = lazy(() => import('../features/members/pages/CoachMembe
 const CoachManagementListPage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachManagementListPage })));
 const CoachManagementPage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachManagementPage })));
 const CoachOwnSchedulePage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachOwnSchedulePage })));
+const CoachAvailabilityPage = lazy(() => import('../features/coaches/pages/CoachAvailabilityPage').then((module) => ({ default: module.CoachAvailabilityPage })));
+const ManagerAvailabilityPage = lazy(() => import('../features/coaches/pages/ManagerAvailabilityPage').then((module) => ({ default: module.ManagerAvailabilityPage })));
 const GroupClassDetailPage = lazy(() => import('../features/group-classes/pages/GroupClassDetailPage').then((module) => ({ default: module.GroupClassDetailPage })));
 const GroupClassesPage = lazy(() => import('../features/group-classes/pages/GroupClassesPage').then((module) => ({ default: module.GroupClassesPage })));
 const MemberPrivateSchedulePage = lazy(() => import('../features/private-courses/pages/MemberPrivateSchedulePage').then((module) => ({ default: module.MemberPrivateSchedulePage })));
@@ -81,6 +83,7 @@ export const router = createBrowserRouter([
               { path: 'members', element: <MembersPage /> },
               { path: 'coaches', element: <CoachManagementListPage /> },
               { path: 'coaches/:coachId', element: <CoachManagementPage /> },
+              { path: 'coach-availability', element: <ManagerAvailabilityPage /> },
               { path: 'sports', element: <SportsManagementPage /> },
               { path: 'rooms', element: <RoomsManagementPage /> },
               { path: 'classes', element: <GroupClassesPage /> },
@@ -148,6 +151,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="attendance" replace /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
           { path: 'schedule', element: <CoachOwnSchedulePage /> },
+          { path: 'availability', element: <CoachAvailabilityPage /> },
           { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
           { path: 'workout-plans', element: <WorkoutPlansPage /> },
           { path: 'workout-plans/:planId', element: <WorkoutPlanDetailPage /> },
