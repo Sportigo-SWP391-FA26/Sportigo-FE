@@ -1,9 +1,9 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getAttendanceHistory, getSessionAttendance, markSessionAttendance } from '../api';
+import { exportAttendance, getAttendanceHistory, getSessionAttendance, markSessionAttendance } from '../api';
 import { retryServerErrors } from '../errors';
 import { endOfCenterDay, startOfCenterDay } from '../format';
 import { trainingKeys } from '../queryKeys';
-import type { AttendanceQuery, AttendanceStatus, MarkAttendanceInput } from '../types';
+import type { AttendanceExportQuery, AttendanceQuery, AttendanceStatus, MarkAttendanceInput } from '../types';
 
 export function useAttendanceHistory(query: AttendanceQuery, enabled = true) {
   return useQuery({
@@ -67,4 +67,9 @@ export function useAttendanceSummary(range: { from: string; to: string }) {
         ? undefined
         : { attended: present + late, marked },
   };
+}
+
+// Xuất Excel lịch sử điểm danh (Coach, Manager); trả về file để trang tự lưu
+export function useExportAttendance() {
+  return useMutation({ mutationFn: (query: AttendanceExportQuery) => exportAttendance(query) });
 }

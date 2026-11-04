@@ -1,8 +1,10 @@
-import { MagnifyingGlass, X } from '@phosphor-icons/react';
+import { FileXls, MagnifyingGlass, X } from '@phosphor-icons/react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from '../../../components/feedback/toast';
+import { parseApiError } from '../errors';
 import { addDays, endOfCenterDay, formatDateTime, formatTime, monthRange, startOfCenterDay, todayInCenter } from '../format';
-import { useAttendanceHistory } from '../hooks/useAttendance';
+import { useAttendanceHistory, useExportAttendance } from '../hooks/useAttendance';
 import { attendanceStatuses, attendanceStatusLabels } from '../labels';
 import type { AttendanceHistoryItem, AttendanceQuery, AttendanceStatus } from '../types';
 import { AttendanceStatusChip } from './AttendanceStatusChip';
@@ -69,6 +71,19 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
     to: to ? endOfCenterDay(to) : undefined,
   };
   const history = useAttendanceHistory(query, !rangeError);
+  const exporter = useExportAttendance();
+  const canExport = isStaff && !rangeError && (history.data?.total ?? 0) > 0;
+
+  // Xuất đúng bộ lọc đang áp dụng trên server; ô tìm kiếm chỉ lọc trong trang nên không áp dụng cho file
+  const exportExcel = async () => {
+    try {
+      const filters = { status: query.status, classId: query.classId, memberId: query.memberId, from: query.from, to: query.to };
+      saveFile(await exporter.mutateAsync(filters), `sportigo-diem-danh-${todayInCenter()}.xlsx`);
+      toast('Đã tải báo cáo điểm danh.');
+    } catch (error) {
+      toast(parseApiError(error).message, 'error');
+    }
+  };
   const hasFilters = FILTER_KEYS.some((key) => key !== 'page' && params.get(key));
 
   // Đổi bộ lọc thì quay về trang 1; giữ các tham số khác của trang (ví dụ ?tab=)
@@ -117,7 +132,7 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
   );
 
   const clearButton = (
-    <Button variant="ghost" className="ml-auto" onClick={clearFilters} disabled={!hasFilters && !search} icon={<X aria-hidden="true" />}>
+    <Button variant="ghost" onClick={clearFilters} disabled={!hasFilters && !search} icon={<X aria-hidden="true" />}>
       Xóa bộ lọc
     </Button>
   );
@@ -125,7 +140,7 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
   return (
     <div>
       <div className={`${cardClass} p-4 sm:p-5`}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:items-end">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto] lg:items-end">
           <Field id={`${id}-search`} label="Tìm kiếm" className="sm:col-span-2 lg:col-span-1">
             <div className="relative">
               <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -163,20 +178,34 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
               ))}
             </SelectInput>
           </Field>
-        </div>
-
-        {/* Hàng dưới: chip chọn nhanh và bộ lọc đang áp dụng bên trái, nút Xóa bộ lọc bên phải */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {presetGroup}
-            {isStaff && classId && (
-              <ActiveFilter label={`Lớp: ${className ?? `#${classId}`}`} onRemove={() => updateParams({ classId: undefined })} />
-            )}
-            {memberId && (
-              <ActiveFilter label={`Học viên: ${memberName ?? `#${memberId}`}`} onRemove={() => updateParams({ memberId: undefined })} />
-            )}
-          </div>
           {clearButton}
+        </div>
+      </div>
+
+      {/* Thẻ ngang: chip chọn nhanh và bộ lọc đang áp dụng bên trái, Xuất Excel bên phải */}
+      <div className={`${cardClass} mt-3 flex flex-wrap items-center justify-between gap-2 p-3 sm:px-4`}>
+        <div className="flex flex-wrap items-center gap-2">
+          {presetGroup}
+          {isStaff && classId && (
+            <ActiveFilter label={`Lớp: ${className ?? `#${classId}`}`} onRemove={() => updateParams({ classId: undefined })} />
+          )}
+          {memberId && (
+            <ActiveFilter label={`Học viên: ${memberName ?? `#${memberId}`}`} onRemove={() => updateParams({ memberId: undefined })} />
+          )}
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {isStaff && (
+            <Button
+              variant="secondary"
+              onClick={exportExcel}
+              loading={exporter.isPending}
+              disabled={!canExport}
+              icon={<FileXls aria-hidden="true" />}
+              title={search ? 'File xuất theo bộ lọc ngày, trạng thái, lớp; không áp dụng ô tìm kiếm' : undefined}
+            >
+              Xuất Excel
+            </Button>
+          )}
         </div>
       </div>
 
@@ -231,6 +260,16 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
       </div>
     </div>
   );
+}
+
+function saveFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  // Đợi trình duyệt bắt đầu tải rồi mới thu hồi URL
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function ActiveFilter({ label, onRemove }: { label: string; onRemove: () => void }) {

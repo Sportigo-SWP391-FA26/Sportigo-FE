@@ -1,8 +1,10 @@
+import axios from 'axios';
 import { apiClient } from '../../api/client';
 import type {
   AssessableContext,
   AssessmentInput,
   AssessmentQuery,
+  AttendanceExportQuery,
   AttendanceHistoryItem,
   AttendanceQuery,
   CoachMemberListRow,
@@ -56,6 +58,24 @@ export async function getAttendanceHistory(query: AttendanceQuery) {
     params: cleanParams(query),
   });
   return data;
+}
+
+// Xuất Excel lịch sử điểm danh theo bộ lọc đang chọn (Coach, Manager)
+export async function exportAttendance(query: AttendanceExportQuery) {
+  try {
+    const { data } = await apiClient.get<Blob>('/attendance/export', { params: cleanParams(query), responseType: 'blob' });
+    return data;
+  } catch (error) {
+    // responseType blob làm body lỗi cũng là Blob: đọc lại thành JSON để hiện đúng thông báo của backend
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text());
+      } catch {
+        // Không phải JSON thì giữ nguyên, parseApiError dùng thông báo chung
+      }
+    }
+    throw error;
+  }
 }
 
 // ---------- FR-49 / FR-50 ----------
