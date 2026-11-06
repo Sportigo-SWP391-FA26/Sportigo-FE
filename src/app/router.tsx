@@ -34,6 +34,8 @@ const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage').t
 const UsersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })));
 const MembersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.MembersPage })));
 const StaffPage = lazy(() => import('../features/staff/pages/StaffPage').then((module) => ({ default: module.StaffPage })));
+// note: FR-65 tải riêng như các trang khác để không làm nặng lần mở web đầu tiên
+const StaffPerformancePage = lazy(() => import('../features/staff/pages/StaffPerformancePage').then((module) => ({ default: module.StaffPerformancePage })));
 const MemberSupportPage = lazy(() => import('../features/support/pages/MemberSupportPage').then((module) => ({ default: module.MemberSupportPage })));
 const MemberSupportDetailPage = lazy(() => import('../features/support/pages/MemberSupportDetailPage').then((module) => ({ default: module.MemberSupportDetailPage })));
 const SupportQueuePage = lazy(() => import('../features/support/pages/SupportQueuePage').then((module) => ({ default: module.SupportQueuePage })));
@@ -80,6 +82,9 @@ export const router = createBrowserRouter([
               { path: 'website-content', element: <LandingContentPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
+              // FR-65: hiệu suất nhân sự, chỉ Manager. Không đặt dưới "staff/" vì menu so khớp theo tiền tố
+              // sẽ tô sáng cả mục "Nhân sự" lẫn "Hiệu suất nhân sự" cùng lúc
+              { path: 'staff-performance', element: <StaffPerformancePage /> },
               { path: 'members', element: <MembersPage /> },
               { path: 'coaches', element: <CoachManagementListPage /> },
               { path: 'coaches/:coachId', element: <CoachManagementPage /> },

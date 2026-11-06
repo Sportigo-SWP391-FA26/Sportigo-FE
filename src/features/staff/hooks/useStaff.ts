@@ -1,7 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
 import { userKeys } from '../../users/hooks/useUsers';
-import { createStaff, listStaff, updateStaff } from '../api';
+import { createStaff, getStaffPerformance, listStaff, updateStaff } from '../api';
+import type { PerformanceRange } from '../performanceTypes';
 import type { CreateStaffInput, StaffListQuery, UpdateStaffInput } from '../types';
 
 export const staffKeys = {
@@ -14,6 +15,16 @@ export function useStaffList(query: StaffListQuery) {
   return useQuery({
     queryKey: staffKeys.list(query),
     queryFn: () => listStaff(query),
+    placeholderData: keepPreviousData,
+    retry: retryServerErrors,
+  });
+}
+
+// FR-65: giữ số liệu cũ trong lúc đổi khoảng ngày để bảng không nháy trắng
+export function useStaffPerformance(range: PerformanceRange) {
+  return useQuery({
+    queryKey: [...staffKeys.all, 'performance', range] as const,
+    queryFn: () => getStaffPerformance(range),
     placeholderData: keepPreviousData,
     retry: retryServerErrors,
   });

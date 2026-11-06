@@ -1,7 +1,7 @@
-import { IdentificationBadge, MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { ChartBar, IdentificationBadge, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button } from '../../../components/ui/Button';
+import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Card, PageHeader } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -82,9 +82,15 @@ export function StaffPage() {
         title="Quản lý nhân sự"
         description="Tạo và quản lý tài khoản Coach, Receptionist. Mã nhân sự được hệ thống cấp tự động."
         actions={
-          <Button icon={<Plus aria-hidden="true" />} onClick={() => setForm({ open: true, staff: null })}>
-            Thêm nhân sự
-          </Button>
+          <>
+            {/* note: FR-65 lối tắt sang trang hiệu suất nhân sự */}
+            <ButtonLink to="/app/staff-performance" variant="secondary" icon={<ChartBar aria-hidden="true" />}>
+              Xem hiệu suất
+            </ButtonLink>
+            <Button icon={<Plus aria-hidden="true" />} onClick={() => setForm({ open: true, staff: null })}>
+              Thêm nhân sự
+            </Button>
+          </>
         }
       />
 

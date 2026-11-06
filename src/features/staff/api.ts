@@ -1,5 +1,6 @@
 import { apiClient } from '../../api/client';
 import type { CreateStaffInput, StaffListPage, StaffListQuery, StaffMember, UpdateStaffInput } from './types';
+import type { PerformanceRange, StaffPerformance } from './performanceTypes';
 
 // FR-07
 export async function listStaff(query: StaffListQuery) {
@@ -11,6 +12,12 @@ export async function listStaff(query: StaffListQuery) {
 
 export async function createStaff(input: CreateStaffInput) {
   const { data } = await apiClient.post<StaffMember & { emailSent: boolean }>('/staff', input);
+  return data;
+}
+
+// FR-65: hiệu suất nhân sự trong khoảng ngày (giờ trung tâm)
+export async function getStaffPerformance(range: PerformanceRange) {
+  const { data } = await apiClient.get<StaffPerformance>('/staff/performance', { params: range });
   return data;
 }
 

@@ -18,6 +18,8 @@ export const centerManagerNavigation: NavigationEntry[] = [
       { label: 'Người dùng', path: '/app/users' },
       { label: 'Hội viên', path: '/app/members' },
       { label: 'Nhân sự', path: '/app/staff' },
+      // FR-65
+      { label: 'Hiệu suất nhân sự', path: '/app/staff-performance' },
       { label: 'Coach', path: '/app/coaches' },
       { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
     ],
