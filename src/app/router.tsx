@@ -6,6 +6,7 @@ import { MemberLayout } from '../layouts/MemberLayout';
 import { RequireRole } from '../components/auth/RequireRole';
 import { CoachLayout } from '../layouts/CoachLayout';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
+import { getSessionRole } from '../components/auth/session';
 import { LandingPage } from '../features/landing/pages/LandingPage';
 
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
@@ -15,6 +16,7 @@ const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPassw
 const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
 const ComingSoonPage = lazy(() => import('../pages/ComingSoonPage').then((module) => ({ default: module.ComingSoonPage })));
 const MemberHomePage = lazy(() => import('../features/member/pages/MemberHomePage').then((module) => ({ default: module.MemberHomePage })));
+const WaitlistPage = lazy(() => import('../features/member/pages/WaitlistPage').then((module) => ({ default: module.WaitlistPage })));
 const ClassSchedulePage = lazy(() => import('../features/member/pages/ClassSchedulePage').then((module) => ({ default: module.ClassSchedulePage })));
 const GroupClassBookingDetailPage = lazy(() => import('../features/member/pages/GroupClassBookingDetailPage').then((module) => ({ default: module.GroupClassBookingDetailPage })));
 const MemberPaymentsPage = lazy(() => import('../features/finance/pages/MemberPaymentsPage').then((module) => ({ default: module.MemberPaymentsPage })));
@@ -55,12 +57,26 @@ const RoomsManagementPage = lazy(() => import('../features/catalog/pages/RoomsMa
 const SportsManagementPage = lazy(() => import('../features/catalog/pages/SportsManagementPage').then((module) => ({ default: module.SportsManagementPage })));
 const LandingContentPage = lazy(() => import('../features/content/pages/LandingContentPage').then((module) => ({ default: module.LandingContentPage })));
 
+function WaitlistRouteLayout() {
+  return getSessionRole() === 'CENTER_MANAGER' ? <AppLayout /> : <MemberLayout />;
+}
+
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  {
+    path: '/waitlist',
+    element: <RequireRole roles={['MEMBER', 'CENTER_MANAGER']} />,
+    children: [
+      {
+        element: <WaitlistRouteLayout />,
+        children: [{ index: true, element: <WaitlistPage /> }],
+      },
+    ],
+  },
   {
     path: '/app',
     element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,

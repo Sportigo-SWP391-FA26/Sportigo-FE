@@ -28,6 +28,7 @@ export const centerManagerNavigation: NavigationEntry[] = [
       { label: 'Bộ môn', path: '/app/sports' },
       { label: 'Lớp nhóm', path: '/app/classes' },
       { label: 'Khóa học 1–1', path: '/app/private-courses' },
+      { label: 'Waitlist', path: '/waitlist' },
       { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
       { label: 'Phòng tập', path: '/app/rooms' },
     ],
