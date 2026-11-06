@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { ClassRegistrationOrder, MyClassRegistration, PublicClassDetail, PublicClassFilters, PublicClassPage, WaitlistEntry } from './bookingTypes';
+import type { ClassRegistrationOrder, MyClassRegistration, PublicClassDetail, PublicClassFilters, PublicClassPage, WaitlistEntry, WaitlistFilters, WaitlistHistory, WaitlistPage, WaitlistRecord, WaitlistResponse } from './bookingTypes';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -30,6 +30,29 @@ export async function registerMemberOnBehalf(classId: number, memberId: number) 
 
 export async function joinClassWaitlist(classId: number) {
   const { data } = await apiClient.post<DataResponse<WaitlistEntry>>(`/group-classes/${classId}/waitlist`);
+  return data.data;
+}
+
+export async function respondToClassWaitlist(classId: number, accept: boolean) {
+  const { data } = await apiClient.post<DataResponse<WaitlistResponse>>(
+    `/group-classes/${classId}/waitlist/respond`,
+    { accept },
+  );
+  return data.data;
+}
+
+export async function getMyWaitlists() {
+  const { data } = await apiClient.get<DataResponse<{ items: WaitlistRecord[] }>>('/waitlist/me');
+  return data.data.items;
+}
+
+export async function getWaitlists(filters: WaitlistFilters) {
+  const { data } = await apiClient.get<DataResponse<WaitlistPage>>('/waitlist', { params: filters });
+  return data.data;
+}
+
+export async function getWaitlistHistory(waitlistId: number) {
+  const { data } = await apiClient.get<DataResponse<WaitlistHistory>>(`/waitlist/${waitlistId}/history`);
   return data.data;
 }
 

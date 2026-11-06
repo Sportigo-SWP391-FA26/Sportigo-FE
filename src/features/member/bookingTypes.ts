@@ -100,3 +100,80 @@ export type WaitlistEntry = {
   offeredAt: string | null;
   offerExpiresAt: string | null;
 };
+
+export type WaitlistInvitationStatus =
+  | 'OFFERED'
+  | 'ACCEPTED'
+  | 'DECLINED'
+  | 'EXPIRED'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_EXPIRED'
+  | 'FULFILLED';
+
+export type WaitlistInvitation = {
+  id: number;
+  waitlistId: number;
+  status: WaitlistInvitationStatus;
+  offeredAt: string;
+  expiresAt: string;
+  respondedAt: string | null;
+  orderId: number | null;
+  failureReason: string | null;
+  order: {
+    id: number;
+    orderNumber: string;
+    status: string;
+    expiresAt: string | null;
+    payments: Array<{ id: number; status: string; amount: string | number; paidAt: string | null }>;
+  } | null;
+};
+
+export type WaitlistRecord = WaitlistEntry & {
+  groupClass: { id: number; name: string; status: string; capacity: number };
+  invitations: WaitlistInvitation[];
+  member?: { user: { id: number; displayName: string; email: string } };
+};
+
+export type WaitlistPage = {
+  items: WaitlistRecord[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
+export type WaitlistFilters = {
+  page: number;
+  limit: number;
+  classId?: number;
+  status?: WaitlistEntry['status'];
+};
+
+export type WaitlistHistory = Omit<
+  Pick<
+    WaitlistRecord,
+    'id' | 'memberId' | 'classId' | 'status' | 'joinedAt' | 'offeredAt' | 'offerExpiresAt' | 'invitations' | 'member'
+  >,
+  'member'
+> & {
+  groupClass: { id: number; name: string; status: string };
+  member: { user: { id: number; displayName: string; email: string } };
+};
+
+export type WaitlistResponse = {
+  waitlist: WaitlistEntry;
+  order: {
+    id: number;
+    orderNumber: string;
+    status: string;
+    finalAmount: string | number;
+    expiresAt: string | null;
+  } | null;
+  registration?: {
+    id: number;
+    memberId: number;
+    classId: number;
+    status: 'PENDING_PAYMENT';
+    registeredAt: string;
+    price: string | number;
+  };
+};
