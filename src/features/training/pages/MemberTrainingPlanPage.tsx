@@ -124,6 +124,7 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
   const weeks = new Map(groupPlanItems(plan.items).map((week) => [week.weekNumber, week]));
   const [openWeeks, setOpenWeeks] = useState(() => new Set([initialWeek ?? progress?.week ?? 1]));
   const idPrefix = `plan-${assignment.id}`;
+  const completionByItemId = new Map(assignment.completedItems.map((completion) => [completion.workoutPlanItemId, completion]));
 
   const toggleWeek = (weekNumber: number) =>
     setOpenWeeks((current) => {
@@ -154,6 +155,10 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
         </div>
         <h2 className="mt-3 text-2xl leading-tight font-extrabold tracking-[-.02em] text-ink">{plan.name}</h2>
         {plan.description && <p className="mt-2 text-sm leading-relaxed text-muted">{plan.description}</p>}
+        <div className="mt-5 rounded-2xl bg-canvas p-4">
+          <div className="flex items-center justify-between gap-3 text-sm"><strong className="text-ink">Tiến độ toàn giáo án</strong><span className="font-extrabold text-primary-deep">{assignment.progress.completedItems}/{assignment.progress.totalItems} mục · {assignment.progress.percentage}%</span></div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${assignment.progress.percentage}%` }} /></div>
+        </div>
         <dl className="mt-5 grid gap-4 border-t border-line pt-5 text-sm sm:grid-cols-2">
           <Meta icon={<ChalkboardTeacher />} label="Coach phụ trách" value={enrollment.coach.displayName} />
           <Meta icon={<UserCircle />} label="Khóa 1-1" value={enrollment.course.name} />
@@ -221,7 +226,7 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
                         <h4 className="mb-3 text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">
                           Buổi {session.sessionNumber}
                         </h4>
-                        <PlanItemList items={session.items} />
+                        <PlanItemList items={session.items} completionByItemId={completionByItemId} />
                       </div>
                     ))}
                   </div>

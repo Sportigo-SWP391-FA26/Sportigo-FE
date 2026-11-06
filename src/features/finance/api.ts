@@ -2,7 +2,7 @@ import { apiClient } from '../../api/client';
 
 export type WalletTransaction = { id: number; type: string; amount: string; balanceAfter: string; description?: string; createdAt: string };
 export type Wallet = { balance: number; transactions: WalletTransaction[]; total: number };
-export type Payment = { id: number; reference: string; amount: string; channel: string; status: string; paidAt?: string; createdAt: string; order: { id: number; orderNumber: string; invoice?: { id: number; invoiceNumber: string } }; paymentMethod: { name: string } };
+export type Payment = { id: number; reference: string; amount: string; channel: string; status: string; paidAt?: string; createdAt: string; order: { id: number; orderNumber: string; items: Array<{ id: number; itemNameSnapshot: string; itemType: string; finalAmount: string }>; invoice?: { id: number; invoiceNumber: string } }; paymentMethod: { name: string } };
 export type ServiceOrder = {
   id: number;
   orderNumber: string;
@@ -16,9 +16,21 @@ export type ServiceOrder = {
   payments: Array<{ id: number; amount: string; status: string; channel: string }>;
   promotion?: { id: number; code: string; name: string } | null;
 };
-export type Promotion = { id: number; code: string; name: string; discountType: string; discountValue: string; status: string; startAt: string; endAt: string };
-export type RefundRequest = { id: number; requestedAmount: string; reason: string; status: string; requestedAt: string; member: { user: { displayName: string; email: string } }; payment: { reference: string; order: { orderNumber: string } } };
-export type Revenue = { gross: number; refunds: number; net: number; transactions: number; byChannel: Record<string, number> };
+export type Promotion = { id: number; code: string; name: string; discountType: string; discountValue: string; isPublic: boolean; status: string; startAt: string; endAt: string };
+export type RefundRequest = { id: number; requestedAmount: string; reason: string; status: string; requestedAt: string; member: { user: { displayName: string; email: string } }; payment?: { reference: string; order: { orderNumber: string } } | null; orderItem: { id: number; itemNameSnapshot: string; order: { orderNumber: string } }; adjustments: Array<{ id: number; amount: string; payment: { reference: string } }> };
+export type RevenueFilters = { from: string; to: string; channel?: 'ONLINE' | 'COUNTER' | 'WALLET'; itemType?: 'GROUP_CLASS' | 'PRIVATE_COURSE' };
+export type Revenue = {
+  period: { from: string; to: string };
+  filters: { channel: RevenueFilters['channel'] | null; itemType: RevenueFilters['itemType'] | null };
+  gross: number;
+  discount: number;
+  refunds: number;
+  net: number;
+  transactions: number;
+  walletTopUps: number;
+  byChannel: Record<string, number>;
+  byService: Record<string, { orders: number; transactions: number; gross: number; discount: number; refunds: number; net: number }>;
+};
 export type AuditLogItem = {
   id: number;
   action: string;
@@ -46,19 +58,20 @@ export const financeApi = {
   cash: (orderId: number, amount: number) => apiClient.post(`/orders/${orderId}/payments/cash`, { amount }).then((r) => r.data),
   searchCashOrders: (q: string) => apiClient.get<CashOrderResult[]>('/orders/cashier/search', { params: { q } }).then((r) => r.data),
   refund: (paymentId: number, requestedAmount: number, reason: string) => apiClient.post(`/payments/${paymentId}/refund-requests`, { requestedAmount, reason }).then((r) => r.data),
+  refundItem: (orderItemId: number, requestedAmount: number, reason: string) => apiClient.post(`/order-items/${orderItemId}/refund-requests`, { requestedAmount, reason }).then((r) => r.data),
   promotions: () => apiClient.get<Promotion[]>('/promotions').then((r) => r.data),
   createPromotion: (data: Record<string, unknown>) => apiClient.post('/promotions', data).then((r) => r.data),
   updatePromotion: (id: number, data: Record<string, unknown>) => apiClient.patch(`/promotions/${id}`, data).then((r) => r.data),
   refunds: () => apiClient.get<RefundRequest[]>('/refund-requests').then((r) => r.data),
   reviewRefund: (id: number, decision: string, note: string, approvedAmount?: number) => apiClient.patch(`/refund-requests/${id}/review`, { decision, note, approvedAmount }).then((r) => r.data),
   completeRefund: (id: number) => apiClient.post(`/refund-requests/${id}/complete`).then((r) => r.data),
-  revenue: () => apiClient.get<Revenue>('/reports/revenue').then((r) => r.data),
+  revenue: (params: RevenueFilters) => apiClient.get<Revenue>('/reports/revenue', { params }).then((r) => r.data),
   audit: (params: AuditQuery) => apiClient.get<AuditPage>('/audit-logs', { params }).then((r) => r.data),
   classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),
   verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; confirmed: boolean; paymentStatus: string; responseCode?: string; transactionStatus?: string; reference?: string }>(`/payments/vnpay/verify?${query}`).then((r) => r.data),
   invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),
-  revenueExcel: () => apiClient.get<Blob>('/reports/revenue/export', { responseType: 'blob' }).then((r) => r.data),
-  reportFile: (kind: 'revenue'|'classes', format: 'xlsx'|'pdf') => apiClient.get<Blob>(`/reports/${kind}/export`, { params: { format }, responseType: 'blob' }).then((r) => r.data),
+  revenueExcel: (params: RevenueFilters) => apiClient.get<Blob>('/reports/revenue/export', { params: { ...params, format: 'xlsx' }, responseType: 'blob' }).then((r) => r.data),
+  reportFile: (kind: 'revenue'|'classes', format: 'xlsx'|'pdf', params: Partial<RevenueFilters> = {}) => apiClient.get<Blob>(`/reports/${kind}/export`, { params: { ...params, format }, responseType: 'blob' }).then((r) => r.data),
 };
 
 export function saveBlob(blob: Blob, filename: string) { const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=filename; link.click(); URL.revokeObjectURL(url); }

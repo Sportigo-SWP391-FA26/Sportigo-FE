@@ -1,8 +1,15 @@
 import { apiClient } from '../../api/client';
 import type { StaffListPage } from '../staff/types';
-import type { CoachAvailability, CoachScheduleItem, CoachSport, AvailabilityInput, AvailabilityCalendar, AvailabilityChangeRequest, AvailabilitySubmission } from './types';
+import type { CoachAvailability, CoachScheduleItem, CoachSport, QualifiedCoach, AvailabilityInput, AvailabilityCalendar, AvailabilityChangeRequest, AvailabilitySubmission } from './types';
 
 type DataResponse<T> = { success: true; data: T };
+
+export async function getQualifiedCoaches(sportId?: number) {
+  const { data } = await apiClient.get<DataResponse<QualifiedCoach[]>>('/coaches', {
+    params: { status: 'ACTIVE', ...(sportId ? { sportId } : {}) },
+  });
+  return data.data;
+}
 
 export async function getCoachSports(coachId: number) {
   const { data } = await apiClient.get<DataResponse<CoachSport[]>>(`/coaches/${coachId}/sports`);

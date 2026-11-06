@@ -7,6 +7,7 @@ import type {
   CreateSessionInput,
   GroupClass,
   GroupClassStatus,
+  RecurringSchedulePreview,
   UpdateGroupClassInput,
 } from './types';
 
@@ -44,6 +45,11 @@ export async function createClassSession(classId: number, input: CreateSessionIn
 
 export async function createRecurringClassSessions(classId: number, input: CreateRecurringSessionsInput) {
   const { data } = await apiClient.post<DataResponse<ClassSession[]>>(`/group-classes/${classId}/sessions/recurring`, input);
+  return data.data;
+}
+
+export async function previewRecurringClassSessions(classId: number, input: CreateRecurringSessionsInput) {
+  const { data } = await apiClient.post<DataResponse<RecurringSchedulePreview>>(`/group-classes/${classId}/sessions/recurring/preview`, input);
   return data.data;
 }
 

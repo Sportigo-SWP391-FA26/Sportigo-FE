@@ -22,9 +22,8 @@ export function toAssessmentInput(values: AssessmentFormOutput): AssessmentInput
   return {
     memberId: values.memberId,
     ...(type === 'GROUP_CLASS' ? { classRegistrationId: contextId } : { privateEnrollmentId: contextId }),
-    assessmentDate: values.assessmentDate,
     coachComment: values.coachComment,
-    metrics: Object.fromEntries(values.metrics.map((metric) => [metric.name.trim(), metric.value as number])),
+    metricValues: [],
     ...(values.score !== undefined && { score: values.score }),
     ...(values.recommendation && { recommendation: values.recommendation }),
     ...(values.nextAssessmentDate && { nextAssessmentDate: values.nextAssessmentDate }),

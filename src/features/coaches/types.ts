@@ -4,6 +4,16 @@ export type CoachSport = {
   isActive: boolean;
 };
 
+export type QualifiedCoach = {
+  id: number;
+  displayName: string;
+  avatarUrl: string | null;
+  coachCode: string;
+  bio: string | null;
+  status: 'ACTIVE';
+  sports: CoachSport[];
+};
+
 export type CoachAvailability = {
   id: number;
   coachId: number;

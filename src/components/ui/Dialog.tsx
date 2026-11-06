@@ -11,7 +11,7 @@ type DialogProps = {
   children: ReactNode;
   footer?: ReactNode;
   /** sm: hộp xác nhận nổi giữa màn hình; md/lg: form, toàn màn hình trên điện thoại */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
 // Dùng <dialog> gốc của trình duyệt: có focus trap, phím Esc và nền mờ sẵn.
@@ -19,6 +19,7 @@ const sizeClasses = {
   sm: 'm-auto h-fit max-h-[90dvh] w-[calc(100%-2rem)] max-w-md rounded-card shadow-raised',
   md: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(90dvh,860px)] sm:max-w-lg sm:rounded-card sm:shadow-raised',
   lg: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(90dvh,860px)] sm:max-w-2xl sm:rounded-card sm:shadow-raised',
+  xl: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(92dvh,920px)] sm:max-w-5xl sm:rounded-card sm:shadow-raised',
 };
 
 export function Dialog({ open, onClose, title, description, children, footer, size = 'md' }: DialogProps) {

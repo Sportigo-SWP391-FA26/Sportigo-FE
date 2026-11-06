@@ -1,128 +1,70 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as api from '../api';
-import { addDays, todayInCenter } from '../format';
 import { axiosError } from '../testing/axiosError';
 import { renderWithProviders } from '../testing/renderWithProviders';
-import type { ProgressAssessment, Trainee } from '../types';
+import type { AssessableSession, ProgressAssessment, TraineeMember } from '../types';
 import { AssessmentForm } from './AssessmentForm';
 
 vi.mock('../api');
-
-const swim = { id: 1, name: 'Bơi lội' };
-const trainees: Trainee[] = [
-  {
-    member: { id: 3, memberCode: 'MEM-01', displayName: 'Trần Thị Bình' },
-    contexts: [
-      { type: 'GROUP_CLASS', classRegistrationId: 31, name: 'Bơi cơ bản', sport: swim },
-      { type: 'PRIVATE_COURSE', privateEnrollmentId: 15, name: 'Bơi 1-1 – 12 buổi', sport: swim, status: 'ACTIVE' },
-    ],
-  },
-  {
-    member: { id: 4, memberCode: 'MEM-02', displayName: 'Phạm Minh Đức' },
-    contexts: [{ type: 'GROUP_CLASS', classRegistrationId: 40, name: 'Cầu lông nâng cao', sport: { id: 2, name: 'Cầu lông' } }],
-  },
+const members: TraineeMember[] = [{ id: 3, memberCode: 'MEM-01', displayName: 'Trần Thị Bình' }];
+const metric = { id: 11, sportId: 1, code: 'technique', name: 'Kỹ thuật bơi', unit: 'điểm', minValue: 0, maxValue: 100, direction: 'HIGHER_IS_BETTER' as const, isRequired: true, isActive: true, displayOrder: 1 };
+const sessions: AssessableSession[] = [
+  { type: 'GROUP_CLASS', id: 31, startsAt: '2026-11-03T11:00:00.000Z', endsAt: '2026-11-03T12:30:00.000Z', name: 'Bơi cơ bản', sport: { id: 1, name: 'Bơi lội' }, metricDefinitions: [metric], completedPlanItems: [] },
+  { type: 'PRIVATE_COURSE', id: 42, sessionDate: '2026-11-04', startsAt: '2026-11-04T11:00:00.000Z', endsAt: '2026-11-04T12:30:00.000Z', name: 'Bơi 1-1', sport: { id: 1, name: 'Bơi lội' }, metricDefinitions: [metric], completedPlanItems: [{ id: 7, weekNumber: 1, sessionNumber: 1, itemOrder: 1, title: 'Nhịp thở', content: 'Thực hành nhịp thở', durationMinutes: 20, sets: null, repetitions: null, intensity: null, note: null }] },
 ];
 
-const members = trainees.map((trainee) => trainee.member);
-
 function renderForm(onCreated = vi.fn()) {
-  // Ngữ cảnh tải riêng theo học viên đang chọn (GET /members/:id)
-  vi.mocked(api.getMemberContexts).mockImplementation(async (memberId) => trainees.find((trainee) => trainee.member.id === memberId)?.contexts ?? []);
+  vi.mocked(api.getAssessableSessions).mockResolvedValue(sessions);
   renderWithProviders(<AssessmentForm members={members} onCreated={onCreated} onCancel={vi.fn()} />);
   return onCreated;
 }
-
-function fillRequired() {
-  fireEvent.change(screen.getByLabelText(/Nhận xét/), { target: { value: 'Kỹ thuật thở tiến bộ rõ.' } });
-  fireEvent.change(screen.getByLabelText('Tên chỉ số 1'), { target: { value: 'Kỹ thuật (1–10)' } });
-  fireEvent.change(screen.getByLabelText('Giá trị chỉ số 1'), { target: { value: '8' } });
+async function selectSession(label: RegExp) {
+  fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
+  const select = await screen.findByLabelText(/Buổi đã hoàn thành/);
+  const option = screen.getByRole('option', { name: label }) as HTMLOptionElement;
+  fireEvent.change(select, { target: { value: option.value } });
 }
 
-afterEach(() => {
-  cleanup();
-  vi.resetAllMocks();
-});
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
-describe('Form đánh giá tiến độ (FR-52, BR-46)', () => {
-  test('chỉ liệt kê ngữ cảnh của học viên đã chọn', async () => {
+describe('Form đánh giá theo buổi học Flow 4', () => {
+  test('chỉ hiển thị các buổi backend xác nhận đủ điều kiện', async () => {
     renderForm();
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    expect(await screen.findByRole('radio', { name: /Bơi cơ bản/ })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Bơi 1-1/ })).toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /Cầu lông nâng cao/ })).not.toBeInTheDocument();
+    await selectSession(/Lớp nhóm · Bơi cơ bản/);
+    expect(screen.getByRole('option', { name: /Khóa 1–1 · Bơi 1-1/ })).toBeInTheDocument();
+    expect(api.getAssessableSessions).toHaveBeenCalledWith(3);
   });
 
-  test('chỉ chọn và gửi đúng MỘT ngữ cảnh', async () => {
-    vi.mocked(api.createAssessment).mockResolvedValue({ id: 9, member: trainees[0].member } as ProgressAssessment);
+  test('gửi session ID và metric definition, không gửi metric tự do', async () => {
+    vi.mocked(api.createAssessment).mockResolvedValue({ id: 9 } as ProgressAssessment);
     const onCreated = renderForm();
-
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    const group = await screen.findByRole('radio', { name: /Bơi cơ bản/ });
-    const privateCourse = screen.getByRole('radio', { name: /Bơi 1-1/ });
-    fireEvent.click(group);
-    fireEvent.click(privateCourse);
-    expect(group).not.toBeChecked();
-    expect(privateCourse).toBeChecked();
-
-    fillRequired();
+    await selectSession(/Lớp nhóm · Bơi cơ bản/);
+    fireEvent.change(screen.getByLabelText(/Kỹ thuật bơi/), { target: { value: '82' } });
+    fireEvent.change(screen.getByLabelText(/Nhận xét/), { target: { value: 'Tiến bộ tốt.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
-
-    await waitFor(() => expect(api.createAssessment).toHaveBeenCalledTimes(1));
-    const payload = vi.mocked(api.createAssessment).mock.calls[0][0];
-    expect(payload).toEqual({
-      memberId: 3,
-      privateEnrollmentId: 15,
-      assessmentDate: todayInCenter(),
-      coachComment: 'Kỹ thuật thở tiến bộ rõ.',
-      metrics: { 'Kỹ thuật (1–10)': 8 },
-    });
-    expect(payload).not.toHaveProperty('classRegistrationId');
-    await waitFor(() => expect(onCreated).toHaveBeenCalled());
+    await waitFor(() => expect(api.createAssessment).toHaveBeenCalledWith(expect.objectContaining({ memberId: 3, classSessionId: 31, metricValues: [{ definitionId: 11, value: 82 }] })));
+    expect(onCreated).toHaveBeenCalled();
   });
 
-  test('đổi học viên thì bỏ ngữ cảnh đã chọn và bắt chọn lại', async () => {
+  test('khóa 1-1 cho phép ghi nhận mục giáo án hoàn thành trong cùng request', async () => {
+    vi.mocked(api.createAssessment).mockResolvedValue({ id: 10 } as ProgressAssessment);
     renderForm();
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '4' } });
-    expect(await screen.findByRole('radio', { name: /Cầu lông nâng cao/ })).not.toBeChecked();
-
-    fillRequired();
+    await selectSession(/Khóa 1–1 · Bơi 1-1/);
+    fireEvent.change(screen.getByLabelText(/Kỹ thuật bơi/), { target: { value: '75' } });
+    fireEvent.change(screen.getByLabelText(/Nhận xét/), { target: { value: 'Hoàn thành tốt.' } });
+    fireEvent.click(screen.getByText(/Nhịp thở/).closest('label')!.querySelector('input')!);
     fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
-    expect(await screen.findByText('Vui lòng chọn đúng một ngữ cảnh đánh giá')).toBeInTheDocument();
-    expect(api.createAssessment).not.toHaveBeenCalled();
+    await waitFor(() => expect(api.createAssessment).toHaveBeenCalledWith(expect.objectContaining({ privateCourseAttendanceId: 42, completedWorkoutPlanItemIds: [7] })));
   });
 
-  test('không cho chọn ngày đánh giá ở tương lai', async () => {
+  test('hiện lỗi nghiệp vụ từ backend', async () => {
+    vi.mocked(api.createAssessment).mockRejectedValue(axiosError(403, { code: 'ASSESSMENT_CONTEXT_INVALID', message: 'Buổi học không thuộc Coach.' }));
     renderForm();
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
-    fillRequired();
-    const date = screen.getByLabelText(/^Ngày đánh giá\s*\*?$/);
-    expect(date).toHaveAttribute('max', todayInCenter());
-    fireEvent.change(date, { target: { value: addDays(todayInCenter(), 1) } });
+    await selectSession(/Lớp nhóm · Bơi cơ bản/);
+    fireEvent.change(screen.getByLabelText(/Kỹ thuật bơi/), { target: { value: '80' } });
+    fireEvent.change(screen.getByLabelText(/Nhận xét/), { target: { value: 'Nhận xét.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
-    expect(await screen.findByText('Ngày đánh giá không được ở tương lai')).toBeInTheDocument();
-    expect(api.createAssessment).not.toHaveBeenCalled();
-  });
-
-  test('403 ASSESSMENT_CONTEXT_INVALID hiện tại ô ngữ cảnh', async () => {
-    vi.mocked(api.createAssessment).mockRejectedValue(
-      axiosError(403, {
-        code: 'ASSESSMENT_CONTEXT_INVALID',
-        message: 'Coach không phụ trách học viên hoặc ngữ cảnh đánh giá không hợp lệ.',
-      }),
-    );
-    renderForm();
-    fireEvent.change(screen.getByLabelText(/Học viên/), { target: { value: '3' } });
-    fireEvent.click(await screen.findByRole('radio', { name: /Bơi cơ bản/ }));
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu đánh giá' }));
-
-    const messages = await screen.findAllByText('Coach không phụ trách học viên hoặc ngữ cảnh đánh giá không hợp lệ.');
-    expect(messages.some((element) => element.id.endsWith('-context-error'))).toBe(true);
+    expect(await screen.findByText('Buổi học không thuộc Coach.')).toBeInTheDocument();
   });
 });

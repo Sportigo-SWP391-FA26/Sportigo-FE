@@ -24,6 +24,14 @@ export type SportInput = {
   isActive: boolean;
 };
 
+export type AssessmentMetric = {
+  id: number; sportId: number; code: string; name: string; unit: string;
+  minValue: string | number; maxValue: string | number;
+  direction: 'HIGHER_IS_BETTER' | 'LOWER_IS_BETTER';
+  isRequired: boolean; isActive: boolean; displayOrder: number;
+};
+export type AssessmentMetricInput = Omit<AssessmentMetric, 'id' | 'sportId'>;
+
 export type RoomInput = {
   code?: string;
   name: string;

@@ -35,20 +35,22 @@ test('shows and retries API errors instead of showing an empty list', async () =
 
 test('creates a draft using active sport and coach data without sending a status', async () => {
   vi.mocked(api.getGroupClasses).mockResolvedValue([]);
-  vi.mocked(api.createGroupClass).mockResolvedValue({} as Awaited<ReturnType<typeof api.createGroupClass>>);
+  vi.mocked(api.createGroupClass).mockResolvedValue({ id: 5 } as Awaited<ReturnType<typeof api.createGroupClass>>);
   vi.mocked(catalogApi.getSports).mockResolvedValue([
     { id: 2, name: 'Cầu lông', description: null, imageUrl: null, isActive: true },
     { id: 4, name: 'Ngừng hoạt động', description: null, imageUrl: null, isActive: false },
   ]);
-  vi.mocked(coachApi.getCoaches).mockResolvedValue([{
-    id: 8, email: 'coach@sportigo.vn', phone: null, displayName: 'Coach An', avatarUrl: null, role: 'COACH', status: 'ACTIVE',
-    emailVerified: true, staffCode: 'COA-08', hiredAt: null, bio: null, coachStatus: 'ACTIVE', createdAt: '2029-01-01T00:00:00.000Z',
+  vi.mocked(coachApi.getQualifiedCoaches).mockResolvedValue([{
+    id: 8, displayName: 'Coach An', avatarUrl: null, coachCode: 'COA-08', bio: null, status: 'ACTIVE',
+    sports: [{ id: 2, name: 'Cầu lông', isActive: true }],
   }]);
   renderWithProviders(<GroupClassesPage />);
   fireEvent.click(await screen.findByRole('button', { name: 'Tạo lớp nhóm' }));
   const dialog = screen.getByRole('dialog', { name: 'Tạo lớp nhóm' });
   await within(dialog).findByRole('option', { name: 'Cầu lông' });
   fireEvent.change(within(dialog).getByLabelText(/Môn thể thao/), { target: { value: '2' } });
+  await waitFor(() => expect(coachApi.getQualifiedCoaches).toHaveBeenCalledWith(2));
+  await within(dialog).findByRole('option', { name: /Coach An/ });
   fireEvent.change(within(dialog).getByLabelText(/Coach/), { target: { value: '8' } });
   fireEvent.change(within(dialog).getByLabelText(/Tên lớp/), { target: { value: 'Lớp cầu lông mới' } });
   fireEvent.change(within(dialog).getByLabelText(/Sức chứa/), { target: { value: '10' } });

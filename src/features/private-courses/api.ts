@@ -35,3 +35,11 @@ export async function changePrivateOccurrence(
   );
   return data.data;
 }
+
+export async function completePrivateSession(enrollmentId: number, scheduleId: number, sessionDate: string) {
+  const { data } = await apiClient.post<DataResponse<{ id: number; sessionDate: string }>>(
+    `/private-courses/enrollments/${enrollmentId}/schedules/${scheduleId}/attendance`,
+    { sessionDate },
+  );
+  return data.data;
+}

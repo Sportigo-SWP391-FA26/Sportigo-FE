@@ -1,13 +1,12 @@
 import { CalendarBlank, Plus } from '@phosphor-icons/react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
-import { useCoaches } from '../../coaches/hooks/useCoachManagement';
+import { useQualifiedCoaches } from '../../coaches/hooks/useCoachManagement';
 import { getSports } from '../../catalog/api';
-import { ButtonLink } from '../../../components/ui/Button';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
@@ -57,6 +56,13 @@ function classStatus(status: string) {
   return labels[status] ?? status;
 }
 
+function classStatusTone(status: string): 'success' | 'danger' | 'warning' | 'neutral' {
+  if (status === 'OPEN') return 'success';
+  if (status === 'CANCELLED') return 'danger';
+  if (status === 'DRAFT') return 'warning';
+  return 'neutral';
+}
+
 export function GroupClassesPage() {
   const classes = useGroupClasses();
   const [creating, setCreating] = useState(false);
@@ -71,23 +77,55 @@ export function GroupClassesPage() {
       ) : classes.data.length === 0 ? (
         <EmptyState icon={<CalendarBlank />} title="Chưa có lớp nhóm" description="Chưa có lớp nào được tạo trong hệ thống." action={<Button onClick={() => setCreating(true)}>Tạo lớp nhóm</Button>} />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {classes.data.map((groupClass) => (
-            <Card key={groupClass.id} className="p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <Link to={`/app/classes/${groupClass.id}`} className="text-lg font-extrabold text-ink hover:text-primary-deep focus-visible:outline-2 focus-visible:outline-primary">{groupClass.name}</Link>
-                  <p className="mt-1 text-sm text-muted">{groupClass.sport.name} · Coach {groupClass.coach.user.displayName}</p>
+            <Card key={groupClass.id} className="group flex min-w-0 flex-col overflow-hidden p-0">
+              <div className="relative aspect-[16/8] overflow-hidden bg-primary/8">
+                {groupClass.sport.imageUrl ? (
+                  <img
+                    src={groupClass.sport.imageUrl}
+                    alt={`Lớp ${groupClass.name}`}
+                    className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="grid size-full place-items-center text-primary" aria-hidden="true"><CalendarBlank size={42} /></div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
+                <span className="absolute bottom-3 left-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-primary-deep backdrop-blur">
+                  {groupClass.sport.name}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <Link
+                    to={`/app/classes/${groupClass.id}`}
+                    className="min-w-0 text-lg font-extrabold text-ink hover:text-primary-deep focus-visible:rounded focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {groupClass.name}
+                  </Link>
+                  <Chip tone={classStatusTone(groupClass.status)} dot>{classStatus(groupClass.status)}</Chip>
                 </div>
-                <Chip tone={groupClass.status === 'OPEN' ? 'success' : groupClass.status === 'CANCELLED' ? 'danger' : 'neutral'} dot>{classStatus(groupClass.status)}</Chip>
+                {groupClass.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">{groupClass.description}</p>}
+                <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 border-t border-line pt-4 text-sm">
+                  <p className="min-w-0"><span className="text-xs text-muted">Coach phụ trách</span><br /><strong className="block truncate text-ink">{groupClass.coach.user.displayName}</strong></p>
+                  <p><span className="text-xs text-muted">Sức chứa</span><br /><strong className="text-ink">{groupClass.capacity} học viên</strong></p>
+                  <p><span className="text-xs text-muted">Bắt đầu</span><br /><strong className="text-ink">{formatDate(groupClass.startDate)}</strong></p>
+                  <p><span className="text-xs text-muted">Kết thúc</span><br /><strong className="text-ink">{formatDate(groupClass.endDate)}</strong></p>
+                </div>
+                <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-5">
+                  <div>
+                    <p className="text-xs text-muted">Học phí toàn khóa</p>
+                    <p className="text-xl font-extrabold text-ink">{new Intl.NumberFormat('vi-VN').format(Number(groupClass.tuitionFee))} ₫</p>
+                  </div>
+                  <Link
+                    to={`/app/classes/${groupClass.id}`}
+                    className="inline-flex min-h-11 shrink-0 items-center rounded-control bg-primary px-4 text-sm font-bold text-white hover:bg-primary-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    Chi tiết lớp học
+                  </Link>
+                </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <p><span className="text-muted">Sức chứa</span><br /><strong>{groupClass.capacity}</strong></p>
-                <p><span className="text-muted">Học phí</span><br /><strong>{new Intl.NumberFormat('vi-VN').format(Number(groupClass.tuitionFee))} ₫</strong></p>
-                <p><span className="text-muted">Bắt đầu</span><br /><strong>{formatDate(groupClass.startDate)}</strong></p>
-                <p><span className="text-muted">Kết thúc</span><br /><strong>{formatDate(groupClass.endDate)}</strong></p>
-              </div>
-              <div className="mt-4 flex justify-end"><ButtonLink to={`/app/classes/${groupClass.id}`} size="sm">Chi tiết và buổi học</ButtonLink></div>
             </Card>
           ))}
         </div>
@@ -99,8 +137,8 @@ export function GroupClassesPage() {
 
 function CreateGroupClassDialog({ onClose }: { onClose: () => void }) {
   const create = useCreateGroupClass();
+  const navigate = useNavigate();
   const sports = useQuery({ queryKey: trainingKeys.sports(), queryFn: getSports, retry: retryServerErrors });
-  const coaches = useCoaches();
   const today = todayInCenter();
   const startDate = addDays(today, 7);
   const form = useForm<Values>({
@@ -119,6 +157,16 @@ function CreateGroupClassDialog({ onClose }: { onClose: () => void }) {
     },
   });
   const errors = form.formState.errors;
+  const selectedSport = useWatch({ control: form.control, name: 'sportId' });
+  const sportId = Number(selectedSport);
+  const coaches = useQualifiedCoaches(Number.isInteger(sportId) && sportId > 0 ? sportId : undefined);
+  const previousSport = useRef(selectedSport);
+  useEffect(() => {
+    if (previousSport.current !== selectedSport) {
+      form.setValue('coachId', '', { shouldValidate: true, shouldDirty: true });
+      previousSport.current = selectedSport;
+    }
+  }, [form, selectedSport]);
   const pending = form.formState.isSubmitting || create.isPending;
   const submit = form.handleSubmit(async (values) => {
     const input: CreateGroupClassInput = {
@@ -134,28 +182,32 @@ function CreateGroupClassDialog({ onClose }: { onClose: () => void }) {
       endDate: `${values.endDate}T00:00:00.000Z`,
     };
     try {
-      await create.mutateAsync(input);
+      const created = await create.mutateAsync(input);
       toast('Đã tạo lớp ở trạng thái bản nháp. Tạo lịch buổi và hoàn thiện dữ liệu trước khi mở đăng ký.');
       onClose();
+      navigate(`/app/classes/${created.id}?schedule=1`);
     } catch (error) {
       form.setError('root.server', { message: parseApiError(error).message });
     }
   });
-  const activeCoaches = coaches.data?.filter((coach) => coach.status === 'ACTIVE' && coach.coachStatus === 'ACTIVE') ?? [];
   const closeWhenIdle = () => { if (!pending) onClose(); };
   const fieldError = (name: keyof Values) => errors[name]?.message;
 
   return (
     <Dialog open onClose={closeWhenIdle} title="Tạo lớp nhóm" description="Lớp mới được tạo ở trạng thái Bản nháp. Trạng thái không được gửi qua form này." size="lg"
-      footer={<><Button variant="secondary" onClick={closeWhenIdle} disabled={pending}>Đóng</Button><Button onClick={submit} loading={pending} disabled={sports.isPending || sports.isError || coaches.isPending || coaches.isError}>Tạo bản nháp</Button></>}>
-      {sports.isPending || coaches.isPending ? <ListSkeleton rows={3} label="Đang tải môn thể thao và Coach…" /> :
-        sports.isError || coaches.isError ? <InlineAlert>Không tải được dữ liệu bắt buộc: {sports.isError ? parseApiError(sports.error).message : parseApiError(coaches.error).message}</InlineAlert> : (
+      footer={<><Button variant="secondary" onClick={closeWhenIdle} disabled={pending}>Đóng</Button><Button onClick={submit} loading={pending} disabled={sports.isPending || sports.isError || coaches.isError}>Tạo bản nháp</Button></>}>
+      {sports.isPending ? <ListSkeleton rows={3} label="Đang tải môn thể thao…" /> :
+        sports.isError ? <InlineAlert>Không tải được dữ liệu bắt buộc: {parseApiError(sports.error).message}</InlineAlert> : (
           <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
             <Field id="new-class-sport" label="Môn thể thao" required error={fieldError('sportId')}>
               <select id="new-class-sport" className={inputClass} {...form.register('sportId')}><option value="">Chọn môn đang hoạt động</option>{sports.data?.filter((sport) => sport.isActive).map((sport) => <option key={sport.id} value={sport.id}>{sport.name}</option>)}</select>
             </Field>
             <Field id="new-class-coach" label="Coach" required error={fieldError('coachId')}>
-              <select id="new-class-coach" className={inputClass} {...form.register('coachId')}><option value="">Chọn Coach đang hoạt động</option>{activeCoaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.displayName}</option>)}</select>
+              <select id="new-class-coach" className={inputClass} disabled={!sportId || coaches.isPending} {...form.register('coachId')}>
+                <option value="">{!sportId ? 'Chọn môn trước' : coaches.isPending ? 'Đang tải Coach phù hợp…' : 'Chọn Coach đúng chuyên môn'}</option>
+                {coaches.data?.map((coach) => <option key={coach.id} value={coach.id}>{coach.displayName} · {coach.coachCode}</option>)}
+              </select>
+              {sportId > 0 && !coaches.isPending && coaches.data?.length === 0 && <p className="mt-2 text-xs font-semibold text-orange-700">Chưa có Coach đang hoạt động được phân công chuyên môn này.</p>}
             </Field>
             <Field id="new-class-name" label="Tên lớp" required error={fieldError('name')} className="sm:col-span-2"><input id="new-class-name" className={inputClass} {...form.register('name')} /></Field>
             <Field id="new-class-description" label="Mô tả" className="sm:col-span-2"><textarea id="new-class-description" className={textareaClass} {...form.register('description')} /></Field>

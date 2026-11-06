@@ -48,6 +48,8 @@ export function memberAssignment(overrides: Partial<MemberPlanAssignment> = {}):
       course: { id: 3, name: 'Bơi 1-1 – 12 buổi' },
       coach: { id: 2, coachCode: 'COA-DEMO-01', displayName: 'Lê Văn Cường' },
     },
+    completedItems: [],
+    progress: { totalItems: 3, completedItems: 0, percentage: 0 },
     ...overrides,
   };
 }

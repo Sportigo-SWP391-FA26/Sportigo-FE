@@ -2,6 +2,7 @@ import axios from 'axios';
 import { apiClient } from '../../api/client';
 import type {
   AssessableContext,
+  AssessableSession,
   AssessmentInput,
   AssessmentQuery,
   AttendanceExportQuery,
@@ -157,6 +158,11 @@ export async function getAssessments(query: AssessmentQuery) {
 
 export async function createAssessment(input: AssessmentInput) {
   const { data } = await apiClient.post<ProgressAssessment>('/progress-assessments', input);
+  return data;
+}
+
+export async function getAssessableSessions(memberId: number) {
+  const { data } = await apiClient.get<AssessableSession[]>('/coaches/me/assessable-sessions', { params: { memberId } });
   return data;
 }
 

@@ -1,8 +1,8 @@
-import { CalendarBlank, PencilSimple, Plus } from '@phosphor-icons/react';
+import { CalendarBlank, Check, Clock, PencilSimple, Plus, WarningCircle } from '@phosphor-icons/react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { getSports } from '../../training/api';
@@ -12,16 +12,16 @@ import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
-import { addDays, fromCenterDateTimeInput, formatDateTime, toCenterDateTimeInput } from '../../training/format';
+import { fromCenterDateTimeInput, formatDateTime, toCenterDateTimeInput } from '../../training/format';
 import { parseApiError, retryServerErrors } from '../../training/errors';
 import { trainingKeys } from '../../training/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { WeeklyTimetable } from '../../../components/schedule/WeeklyTimetable';
-import { useCoaches } from '../../coaches/hooks/useCoachManagement';
+import { useCoachAvailability, useCoachSchedule, useQualifiedCoaches } from '../../coaches/hooks/useCoachManagement';
 import { useRooms } from '../../catalog/hooks';
-import { useGroupClassSessions, useGroupClasses, useCancelClassSession, useChangeClassSession, useCreateClassSession, useCreateRecurringClassSessions, useUpdateGroupClass, useUpdateGroupClassStatus } from '../hooks/useGroupClasses';
-import type { GroupClass } from '../types';
+import { useGroupClassSessions, useGroupClasses, useCancelClassSession, useChangeClassSession, useCreateClassSession, useCreateRecurringClassSessions, usePreviewRecurringClassSessions, useUpdateGroupClass, useUpdateGroupClassStatus } from '../hooks/useGroupClasses';
+import type { CreateRecurringSessionsInput, GroupClass } from '../types';
 
 const editSchema = z
   .object({
@@ -70,12 +70,13 @@ function initialValues(groupClass: GroupClass): EditValues {
 
 export function GroupClassDetailPage() {
   const classId = Number(useParams().classId);
+  const [searchParams] = useSearchParams();
   const classes = useGroupClasses();
   const sessions = useGroupClassSessions(classId);
   const [editing, setEditing] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<SessionTarget>(null);
   const [changeTarget, setChangeTarget] = useState<ChangeTarget>(null);
-  const [creatingSession, setCreatingSession] = useState<'single' | 'recurring' | null>(null);
+  const [creatingSession, setCreatingSession] = useState<'single' | 'recurring' | null>(() => searchParams.get('schedule') === '1' ? 'recurring' : null);
   const groupClass = classes.data?.find((item) => item.id === classId);
   const cancel = useCancelClassSession(classId);
   const updateStatus = useUpdateGroupClassStatus();
@@ -126,10 +127,10 @@ export function GroupClassDetailPage() {
           <ListSkeleton rows={4} label="Đang tải các buổi học…" />
         ) : sessions.isError ? (
           <ErrorState compact error={sessions.error} onRetry={() => sessions.refetch()} retrying={sessions.isRefetching} pendingApi="GET /api/group-classes/:id/sessions" />
-        ) : sessions.data.length === 0 ? (
-          <EmptyState compact icon={<CalendarBlank />} title="Lớp chưa có buổi học" description="Chưa có ClassSession nào được tạo cho lớp này." />
         ) : (
-          <WeeklyTimetable items={sessions.data.map((session) => ({
+          <div className="space-y-3">
+            {sessions.data.length === 0 && <InlineAlert>Lớp chưa có buổi học. Chọn “Tạo lịch lặp” để xếp ca theo availability đã duyệt của Coach.</InlineAlert>}
+            <WeeklyTimetable emptyText="Chưa có buổi học" items={sessions.data.map((session) => ({
             id: session.id,
             dayOfWeek: new Date(session.startsAt).getDay(),
             date: session.startsAt,
@@ -138,11 +139,13 @@ export function GroupClassDetailPage() {
             subtitle: `${session.room?.name ?? 'Chưa có phòng'}${session.note ? ` · ${session.note}` : ''}`,
             tone: session.status === 'CANCELLED' ? 'danger' as const : session.status === 'COMPLETED' ? 'neutral' as const : 'success' as const,
             content: <div className="space-y-2"><Chip tone={session.status === 'CANCELLED' ? 'danger' : session.status === 'COMPLETED' ? 'neutral' : 'success'} dot>{session.status === 'SCHEDULED' ? 'Đã lên lịch' : session.status === 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'}</Chip>{session.status === 'SCHEDULED' && <div className="grid gap-1.5"><Button size="sm" variant="secondary" onClick={() => setChangeTarget({ id: session.id, startsAt: session.startsAt, roomId: session.roomId })}>Đổi lịch</Button><Button size="sm" variant="danger" onClick={() => setCancelTarget({ id: session.id, title: formatDateTime(session.startsAt) })}>Hủy buổi học</Button></div>}</div>,
-          }))} />
+            }))} />
+          </div>
         )}
       </Card>
       {editing && <EditGroupClassDialog groupClass={groupClass} onClose={() => setEditing(false)} />}
-      {creatingSession && <CreateSessionDialog classId={classId} mode={creatingSession} onClose={() => setCreatingSession(null)} />}
+      {creatingSession === 'single' && <CreateSessionDialog classId={classId} onClose={() => setCreatingSession(null)} />}
+      {creatingSession === 'recurring' && <RecurringScheduleDialog groupClass={groupClass} onClose={() => setCreatingSession(null)} />}
       {changeTarget && <ChangeSessionDialog classId={classId} target={changeTarget} onClose={() => setChangeTarget(null)} />}
       <CancelSessionDialog
         key={cancelTarget?.id ?? 'closed'}
@@ -159,8 +162,17 @@ export function GroupClassDetailPage() {
 function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass; onClose: () => void }) {
   const update = useUpdateGroupClass(groupClass.id);
   const sports = useQuery({ queryKey: trainingKeys.sports(), queryFn: getSports, retry: retryServerErrors });
-  const coaches = useCoaches();
   const form = useForm<EditValues>({ resolver: zodResolver(editSchema), defaultValues: initialValues(groupClass) });
+  const selectedSport = useWatch({ control: form.control, name: 'sportId' });
+  const sportId = Number(selectedSport);
+  const coaches = useQualifiedCoaches(Number.isInteger(sportId) && sportId > 0 ? sportId : undefined);
+  const previousSport = useRef(selectedSport);
+  useEffect(() => {
+    if (previousSport.current !== selectedSport) {
+      form.setValue('coachId', '', { shouldValidate: true, shouldDirty: true });
+      previousSport.current = selectedSport;
+    }
+  }, [form, selectedSport]);
   const values = form.formState.errors;
 
   const submit = form.handleSubmit(async (formValues) => {
@@ -192,7 +204,6 @@ function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass;
     if (!update.isPending) onClose();
   };
   const inputError = (name: keyof EditValues) => values[name]?.message;
-  const activeCoaches = coaches.data?.filter((item) => item.status === 'ACTIVE' && item.coachStatus === 'ACTIVE') ?? [];
 
   return (
     <Dialog
@@ -216,7 +227,13 @@ function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass;
       ) : (
         <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} noValidate>
           <Field id="class-sport" label="Môn thể thao" required error={inputError('sportId')}><select id="class-sport" className={inputClass} aria-invalid={Boolean(inputError('sportId'))} {...form.register('sportId')}><option value="">Chọn môn</option>{sports.data?.map((sport) => <option key={sport.id} value={sport.id}>{sport.name}</option>)}</select></Field>
-          <Field id="class-coach" label="Coach" required error={inputError('coachId')}><select id="class-coach" className={inputClass} aria-invalid={Boolean(inputError('coachId'))} {...form.register('coachId')}><option value="">Chọn Coach đang hoạt động</option>{activeCoaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.displayName}</option>)}</select></Field>
+          <Field id="class-coach" label="Coach" required error={inputError('coachId')}>
+            <select id="class-coach" className={inputClass} aria-invalid={Boolean(inputError('coachId'))} disabled={!sportId || coaches.isPending} {...form.register('coachId')}>
+              <option value="">{!sportId ? 'Chọn môn trước' : coaches.isPending ? 'Đang tải Coach phù hợp…' : 'Chọn Coach đúng chuyên môn'}</option>
+              {coaches.data?.map((coach) => <option key={coach.id} value={coach.id}>{coach.displayName} · {coach.coachCode}</option>)}
+            </select>
+            {sportId > 0 && !coaches.isPending && coaches.data?.length === 0 && <p className="mt-2 text-xs font-semibold text-orange-700">Chưa có Coach hoạt động có chuyên môn này.</p>}
+          </Field>
           <Field id="class-name" label="Tên lớp" required error={inputError('name')} className="sm:col-span-2"><input id="class-name" className={inputClass} aria-invalid={Boolean(inputError('name'))} {...form.register('name')} /></Field>
           <Field id="class-description" label="Mô tả" className="sm:col-span-2"><textarea id="class-description" className={textareaClass} {...form.register('description')} /></Field>
           <Field id="class-capacity" label="Sức chứa" required error={inputError('capacity')}><input id="class-capacity" type="number" min="1" step="1" className={inputClass} aria-invalid={Boolean(inputError('capacity'))} {...form.register('capacity')} /></Field>
@@ -271,42 +288,17 @@ function CancelSessionDialog({
   );
 }
 
-function createSessionFormSchema(mode: 'single' | 'recurring') {
+function createSessionFormSchema() {
   return z.object({
     roomId: z.string().min(1, 'Chọn phòng học.'),
     startsAt: z.string(),
     endsAt: z.string(),
-    dayOfWeek: z.string(),
-    startTime: z.string(),
-    endTime: z.string(),
-    effectiveFrom: z.string(),
-    effectiveTo: z.string(),
     note: z.string(),
   }).superRefine((value, context) => {
-    if (mode === 'single') {
-      if (!value.startsAt) context.addIssue({ code: 'custom', path: ['startsAt'], message: 'Chọn giờ bắt đầu.' });
-      if (!value.endsAt) context.addIssue({ code: 'custom', path: ['endsAt'], message: 'Chọn giờ kết thúc.' });
-      if (value.startsAt && value.endsAt && value.startsAt >= value.endsAt) context.addIssue({ code: 'custom', path: ['endsAt'], message: 'Giờ kết thúc phải sau giờ bắt đầu.' });
-    } else {
-      if (!/^[0-6]$/.test(value.dayOfWeek)) context.addIssue({ code: 'custom', path: ['dayOfWeek'], message: 'Chọn thứ trong tuần.' });
-      if (!value.startTime) context.addIssue({ code: 'custom', path: ['startTime'], message: 'Nhập giờ bắt đầu.' });
-      if (!value.endTime) context.addIssue({ code: 'custom', path: ['endTime'], message: 'Nhập giờ kết thúc.' });
-      if (value.startTime && value.endTime && value.startTime >= value.endTime) context.addIssue({ code: 'custom', path: ['endTime'], message: 'Giờ kết thúc phải sau giờ bắt đầu.' });
-      if (!value.effectiveFrom) context.addIssue({ code: 'custom', path: ['effectiveFrom'], message: 'Chọn ngày bắt đầu hiệu lực.' });
-      if (!value.effectiveTo) context.addIssue({ code: 'custom', path: ['effectiveTo'], message: 'Chọn ngày kết thúc hiệu lực.' });
-      if (value.effectiveFrom && value.effectiveTo && value.effectiveFrom > value.effectiveTo) context.addIssue({ code: 'custom', path: ['effectiveTo'], message: 'Ngày kết thúc hiệu lực phải bằng hoặc sau ngày bắt đầu.' });
-    }
+    if (!value.startsAt) context.addIssue({ code: 'custom', path: ['startsAt'], message: 'Chọn giờ bắt đầu.' });
+    if (!value.endsAt) context.addIssue({ code: 'custom', path: ['endsAt'], message: 'Chọn giờ kết thúc.' });
+    if (value.startsAt && value.endsAt && value.startsAt >= value.endsAt) context.addIssue({ code: 'custom', path: ['endsAt'], message: 'Giờ kết thúc phải sau giờ bắt đầu.' });
   });
-}
-function convertRecurringTimeToUtc(value: string) {
-  const [hours, minutes] = value.split(':').map(Number);
-  const utcMinutes = hours * 60 + minutes - 7 * 60;
-  const dayOffset = utcMinutes < 0 ? -1 : 0;
-  const normalizedMinutes = (utcMinutes + 24 * 60) % (24 * 60);
-  return {
-    time: `${String(Math.floor(normalizedMinutes / 60)).padStart(2, '0')}:${String(normalizedMinutes % 60).padStart(2, '0')}`,
-    dayOffset,
-  };
 }
 const changeSessionSchema = z.object({
   startsAt: z.string().min(1, 'Chọn giờ bắt đầu mới.'),
@@ -314,57 +306,29 @@ const changeSessionSchema = z.object({
   reason: z.string().trim().min(1, 'Nhập lý do đổi lịch.'),
 });
 
-function CreateSessionDialog({ classId, mode, onClose }: { classId: number; mode: 'single' | 'recurring'; onClose: () => void }) {
+function CreateSessionDialog({ classId, onClose }: { classId: number; onClose: () => void }) {
   const rooms = useRooms();
   const single = useCreateClassSession(classId);
-  const recurring = useCreateRecurringClassSessions(classId);
-  const isRecurring = mode === 'recurring';
-  const pending = single.isPending || recurring.isPending;
+  const pending = single.isPending;
   const form = useForm<z.infer<ReturnType<typeof createSessionFormSchema>>>({
-    resolver: zodResolver(createSessionFormSchema(mode)),
+    resolver: zodResolver(createSessionFormSchema()),
     defaultValues: {
       roomId: '',
       startsAt: '',
       endsAt: '',
       note: '',
-      dayOfWeek: '1',
-      startTime: '09:00',
-      endTime: '10:00',
-      effectiveFrom: '',
-      effectiveTo: '',
     },
   });
   const errors = form.formState.errors;
   const submit = form.handleSubmit(async (values) => {
     try {
-      if (isRecurring) {
-        const utcStart = convertRecurringTimeToUtc(values.startTime);
-        const utcEnd = convertRecurringTimeToUtc(values.endTime);
-        if (utcStart.dayOffset !== utcEnd.dayOffset) {
-          form.setError('endTime', { type: 'validate', message: 'Khung giờ này đi qua ranh giới ngày theo UTC; hãy chọn khung giờ có thể biểu diễn trong cùng ngày.' });
-          return;
-        }
-        const dayOfWeek = (Number(values.dayOfWeek) + utcStart.dayOffset + 7) % 7;
-        await recurring.mutateAsync({
-          roomId: Number(values.roomId),
-          recurrence: {
-            dayOfWeek,
-            startTime: utcStart.time,
-            endTime: utcEnd.time,
-            effectiveFrom: addDays(values.effectiveFrom, utcStart.dayOffset),
-            effectiveTo: addDays(values.effectiveTo, utcStart.dayOffset),
-          },
-          ...(values.note?.trim() ? { note: values.note.trim() } : {}),
-        });
-      } else {
-        await single.mutateAsync({
-          roomId: Number(values.roomId),
-          startsAt: fromCenterDateTimeInput(values.startsAt!),
-          endsAt: fromCenterDateTimeInput(values.endsAt!),
-          ...(values.note?.trim() ? { note: values.note.trim() } : {}),
-        });
-      }
-      toast(isRecurring ? 'Đã tạo các buổi học lặp.' : 'Đã tạo buổi học.');
+      await single.mutateAsync({
+        roomId: Number(values.roomId),
+        startsAt: fromCenterDateTimeInput(values.startsAt),
+        endsAt: fromCenterDateTimeInput(values.endsAt),
+        ...(values.note?.trim() ? { note: values.note.trim() } : {}),
+      });
+      toast('Đã tạo buổi học.');
       onClose();
     } catch (error) {
       form.setError('root.server', { message: errorText(error) });
@@ -374,29 +338,132 @@ function CreateSessionDialog({ classId, mode, onClose }: { classId: number; mode
   const error = (name: keyof typeof errors) => errors[name]?.message;
 
   return (
-    <Dialog open onClose={closeWhenIdle} title={isRecurring ? 'Tạo lịch buổi học lặp' : 'Thêm buổi học'} description={isRecurring ? 'Ngày và giờ nhập theo giờ Việt Nam; hệ thống chuyển đổi sang UTC theo API. Lịch phòng và Coach sẽ được backend kiểm tra khi lưu.' : 'Lịch phòng và Coach sẽ được backend kiểm tra khi lưu.'} size="lg"
+    <Dialog open onClose={closeWhenIdle} title="Thêm buổi học" description="Lịch phòng, Coach và hội viên sẽ được backend kiểm tra khi lưu." size="lg"
       footer={<><Button variant="secondary" onClick={closeWhenIdle} disabled={pending}>Đóng</Button><Button onClick={submit} loading={pending} disabled={rooms.isPending || rooms.isError}>Tạo buổi học</Button></>}>
       {rooms.isPending ? <ListSkeleton rows={3} label="Đang tải danh sách phòng…" /> : rooms.isError ? <InlineAlert>Không tải được danh sách phòng: {errorText(rooms.error)}</InlineAlert> : (
         <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} noValidate>
           <Field id="session-room" label="Phòng học" required error={error('roomId')} className="sm:col-span-2">
             <select id="session-room" className={inputClass} {...form.register('roomId')}><option value="">Chọn phòng đang khả dụng</option>{rooms.data?.filter((room) => room.status === 'AVAILABLE').map((room) => <option key={room.id} value={room.id}>{room.name} · sức chứa {room.capacity}{room.location ? ` · ${room.location}` : ''}</option>)}</select>
           </Field>
-          {isRecurring ? <>
-            <Field id="recurring-day" label="Thứ trong tuần" required error={error('dayOfWeek')}>
-              <select id="recurring-day" className={inputClass} {...form.register('dayOfWeek')}><option value="1">Thứ Hai</option><option value="2">Thứ Ba</option><option value="3">Thứ Tư</option><option value="4">Thứ Năm</option><option value="5">Thứ Sáu</option><option value="6">Thứ Bảy</option><option value="0">Chủ Nhật</option></select>
-            </Field>
-            <span />
-            <Field id="recurring-start-time" label="Giờ bắt đầu" required error={error('startTime')}><input id="recurring-start-time" type="time" className={inputClass} {...form.register('startTime')} /></Field>
-            <Field id="recurring-end-time" label="Giờ kết thúc" required error={error('endTime')}><input id="recurring-end-time" type="time" className={inputClass} {...form.register('endTime')} /></Field>
-            <Field id="recurring-from" label="Ngày bắt đầu hiệu lực" required error={error('effectiveFrom')}><input id="recurring-from" type="date" className={inputClass} {...form.register('effectiveFrom')} /></Field>
-            <Field id="recurring-to" label="Ngày kết thúc hiệu lực" required error={error('effectiveTo')}><input id="recurring-to" type="date" className={inputClass} {...form.register('effectiveTo')} /></Field>
-          </> : <>
-            <Field id="session-start" label="Giờ bắt đầu" required error={error('startsAt')}><input id="session-start" type="datetime-local" className={inputClass} {...form.register('startsAt')} /></Field>
-            <Field id="session-end" label="Giờ kết thúc" required error={error('endsAt')}><input id="session-end" type="datetime-local" className={inputClass} {...form.register('endsAt')} /></Field>
-          </>}
+          <Field id="session-start" label="Giờ bắt đầu" required error={error('startsAt')}><input id="session-start" type="datetime-local" className={inputClass} {...form.register('startsAt')} /></Field>
+          <Field id="session-end" label="Giờ kết thúc" required error={error('endsAt')}><input id="session-end" type="datetime-local" className={inputClass} {...form.register('endsAt')} /></Field>
           <Field id="session-note" label="Ghi chú" className="sm:col-span-2"><textarea id="session-note" className={textareaClass} {...form.register('note')} /></Field>
           {errors.root?.server?.message && <div className="sm:col-span-2"><InlineAlert>{errors.root.server.message}</InlineAlert></div>}
         </form>
+      )}
+    </Dialog>
+  );
+}
+
+const TIMETABLE_DAYS = [
+  { value: 1, label: 'Thứ 2' }, { value: 2, label: 'Thứ 3' }, { value: 3, label: 'Thứ 4' },
+  { value: 4, label: 'Thứ 5' }, { value: 5, label: 'Thứ 6' }, { value: 6, label: 'Thứ 7' }, { value: 0, label: 'Chủ nhật' },
+];
+const STANDARD_CLASS_SHIFTS = [
+  { start: '07:00', end: '08:30' },
+  { start: '09:00', end: '10:30' },
+  { start: '11:00', end: '12:30' },
+  { start: '13:30', end: '15:00' },
+  { start: '15:30', end: '17:00' },
+  { start: '17:30', end: '19:00' },
+  { start: '19:30', end: '21:00' },
+];
+const availabilityClock = (value: string) => value.includes('T') ? value.slice(11, 16) : value.slice(0, 5);
+const slotKey = (dayOfWeek: number, startTime: string, endTime: string) => `${dayOfWeek}:${startTime}:${endTime}`;
+
+function RecurringScheduleDialog({ groupClass, onClose }: { groupClass: GroupClass; onClose: () => void }) {
+  const startDate = groupClass.startDate.slice(0, 10);
+  const endDate = groupClass.endDate.slice(0, 10);
+  const availability = useCoachAvailability(groupClass.coachId);
+  const schedule = useCoachSchedule(groupClass.coachId, startDate, endDate);
+  const rooms = useRooms();
+  const preview = usePreviewRecurringClassSessions(groupClass.id);
+  const create = useCreateRecurringClassSessions(groupClass.id);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [roomsBySlot, setRoomsBySlot] = useState<Record<string, string>>({});
+  const [note, setNote] = useState('');
+
+  const slots = useMemo(() => {
+    const approvedWindows = (availability.data ?? [])
+      .filter((item) => item.status === 'AVAILABLE' && item.effectiveFrom.slice(0, 10) <= endDate && (!item.effectiveTo || item.effectiveTo.slice(0, 10) >= startDate))
+      .map((item) => ({ dayOfWeek: item.dayOfWeek, start: availabilityClock(item.startTime), end: availabilityClock(item.endTime) }));
+    return TIMETABLE_DAYS.flatMap((day) => STANDARD_CLASS_SHIFTS
+      .filter((shift) => approvedWindows.some((window) => window.dayOfWeek === day.value && window.start <= shift.start && window.end >= shift.end))
+      .map((shift) => ({ dayOfWeek: day.value, ...shift })));
+  }, [availability.data, endDate, startDate]);
+  const availableRooms = rooms.data?.filter((room) => room.status === 'AVAILABLE' && room.capacity >= groupClass.capacity) ?? [];
+  const busyKeys = useMemo(() => {
+    const busyWindows = (schedule.data ?? []).map((item) => {
+    const formatter = (value: string) => Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(value)).map((part) => [part.type, part.value]));
+    const start = formatter(item.startsAt);
+    const end = formatter(item.endsAt);
+    const day = ({ Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 } as Record<string, number>)[start.weekday];
+      return { dayOfWeek: day, start: `${start.hour}:${start.minute}`, end: `${end.hour}:${end.minute}` };
+    });
+    return new Set(slots
+      .filter((slot) => busyWindows.some((busy) => busy.dayOfWeek === slot.dayOfWeek && busy.start < slot.end && busy.end > slot.start))
+      .map((slot) => slotKey(slot.dayOfWeek, slot.start, slot.end)));
+  }, [schedule.data, slots]);
+
+  const buildInput = (): CreateRecurringSessionsInput => ({
+    patterns: selected.map((key) => {
+      const slot = slots.find((item) => slotKey(item.dayOfWeek, item.start, item.end) === key)!;
+      return { dayOfWeek: slot.dayOfWeek, startTime: slot.start, endTime: slot.end, roomId: Number(roomsBySlot[key]) };
+    }),
+    effectiveFrom: startDate,
+    effectiveTo: endDate,
+    ...(note.trim() ? { note: note.trim() } : {}),
+  });
+  const canPreview = selected.length > 0 && selected.every((key) => Number(roomsBySlot[key]) > 0);
+  const pending = preview.isPending || create.isPending;
+  const closeWhenIdle = () => { if (!pending) onClose(); };
+  const toggle = (key: string) => {
+    preview.reset();
+    setSelected((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+    setRoomsBySlot((current) => current[key] || !availableRooms[0] ? current : { ...current, [key]: String(availableRooms[0].id) });
+  };
+  const runPreview = async () => { if (canPreview) await preview.mutateAsync(buildInput()); };
+  const confirm = async () => {
+    if (!preview.data?.canCreate) return;
+    try {
+      await create.mutateAsync(buildInput());
+      toast(`Đã tạo ${preview.data.total} buổi học theo thời khóa biểu.`);
+      onClose();
+    } catch (error) { toast(errorText(error), 'error'); }
+  };
+
+  return (
+    <Dialog open onClose={closeWhenIdle} title="Xếp thời khóa biểu cho lớp" description={`Chọn ca đã được duyệt của Coach ${groupClass.coach.user.displayName}. Lịch áp dụng từ ${startDate} đến ${endDate}.`} size="xl"
+      footer={<><Button variant="secondary" onClick={closeWhenIdle} disabled={pending}>Đóng</Button>{preview.data?.canCreate ? <Button onClick={confirm} loading={create.isPending}>Xác nhận tạo {preview.data.total} buổi</Button> : <Button onClick={runPreview} loading={preview.isPending} disabled={!canPreview}>Kiểm tra lịch</Button>}</>}>
+      {availability.isPending || schedule.isPending || rooms.isPending ? <ListSkeleton rows={5} label="Đang tải availability, lịch Coach và phòng học…" /> : availability.isError || schedule.isError || rooms.isError ? <InlineAlert>Không tải được dữ liệu xếp lịch. Vui lòng thử lại.</InlineAlert> : (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary/6 px-4 py-3 text-sm">
+            <p><strong>{selected.length} ca đã chọn</strong><span className="ml-2 text-muted">Có thể chọn một hoặc nhiều ca mỗi tuần.</span></p>
+            <div className="flex flex-wrap gap-3 text-xs font-bold"><span className="text-primary-deep">● Khả dụng</span><span className="text-orange-700">● Coach đã bận</span></div>
+          </div>
+          {availableRooms.length === 0 && <InlineAlert>Chưa có phòng đang hoạt động đủ sức chứa {groupClass.capacity} học viên. Hãy cập nhật phòng trước khi xếp lịch.</InlineAlert>}
+          {slots.length === 0 ? <EmptyState compact icon={<CalendarBlank />} title="Coach chưa có availability phù hợp" description="Coach cần gửi lịch và được Center Manager duyệt trước khi xếp lớp." /> : (
+            <div className="overflow-x-auto rounded-card border border-line">
+              <table className="w-full min-w-[820px] table-fixed">
+                <thead className="sticky top-0 z-20"><tr className="bg-canvas"><th className="sticky left-0 z-30 w-32 bg-canvas px-3 py-3 text-left text-xs font-bold text-muted">Ca 90 phút</th>{TIMETABLE_DAYS.map((day) => <th key={day.value} className="px-2 py-3 text-center text-xs font-extrabold text-ink">{day.label}</th>)}</tr></thead>
+                <tbody>{[...new Set(slots.map((item) => `${item.start}-${item.end}`))].sort().map((time) => {
+                  const [start, end] = time.split('-');
+                  return <tr key={time} className="border-t border-line"><th className="sticky left-0 z-10 bg-surface px-3 py-3 text-left text-xs"><span className="block font-extrabold text-primary-deep">{start}–{end}</span><span className="text-muted">Ca khả dụng</span></th>{TIMETABLE_DAYS.map((day) => {
+                    const slot = slots.find((item) => item.dayOfWeek === day.value && item.start === start && item.end === end);
+                    if (!slot) return <td key={day.value} className="p-1.5"><div className="grid min-h-20 place-items-center rounded-xl bg-canvas text-muted/50">—</div></td>;
+                    const key = slotKey(day.value, start!, end!);
+                    const active = selected.includes(key);
+                    const busy = busyKeys.has(key);
+                    return <td key={day.value} className="p-1.5"><button type="button" disabled={busy} aria-pressed={active} onClick={() => toggle(key)} className={`flex min-h-20 w-full flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-primary ${busy ? 'cursor-not-allowed bg-orange-50 text-orange-800' : active ? 'bg-primary text-white shadow-soft' : 'bg-primary/7 text-primary-deep hover:bg-primary/12'}`}>{busy ? <WarningCircle size={18} weight="fill" /> : active ? <Check size={18} weight="bold" /> : <Clock size={18} />}<span>{busy ? 'Coach đã bận' : active ? 'Đã chọn' : 'Có thể dạy'}</span></button>{active && <select aria-label={`Phòng cho ${day.label} ${start}`} className={`${inputClass} mt-1 h-9 py-1 text-xs`} value={roomsBySlot[key] ?? ''} onChange={(event) => { preview.reset(); setRoomsBySlot((current) => ({ ...current, [key]: event.target.value })); }}><option value="">Chọn phòng</option>{availableRooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}</select>}</td>;
+                  })}</tr>;
+                })}</tbody>
+              </table>
+            </div>
+          )}
+          <Field id="recurring-note" label="Ghi chú chung"><textarea id="recurring-note" className={textareaClass} value={note} onChange={(event) => { preview.reset(); setNote(event.target.value); }} /></Field>
+          {preview.isError && <InlineAlert>{errorText(preview.error)}</InlineAlert>}
+          {preview.data && <div className={`rounded-xl px-4 py-3 text-sm ${preview.data.canCreate ? 'bg-lime-50 text-lime-900' : 'bg-red-50 text-red-900'}`}><strong>{preview.data.canCreate ? `Có thể tạo ${preview.data.total} buổi học.` : `${preview.data.conflicts}/${preview.data.total} buổi đang xung đột.`}</strong>{!preview.data.canCreate && <ul className="mt-2 list-disc space-y-1 pl-5">{preview.data.occurrences.filter((item) => !item.valid).slice(0, 6).map((item) => <li key={`${item.startsAt}-${item.roomId}`}>{formatDateTime(item.startsAt)}: {item.message}</li>)}</ul>}</div>}
+        </div>
       )}
     </Dialog>
   );

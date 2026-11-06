@@ -8,13 +8,15 @@ type PlanItemListProps = {
   compact?: boolean;
   /** Vùng thao tác bên phải mỗi mục (màn Coach) */
   renderActions?: (item: WorkoutPlanItem, index: number, items: WorkoutPlanItem[]) => ReactNode;
+  completionByItemId?: Map<number, { completedAt: string; completedBy: { displayName: string }; session: { sessionDate: string } }>;
 };
 
-export function PlanItemList({ items, compact = false, renderActions }: PlanItemListProps) {
+export function PlanItemList({ items, compact = false, renderActions, completionByItemId }: PlanItemListProps) {
   return (
     <ol className="divide-y divide-line">
       {items.map((item, index) => {
         const specs = itemSpecs(item);
+        const completion = completionByItemId?.get(item.id);
         return (
           <li key={item.id} className="flex flex-col gap-3 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-start">
             <div className="flex min-w-0 flex-1 gap-3">
@@ -35,6 +37,7 @@ export function PlanItemList({ items, compact = false, renderActions }: PlanItem
                       {intensityLabel(item.intensity)}
                     </Chip>
                   )}
+                  {completionByItemId && <Chip tone={completion ? 'success' : 'neutral'} dot>{completion ? 'Đã hoàn thành' : 'Chưa thực hiện'}</Chip>}
                 </div>
                 <p className={`mt-1 text-[13px] leading-relaxed whitespace-pre-line text-muted ${compact ? 'line-clamp-2' : ''}`}>
                   {item.content}
@@ -54,6 +57,7 @@ export function PlanItemList({ items, compact = false, renderActions }: PlanItem
                     {item.note}
                   </p>
                 )}
+                {completion && <p className="mt-2 text-xs font-semibold text-success">Hoàn thành ngày {new Intl.DateTimeFormat('vi-VN').format(new Date(`${completion.session.sessionDate}T12:00:00+07:00`))} · Coach {completion.completedBy.displayName}</p>}
               </div>
             </div>
             {renderActions && <div className="flex shrink-0 flex-wrap gap-1 pl-10 sm:pl-0">{renderActions(item, index, items)}</div>}

@@ -9,6 +9,7 @@ import {
   createRecurringClassSessions,
   getGroupClassSessions,
   getGroupClasses,
+  previewRecurringClassSessions,
   updateGroupClass,
   updateGroupClassStatus,
 } from '../api';
@@ -82,6 +83,12 @@ export function useCreateRecurringClassSessions(classId: number) {
   return useMutation({
     mutationFn: (input: CreateRecurringSessionsInput) => createRecurringClassSessions(classId, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: groupClassKeys.sessions(classId) }),
+  });
+}
+
+export function usePreviewRecurringClassSessions(classId: number) {
+  return useMutation({
+    mutationFn: (input: CreateRecurringSessionsInput) => previewRecurringClassSessions(classId, input),
   });
 }
 

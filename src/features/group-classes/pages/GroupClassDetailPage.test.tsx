@@ -53,20 +53,14 @@ async function openDetail() {
   vi.mocked(api.getGroupClasses).mockResolvedValue([groupClass]);
   vi.mocked(api.getGroupClassSessions).mockResolvedValue([session]);
   vi.mocked(trainingApi.getSports).mockResolvedValue([{ id: 2, name: 'Cầu lông', isActive: true }]);
-  vi.mocked(coachApi.getCoaches).mockResolvedValue([{
+  vi.mocked(coachApi.getQualifiedCoaches).mockResolvedValue([{
     id: 8,
-    email: 'coach@sportigo.vn',
-    phone: null,
     displayName: 'Coach An',
     avatarUrl: null,
-    role: 'COACH',
     status: 'ACTIVE',
-    emailVerified: true,
-    staffCode: 'COA-08',
-    hiredAt: null,
+    coachCode: 'COA-08',
     bio: null,
-    coachStatus: 'ACTIVE',
-    createdAt: '2029-01-01T00:00:00.000Z',
+    sports: [{ id: 2, name: 'Cầu lông', isActive: true }],
   }]);
   vi.mocked(catalogApi.getRooms).mockResolvedValue([{ id: 3, code: 'R3', name: 'Sân 3', capacity: 20, location: null, status: 'AVAILABLE' }]);
   return renderWithProviders(<GroupClassDetailPage />, { path: '/app/classes/:classId', route: '/app/classes/5' });

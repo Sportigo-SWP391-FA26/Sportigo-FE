@@ -28,6 +28,11 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
           </p>
           {/* Trang Coach chỉ có đánh giá của chính Coach nên không cần tên Coach; Member vẫn cần biết ai đánh giá */}
           {!showMember && <p className="mt-0.5 text-xs text-muted">Coach {assessment.coach.displayName}</p>}
+          {assessment.session && (
+            <p className="mt-1 text-xs font-semibold text-primary-deep">
+              Sau buổi {formatDate(assessment.session.type === 'GROUP_CLASS' ? assessment.session.startsAt : assessment.session.sessionDate)}
+            </p>
+          )}
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           <ContextChip context={assessment.context} />

@@ -8,6 +8,7 @@ import {
   getCoachSchedule,
   getCoachSports,
   getCoaches,
+  getQualifiedCoaches,
   removeCoachSport,
   updateCoachAvailability,
   getMyAvailabilityCalendar,
@@ -28,6 +29,7 @@ export const coachKeys = {
   availability: (coachId: number) => [...coachKeys.all, coachId, 'availability'] as const,
   schedule: (coachId: number, from: string, to: string) => [...coachKeys.all, coachId, 'schedule', from, to] as const,
   list: () => [...coachKeys.all, 'list'] as const,
+  qualified: (sportId?: number) => [...coachKeys.all, 'qualified', sportId ?? 'none'] as const,
   myCalendar: (month: string) => [...coachKeys.all, 'me', 'availability-calendar', month] as const,
   myChanges: () => [...coachKeys.all, 'me', 'availability-changes'] as const,
   submissions: (month?: string, status?: string) => [...coachKeys.all, 'availability-submissions', month, status] as const,
@@ -66,6 +68,15 @@ export function useCoaches() {
     queryKey: coachKeys.list(),
     queryFn: getCoaches,
     retry: retryServerErrors,
+  });
+}
+
+export function useQualifiedCoaches(sportId?: number) {
+  return useQuery({
+    queryKey: coachKeys.qualified(sportId),
+    queryFn: () => getQualifiedCoaches(sportId),
+    retry: retryServerErrors,
+    enabled: Number.isInteger(sportId) && Number(sportId) > 0,
   });
 }
 

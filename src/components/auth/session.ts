@@ -21,7 +21,7 @@ export function getSessionRole(): AppRole | null {
 
 export const roleHomePath: Record<AppRole, string> = {
   CENTER_MANAGER: '/app/dashboard',
-  COACH: '/coach/attendance',
+  COACH: '/coach/dashboard',
   MEMBER: '/member/home',
   RECEPTIONIST: '/app/cashier',
 };

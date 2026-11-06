@@ -298,6 +298,8 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
                 disabled={locked || mark.isPending}
                 readOnly={locked}
                 onChange={(patch) => updateDraft(student.registrationId, patch)}
+                assessmentPath={`/coach/assessments/new?memberId=${student.member.id}&classRegistrationId=${student.registrationId}&classSessionId=${sessionId}&sessionDate=${session.startsAt.slice(0, 10)}`}
+                canAssess={new Date(session.endsAt) <= new Date() && ['PRESENT', 'LATE'].includes(drafts[student.registrationId]?.status ?? '')}
               />
             ))}
           </ul>
@@ -336,9 +338,11 @@ type StudentRowProps = {
   disabled: boolean;
   readOnly: boolean;
   onChange: (patch: Partial<Draft>) => void;
+  assessmentPath: string;
+  canAssess: boolean;
 };
 
-function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote, invalid, disabled, readOnly, onChange }: StudentRowProps) {
+function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote, invalid, disabled, readOnly, onChange, assessmentPath, canAssess }: StudentRowProps) {
   const noteId = useId();
   const errorId = `${noteId}-row-error`;
   const note = draft?.note ?? '';
@@ -377,6 +381,14 @@ function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote,
       )}
 
       <div className="mt-2">
+        {canAssess && (
+          <Link
+            to={assessmentPath}
+            className="mr-3 inline-flex min-h-11 items-center gap-1.5 rounded-control px-1 text-[13px] font-bold text-primary-deep hover:underline"
+          >
+            <NotePencil aria-hidden="true" /> Đánh giá sau buổi học
+          </Link>
+        )}
         {noteOpen ? (
           <div className="mt-4">
             <label htmlFor={noteId} className="mb-1.5 block text-xs font-bold text-ink">

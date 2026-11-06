@@ -16,7 +16,7 @@ describe('BrandLogo navigation', () => {
 
   test.each<[AppRole, string]>([
     ['MEMBER', '/member/home'],
-    ['COACH', '/coach/attendance'],
+    ['COACH', '/coach/dashboard'],
     ['RECEPTIONIST', '/app/cashier'],
     ['CENTER_MANAGER', '/app/dashboard'],
   ])('sends %s to its role home', (role, expectedPath) => {

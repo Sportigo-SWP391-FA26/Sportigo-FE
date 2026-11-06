@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { Room, RoomInput, Sport, SportInput } from './types';
+import type { AssessmentMetric, AssessmentMetricInput, Room, RoomInput, Sport, SportInput } from './types';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -16,6 +16,19 @@ export async function createSport(input: SportInput) {
 export async function updateSport(id: number, input: Partial<SportInput>) {
   const { data } = await apiClient.put<DataResponse<Sport>>(`/sports/${id}`, input);
   return data.data;
+}
+
+export async function getAssessmentMetrics(sportId: number) {
+  const { data } = await apiClient.get<AssessmentMetric[]>(`/sports/${sportId}/assessment-metrics`);
+  return data;
+}
+export async function createAssessmentMetric(sportId: number, input: AssessmentMetricInput) {
+  const { data } = await apiClient.post<AssessmentMetric>(`/sports/${sportId}/assessment-metrics`, input);
+  return data;
+}
+export async function updateAssessmentMetric(sportId: number, id: number, input: Partial<AssessmentMetricInput>) {
+  const { data } = await apiClient.patch<AssessmentMetric>(`/sports/${sportId}/assessment-metrics/${id}`, input);
+  return data;
 }
 
 export async function getRooms() {

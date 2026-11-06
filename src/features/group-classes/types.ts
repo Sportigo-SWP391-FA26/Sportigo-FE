@@ -13,7 +13,7 @@ export type GroupClass = {
   status: string;
   createdAt: string;
   updatedAt: string;
-  sport: { id: number; name: string; isActive: boolean };
+  sport: { id: number; name: string; imageUrl?: string | null; isActive: boolean };
   coach: { user: { id: number; displayName: string } };
 };
 
@@ -50,6 +50,16 @@ export type CreateSessionInput = {
   note?: string;
 };
 export type CreateRecurringSessionsInput = {
+  patterns: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    roomId: number;
+  }>;
+  effectiveFrom: string;
+  effectiveTo: string;
+  note?: string;
+} | {
   roomId: number;
   recurrence: {
     dayOfWeek: number;
@@ -59,6 +69,19 @@ export type CreateRecurringSessionsInput = {
     effectiveTo: string;
   };
   note?: string;
+};
+export type RecurringSchedulePreview = {
+  canCreate: boolean;
+  total: number;
+  conflicts: number;
+  occurrences: Array<{
+    startsAt: string;
+    endsAt: string;
+    roomId: number;
+    valid: boolean;
+    code?: string;
+    message?: string;
+  }>;
 };
 export type ChangeSessionInput = {
   newStartsAt?: string;

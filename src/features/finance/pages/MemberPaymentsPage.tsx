@@ -2,7 +2,7 @@ import { ArrowSquareOut, Bank, CheckCircle, ClockCounterClockwise, CreditCard, P
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { financeApi, saveBlob } from '../api';
+import { financeApi, saveBlob, type Payment } from '../api';
 import { useMyProfile } from '../../profile/hooks/useMyProfile';
 
 const money = (value: number | string) => Number(value).toLocaleString('vi-VN') + ' ₫';
@@ -63,6 +63,26 @@ export function MemberPaymentsPage() {
     if (method === 'wallet') return void payWallet();
     return void startVnpay();
   };
+  const requestItemRefund = async (payment: Payment) => {
+    const items = payment.order.items;
+    if (items.length === 0) return setMessage('Không tìm thấy dịch vụ thuộc giao dịch này.');
+    let item = items[0]!;
+    if (items.length > 1) {
+      const choices = items.map((candidate, index) => `${index + 1}. ${candidate.itemNameSnapshot}`).join('\n');
+      const selected = Number(window.prompt(`Chọn dịch vụ cần hoàn:\n${choices}`, '1'));
+      if (!Number.isInteger(selected) || selected < 1 || selected > items.length) return;
+      item = items[selected - 1]!;
+    }
+    const requested = window.prompt(`Số tiền yêu cầu hoàn cho ${item.itemNameSnapshot}`, item.finalAmount);
+    const reason = window.prompt('Lý do hoàn tiền');
+    if (!requested || !reason) return;
+    try {
+      await financeApi.refundItem(item.id, Number(requested), reason);
+      setMessage(`Đã gửi yêu cầu hoàn tiền cho dịch vụ “${item.itemNameSnapshot}”.`);
+    } catch {
+      setMessage('Chỉ có thể yêu cầu hoàn sau khi dịch vụ đã hủy hợp lệ và số tiền không vượt giá trị còn lại.');
+    }
+  };
 
   return <div className="finance-page">
     <header className="finance-page__hero"><div><span>TÀI CHÍNH CÁ NHÂN</span><h1>Thanh toán & ví Sportigo</h1><p>Theo dõi số dư, kết hợp ví với VNPay và tải hóa đơn của bạn.</p></div><div className="wallet-balance"><Wallet size={28}/><span>Số dư khả dụng</span><b>{money(wallet.data?.balance ?? 0)}</b><small>Không rút hoặc chuyển nhượng</small><button type="button" onClick={() => document.getElementById('wallet-top-up')?.scrollIntoView({ behavior: 'smooth' })}><Plus /> Nạp tiền</button></div></header>
@@ -98,7 +118,7 @@ export function MemberPaymentsPage() {
         {message && <p className="finance-message" role="status">{message}</p>}
       </>}
     </section>}
-    <section className="finance-list"><header><div><h2>Lịch sử giao dịch</h2><p>Các khoản thanh toán tại quầy, VNPay và ví.</p></div><ClockCounterClockwise size={25}/></header>{payments.isLoading ? <p>Đang tải…</p> : payments.data?.length ? payments.data.map((payment) => <article key={payment.id}><div><b>{payment.order.orderNumber}</b><span>{payment.paymentMethod.name} · {payment.reference}</span></div><strong>{money(payment.amount)}</strong><span className={`finance-status is-${payment.status.toLowerCase()}`}>{payment.status}</span><div className="finance-row-actions">{payment.order.invoice && <button className="is-download" onClick={async()=>saveBlob(await financeApi.invoicePdf(payment.order.invoice!.id),`${payment.order.invoice!.invoiceNumber}.pdf`)}>Tải hóa đơn</button>}{['SUCCESS','PARTIALLY_REFUNDED'].includes(payment.status)&&<button onClick={async()=>{const requested=window.prompt('Số tiền yêu cầu hoàn',payment.amount);const reason=window.prompt('Lý do hoàn tiền');if(!requested||!reason)return;try{await financeApi.refund(payment.id,Number(requested),reason);setMessage('Đã gửi yêu cầu hoàn tiền.');}catch{setMessage('Chỉ có thể yêu cầu hoàn sau khi dịch vụ đã hủy hợp lệ.');}}}>Yêu cầu hoàn</button>}</div></article>) : <p>Chưa có giao dịch.</p>}</section>
+    <section className="finance-list"><header><div><h2>Lịch sử giao dịch</h2><p>Các khoản thanh toán tại quầy, VNPay và ví.</p></div><ClockCounterClockwise size={25}/></header>{payments.isLoading ? <p>Đang tải…</p> : payments.data?.length ? payments.data.map((payment) => <article key={payment.id}><div><b>{payment.order.orderNumber}</b><span>{payment.order.items.map((item) => item.itemNameSnapshot).join(', ') || 'Giao dịch ví'} · {payment.paymentMethod.name} · {payment.reference}</span></div><strong>{money(payment.amount)}</strong><span className={`finance-status is-${payment.status.toLowerCase()}`}>{payment.status}</span><div className="finance-row-actions">{payment.order.invoice && <button className="is-download" onClick={async()=>saveBlob(await financeApi.invoicePdf(payment.order.invoice!.id),`${payment.order.invoice!.invoiceNumber}.pdf`)}>Tải hóa đơn</button>}{['SUCCESS','PARTIALLY_REFUNDED'].includes(payment.status)&&payment.order.items.some((item) => item.itemType !== 'WALLET_TOP_UP')&&<button onClick={() => void requestItemRefund(payment)}>Yêu cầu hoàn</button>}</div></article>) : <p>Chưa có giao dịch.</p>}</section>
   </div>;
 }
 

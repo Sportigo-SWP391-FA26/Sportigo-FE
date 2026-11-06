@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changePrivateOccurrence, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses, updatePrivateCourse } from '../api';
+import { changePrivateOccurrence, completePrivateSession, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses, updatePrivateCourse } from '../api';
 import type { OccurrenceActionInput, UpdatePrivateCourseInput } from '../types';
 
 export const privateCourseKeys = {
@@ -62,5 +62,12 @@ export function useChangePrivateOccurrence() {
       input: OccurrenceActionInput;
     }) => changePrivateOccurrence(enrollmentId, scheduleId, sessionDate, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: privateCourseKeys.enrollments() }),
+  });
+}
+
+export function useCompletePrivateSession() {
+  return useMutation({
+    mutationFn: ({ enrollmentId, scheduleId, sessionDate }: { enrollmentId: number; scheduleId: number; sessionDate: string }) =>
+      completePrivateSession(enrollmentId, scheduleId, sessionDate),
   });
 }

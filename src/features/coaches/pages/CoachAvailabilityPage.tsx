@@ -66,7 +66,17 @@ export function CoachAvailabilityPage() {
     workingSelected.forEach((item) => perDay.set(item.dayOfWeek, (perDay.get(item.dayOfWeek) ?? 0) + 1));
     return { total: workingSelected.length, days: perDay.size, perDay };
   }, [workingSelected]);
-  const valid = counts.total >= 10 && counts.days >= 5 && [...counts.perDay.values()].every((count) => count >= 2 && count <= 4);
+  const rules = calendar.data?.rules;
+  const minimumShifts = rules?.minimumShifts ?? 20;
+  const minimumDays = rules?.minimumDays ?? 5;
+  const minimumPerDay = rules?.minimumPerSelectedDay ?? 2;
+  const maximumPerDay = rules?.maximumPerDay ?? 4;
+  const valid = Boolean(
+    rules
+    && counts.total >= minimumShifts
+    && counts.days >= minimumDays
+    && [...counts.perDay.values()].every((count) => count >= minimumPerDay && count <= maximumPerDay),
+  );
   const editable = calendar.data ? ['DRAFT', 'REJECTED'].includes(calendar.data.submission.status) && month === nextMonthValue() : false;
 
   const selectionMap = useMemo(() => new Map(calendar.data?.submission.selections.map((item) => [`${item.dayOfWeek}:${item.shiftCode}`, item]) ?? []), [calendar.data]);
@@ -81,8 +91,8 @@ export function CoachAvailabilityPage() {
     }
     if (!editable) return;
     const exists = workingSelected.some((item) => `${item.dayOfWeek}:${item.shiftCode}` === key);
-    if (!exists && (counts.perDay.get(cell.dayOfWeek) ?? 0) >= 4) {
-      toast('Mỗi ngày chỉ được chọn tối đa 4 ca.', 'error'); return;
+    if (!exists && (counts.perDay.get(cell.dayOfWeek) ?? 0) >= maximumPerDay) {
+      toast(`Mỗi ngày chỉ được chọn tối đa ${maximumPerDay} ca.`, 'error'); return;
     }
     setSelected(exists ? workingSelected.filter((item) => `${item.dayOfWeek}:${item.shiftCode}` !== key) : [...workingSelected, cell]);
   };
@@ -107,9 +117,9 @@ export function CoachAvailabilityPage() {
             <Button variant="ghost" size="sm" aria-label="Tháng sau" onClick={() => { setSelected(null); setMonth((value) => shiftMonth(value, 1)); }} icon={<CaretRight />} />
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            <Chip tone={counts.total >= 10 ? 'success' : 'warning'}>{counts.total}/10 ca</Chip>
-            <Chip tone={counts.days >= 5 ? 'success' : 'warning'}>{counts.days}/5 ngày</Chip>
-            <Chip tone="info">2–4 ca/ngày</Chip>
+            <Chip tone={counts.total >= minimumShifts ? 'success' : 'warning'}>{counts.total}/{minimumShifts} ca</Chip>
+            <Chip tone={counts.days >= minimumDays ? 'success' : 'warning'}>{counts.days}/{minimumDays} ngày</Chip>
+            <Chip tone="info">{minimumPerDay}–{maximumPerDay} ca/ngày</Chip>
           </div>
         </div>
         {calendar.isPending ? <div className="p-6"><ListSkeleton rows={5} /></div> : calendar.isError ? <div className="p-6"><ErrorState error={calendar.error} onRetry={() => calendar.refetch()} /></div> : calendar.data ? (

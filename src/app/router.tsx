@@ -44,6 +44,7 @@ const CoachManagementListPage = lazy(() => import('../features/coaches/pages/Coa
 const CoachManagementPage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachManagementPage })));
 const CoachOwnSchedulePage = lazy(() => import('../features/coaches/pages/CoachManagementPage').then((module) => ({ default: module.CoachOwnSchedulePage })));
 const CoachAvailabilityPage = lazy(() => import('../features/coaches/pages/CoachAvailabilityPage').then((module) => ({ default: module.CoachAvailabilityPage })));
+const CoachDashboardPage = lazy(() => import('../features/coaches/pages/CoachDashboardPage').then((module) => ({ default: module.CoachDashboardPage })));
 const ManagerAvailabilityPage = lazy(() => import('../features/coaches/pages/ManagerAvailabilityPage').then((module) => ({ default: module.ManagerAvailabilityPage })));
 const GroupClassDetailPage = lazy(() => import('../features/group-classes/pages/GroupClassDetailPage').then((module) => ({ default: module.GroupClassDetailPage })));
 const GroupClassesPage = lazy(() => import('../features/group-classes/pages/GroupClassesPage').then((module) => ({ default: module.GroupClassesPage })));
@@ -148,7 +149,8 @@ export const router = createBrowserRouter([
       {
         element: <CoachLayout />,
         children: [
-          { index: true, element: <Navigate to="attendance" replace /> },
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard', element: <CoachDashboardPage /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
           { path: 'schedule', element: <CoachOwnSchedulePage /> },
           { path: 'availability', element: <CoachAvailabilityPage /> },

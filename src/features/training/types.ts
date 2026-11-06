@@ -203,6 +203,7 @@ export type ProgressAssessment = {
   // Prisma Decimal được serialize thành chuỗi, ví dụ "8.5"
   score: string | number | null;
   metrics: Record<string, number> | null;
+  metricValues: AssessmentMetricValue[];
   coachComment: string;
   recommendation: string | null;
   nextAssessmentDate: string | null;
@@ -210,6 +211,10 @@ export type ProgressAssessment = {
   member: MemberRef;
   coach: CoachRef;
   context: AssessmentContext | null;
+  session:
+    | { type: 'GROUP_CLASS'; id: number; startsAt: string; endsAt: string; status: SessionStatus }
+    | { type: 'PRIVATE_COURSE'; id: number; sessionDate: string; startsAt: string; endsAt: string; completedAt: string }
+    | null;
 };
 
 export type AssessmentQuery = PageQuery & { memberId?: number };
@@ -218,12 +223,51 @@ export type AssessmentInput = {
   memberId: number;
   classRegistrationId?: number;
   privateEnrollmentId?: number;
-  assessmentDate: string;
+  classSessionId?: number;
+  privateCourseAttendanceId?: number;
+  completedWorkoutPlanItemIds?: number[];
   coachComment: string;
-  metrics: Record<string, number>;
+  metricValues: { definitionId: number; value: number }[];
   score?: number;
   recommendation?: string;
   nextAssessmentDate?: string;
+};
+
+export type AssessmentMetricDefinition = {
+  id: number;
+  sportId: number;
+  code: string;
+  name: string;
+  unit: string;
+  minValue: string | number;
+  maxValue: string | number;
+  direction: 'HIGHER_IS_BETTER' | 'LOWER_IS_BETTER';
+  isRequired: boolean;
+  isActive: boolean;
+  displayOrder: number;
+};
+
+export type AssessmentMetricValue = {
+  definitionId: number;
+  code: string;
+  name: string;
+  unit: string;
+  minValue: string | number;
+  maxValue: string | number;
+  direction: 'HIGHER_IS_BETTER' | 'LOWER_IS_BETTER';
+  value: string | number;
+};
+
+export type AssessableSession = {
+  type: 'GROUP_CLASS' | 'PRIVATE_COURSE';
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  sessionDate?: string;
+  name: string;
+  sport: SportRef;
+  metricDefinitions: AssessmentMetricDefinition[];
+  completedPlanItems: WorkoutPlanItem[];
 };
 
 // ---------- FR-53: kế hoạch & tiến độ của Member ----------
@@ -250,6 +294,13 @@ export type MemberPlanAssignment = {
     course: { id: number; name: string };
     coach: CoachRef;
   };
+  completedItems: {
+    workoutPlanItemId: number;
+    completedAt: string;
+    session: { id: number; sessionDate: string; startsAt: string; endsAt: string };
+    completedBy: CoachRef;
+  }[];
+  progress: { totalItems: number; completedItems: number; percentage: number };
 };
 
 export type MemberTraining = {

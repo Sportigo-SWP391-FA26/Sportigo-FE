@@ -2,7 +2,7 @@ import { CalendarBlank, Certificate, Clock, Plus, Trash } from '@phosphor-icons/
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
 import { toast } from '../../../components/feedback/toast';
 import { useMyProfile } from '../../profile/hooks/useMyProfile';
@@ -22,6 +22,7 @@ import { useCoaches, useCoachAvailability, useCoachSchedule, useCoachSports, use
 import type { AvailabilityInput, CoachAvailability, CoachScheduleItem } from '../types';
 import { isCoachScheduleRangeValid } from '../scheduleRange';
 import { z } from 'zod';
+import { useCompletePrivateSession } from '../../private-courses/hooks/usePrivateCourses';
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
@@ -51,7 +52,7 @@ const errorText = (error: unknown) => parseApiError(error).message;
 export function CoachManagementListPage() {
   const coaches = useCoaches();
   return (
-    <div className="mx-auto w-full max-w-[1100px]">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader eyebrow="Nhân sự" title="Quản lý Coach" description="Xem và cập nhật chuyên môn, availability và lịch dạy của Coach." />
       {coaches.isPending ? (
         <ListSkeleton label="Đang tải danh sách Coach…" />
@@ -60,21 +61,23 @@ export function CoachManagementListPage() {
       ) : coaches.data.length === 0 ? (
         <EmptyState icon={<Certificate />} title="Chưa có Coach" description="Tạo Coach trong mục Quản lý nhân sự trước khi quản lý chuyên môn và lịch." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
           {coaches.data.map((coach) => (
-            <Card key={coach.id} className="group overflow-hidden p-0">
-              <div className="flex min-h-40">
+            <Card key={coach.id} className="group min-w-0 overflow-hidden p-0">
+              <div className="flex min-h-44">
                 <CoachAvatar name={coach.displayName} src={coach.avatarUrl} />
-                <div className="flex min-w-0 flex-1 flex-col p-5">
+                <div className="flex min-w-0 flex-1 flex-col gap-4 p-5">
                   <div className="min-w-0">
                     <p className="truncate text-lg font-extrabold text-ink">{coach.displayName}</p>
                     <p className="mt-1 truncate text-sm text-muted">{coach.staffCode ?? coach.email}</p>
                   </div>
-                  <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-                    <Chip tone={coach.coachStatus === 'ACTIVE' ? 'success' : 'neutral'} dot>
-                      {coach.coachStatus === 'ACTIVE' ? 'Đang hoạt động' : coach.coachStatus ?? coach.status}
-                    </Chip>
-                    <ButtonLink to={`/app/coaches/${coach.id}`} size="sm">Mở hồ sơ</ButtonLink>
+                  <div className="mt-auto flex min-w-0 flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <Chip tone={coach.coachStatus === 'ACTIVE' ? 'success' : 'neutral'} dot>
+                        {coach.coachStatus === 'ACTIVE' ? 'Đang hoạt động' : coach.coachStatus ?? coach.status}
+                      </Chip>
+                    </div>
+                    <ButtonLink to={`/app/coaches/${coach.id}`} size="sm" className="shrink-0 whitespace-nowrap">Mở hồ sơ</ButtonLink>
                   </div>
                 </div>
               </div>
@@ -96,7 +99,7 @@ function CoachAvatar({ name, src }: { name: string; src: string | null }) {
     .join('');
 
   return (
-    <div className="relative w-28 shrink-0 overflow-hidden bg-primary/10 sm:w-32">
+    <div className="relative w-28 shrink-0 overflow-hidden bg-primary/10 sm:w-36">
       {src && !failed ? (
         <img
           src={src}
@@ -412,6 +415,8 @@ function CoachSchedulePanel({ coachId, coachName }: { coachId: number; coachName
 }
 
 function ScheduleItem({ item }: { item: CoachScheduleItem }) {
+  const navigate = useNavigate();
+  const completePrivate = useCompletePrivateSession();
   const privateCourse = item.type === 'PRIVATE_COURSE';
   const typeLabel = privateCourse ? 'Khóa 1–1' : 'Lớp nhóm';
   const name = privateCourse ? item.enrollment.privateCourse.name : item.groupClass.name;
@@ -422,6 +427,23 @@ function ScheduleItem({ item }: { item: CoachScheduleItem }) {
       <div className="w-28 shrink-0 text-sm"><p className="font-extrabold text-ink">{formatTime(item.startsAt)}–{formatTime(item.endsAt)}</p><p className="text-xs text-muted">{formatDateTime(item.startsAt).split(' ')[0]}</p></div>
       <div className="min-w-0 flex-1"><p className="truncate font-bold text-ink">{name}</p><p className="text-xs text-muted">{typeLabel}{item.room ? ` · ${item.room.name}` : ''}{privateCourse ? ` · ${item.enrollment.member.user.displayName}` : ''}{privateCourse && item.status === 'RESCHEDULED' ? ` · Buổi gốc ${formatDate(item.originalDate)}` : ''}</p></div>
       <Chip tone={tone} dot>{statusLabel}</Chip>
+      {privateCourse && getSessionRole() === 'COACH' && item.status !== 'CANCELLED' && new Date(item.endsAt) <= new Date() && (
+        <Button
+          size="sm"
+          loading={completePrivate.isPending}
+          onClick={() => completePrivate.mutate(
+            { enrollmentId: item.enrollment.id, scheduleId: item.id, sessionDate: item.originalDate },
+            {
+              onSuccess: (attendance) => navigate(
+                `/coach/assessments/new?memberId=${item.enrollment.member.user.id}&privateEnrollmentId=${item.enrollment.id}&privateCourseAttendanceId=${attendance.id}&sessionDate=${attendance.sessionDate}`,
+              ),
+              onError: (error) => toast(parseApiError(error).message, 'error'),
+            },
+          )}
+        >
+          Hoàn thành & đánh giá
+        </Button>
+      )}
     </div>
   );
 }
