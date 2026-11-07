@@ -86,7 +86,7 @@ export const assessmentFormSchema = z
       }),
     score: z.preprocess(
       (value) => (value === '' || value === null ? undefined : value),
-      z.coerce.number({ invalid_type_error: 'Điểm phải là số' }).min(0, 'Điểm từ 0 đến 100').max(100, 'Điểm từ 0 đến 100').optional(),
+      z.coerce.number({ invalid_type_error: 'Điểm phải là số' }).min(0, 'Điểm tổng từ 0 đến 10').max(10, 'Điểm tổng từ 0 đến 10').optional(),
     ),
     recommendation: z.string().trim().max(2000, 'Khuyến nghị tối đa 2000 ký tự'),
     nextAssessmentDate: z.string(),

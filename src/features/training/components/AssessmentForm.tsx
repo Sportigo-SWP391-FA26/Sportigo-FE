@@ -285,13 +285,13 @@ export function AssessmentForm({ members, onCreated, onCancel }: Props) {
       <section className="space-y-5 border-t border-line pt-5">
         <h2 className="text-base font-extrabold text-ink">3. Tùy chọn</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id={`${id}-score`} label="Điểm tổng" error={errors.score?.message} hint="Từ 0 đến 100">
+          <Field id={`${id}-score`} label="Điểm tổng" error={errors.score?.message} hint="Thang 10, từ 0 đến 10">
             <input
               id={`${id}-score`}
               type="number"
               step="any"
               min={0}
-              max={100}
+              max={10}
               inputMode="decimal"
               className={inputClass}
               aria-invalid={errors.score ? true : undefined}

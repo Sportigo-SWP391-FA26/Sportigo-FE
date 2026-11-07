@@ -5,6 +5,7 @@ import type {
   PlanAssignmentStatus,
   PlanLevel,
   PlanStatus,
+  ScoreLevel,
   TraineeMember,
   WorkoutPlanItem,
 } from './types';
@@ -21,7 +22,13 @@ export function traineeLabel(member: TraineeMember) {
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 
-export const attendanceStatuses: AttendanceStatus[] = ['PRESENT', 'LATE', 'ABSENT', 'EXCUSED'];
+// FR-47: Coach chỉ ghi Có mặt / Vắng. LATE, EXCUSED chỉ còn ở dữ liệu cũ nên vẫn có nhãn để hiển thị.
+export const attendanceStatuses: AttendanceStatus[] = ['PRESENT', 'ABSENT'];
+
+// Dữ liệu cũ: Muộn tính là Có mặt, Có phép tính là Vắng (giống cách backend tính chuyên cần)
+export function toMarkableStatus(status: AttendanceStatus): AttendanceStatus {
+  return status === 'LATE' ? 'PRESENT' : status === 'EXCUSED' ? 'ABSENT' : status;
+}
 
 export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
   PRESENT: 'Có mặt',
@@ -35,6 +42,20 @@ export const attendanceStatusTones: Record<AttendanceStatus, Tone> = {
   LATE: 'warning',
   ABSENT: 'danger',
   EXCUSED: 'info',
+};
+
+export const scoreLevelLabels: Record<ScoreLevel, string> = {
+  EXCELLENT: 'Xuất sắc',
+  GOOD: 'Khá',
+  AVERAGE: 'Trung bình',
+  NEEDS_IMPROVEMENT: 'Cần cải thiện',
+};
+
+export const scoreLevelTones: Record<ScoreLevel, Tone> = {
+  EXCELLENT: 'success',
+  GOOD: 'primary',
+  AVERAGE: 'warning',
+  NEEDS_IMPROVEMENT: 'danger',
 };
 
 export const planStatusLabels: Record<PlanStatus, string> = {

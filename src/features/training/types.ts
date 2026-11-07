@@ -202,6 +202,8 @@ export type ProgressAssessment = {
   assessmentDate: string;
   // Prisma Decimal được serialize thành chuỗi, ví dụ "8.5"
   score: string | number | null;
+  // Mức do backend tính từ score; null khi không chấm điểm. Không có khi backend chưa cập nhật.
+  level?: ScoreLevel | null;
   metrics: Record<string, number> | null;
   coachComment: string;
   recommendation: string | null;
@@ -252,9 +254,14 @@ export type MemberPlanAssignment = {
   };
 };
 
+// Ngưỡng mức đánh giá theo Điểm tổng (0–100), backend là nguồn duy nhất
+export type ScoreLevel = 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT';
+export type ScoreLevelRange = { level: ScoreLevel; label: string; min: number; max: number };
+
 export type MemberTraining = {
   planAssignments: MemberPlanAssignment[];
   assessments: ProgressAssessment[];
+  scoreLevels?: ScoreLevelRange[];
 };
 
 // ---------- API của module khác mà Training dùng ----------

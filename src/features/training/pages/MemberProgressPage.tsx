@@ -6,7 +6,6 @@ import { AttendanceHistoryPanel } from '../components/AttendanceHistoryPanel';
 import type { TrendPoint } from '../components/MetricTrendChart';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading, StatTile } from '../../../components/ui/Card';
-import { Chip } from '../../../components/ui/Chip';
 import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton, Skeleton } from '../../../components/ui/States';
 import { tabPanelProps } from '../../../components/ui/styles';
@@ -14,8 +13,9 @@ import { Tabs } from '../../../components/ui/Tabs';
 import { formatDate, formatNumber, formatPercent, monthRange, toScore, todayInCenter, weekRange } from '../format';
 import { useAttendanceSummary } from '../hooks/useAttendance';
 import { useMyTraining } from '../hooks/useMemberTraining';
-import type { ProgressAssessment } from '../types';
+import type { ProgressAssessment, ScoreLevelRange } from '../types';
 import { SelectInput } from '../components/SelectInput';
+import { ScoreChip, ScoreLevelLegend } from '../components/ScoreLevel';
 
 const MetricTrendChart = lazy(() => import('../components/MetricTrendChart'));
 
@@ -69,7 +69,7 @@ export function MemberProgressPage() {
           />
         ) : (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(300px,1fr)] xl:items-start">
-            <TrendCard assessments={assessments} />
+            <TrendCard assessments={assessments} scoreLevels={training.data?.scoreLevels} />
             <LatestAssessment assessment={assessments[0]} />
           </div>
         )}
@@ -90,7 +90,7 @@ export function MemberProgressPage() {
             ) : training.error ? (
               <ErrorState error={training.error} onRetry={() => training.refetch()} retrying={training.isRefetching} />
             ) : (
-              <AssessmentHistory assessments={assessments} />
+              <AssessmentHistory assessments={assessments} scoreLevels={training.data?.scoreLevels} />
             )
           ) : (
             <AttendanceHistoryPanel scope="member" />
@@ -160,7 +160,7 @@ function AttendanceStats({ latest, trainingPending }: { latest?: ProgressAssessm
                 ? '—'
                 : pending
           }
-          hint="(Có mặt + Muộn) / số buổi đã điểm danh"
+          hint="Có mặt / số buổi đã điểm danh"
         />
         <StatTile
           icon={<Medal />}
@@ -203,7 +203,7 @@ function trendPoints(assessments: ProgressAssessment[], metric: string): TrendPo
     });
 }
 
-function TrendCard({ assessments }: { assessments: ProgressAssessment[] }) {
+function TrendCard({ assessments, scoreLevels }: { assessments: ProgressAssessment[]; scoreLevels?: ScoreLevelRange[] }) {
   const selectId = useId();
   const options = metricOptions(assessments);
   const [selected, setSelected] = useState<string | null>(null);
@@ -250,7 +250,7 @@ function TrendCard({ assessments }: { assessments: ProgressAssessment[] }) {
             </div>
           ) : (
             <Suspense fallback={<Skeleton className="h-[260px] w-full" />}>
-              <MetricTrendChart points={points} metricLabel={metric.label} />
+              <MetricTrendChart points={points} metricLabel={metric.label} bands={metric.key === SCORE_KEY ? scoreLevels : undefined} />
             </Suspense>
           )}
         </>
@@ -286,13 +286,12 @@ function TrendTable({ points, label }: { points: TrendPoint[]; label: string }) 
 }
 
 function LatestAssessment({ assessment }: { assessment: ProgressAssessment }) {
-  const score = toScore(assessment.score);
   return (
     <Card className="p-5 sm:p-6">
       <SectionHeading title="Nhận xét gần nhất" description={`${formatDate(assessment.assessmentDate)} · Coach ${assessment.coach.displayName}`} />
       <div className="flex flex-wrap gap-1.5">
         <ContextChip context={assessment.context} />
-        {score !== null && <Chip tone="success">Điểm {formatNumber(score)}</Chip>}
+        <ScoreChip assessment={assessment} />
       </div>
       <blockquote className="mt-4 border-l-4 border-primary/40 pl-4 text-[15px] leading-relaxed text-ink">{assessment.coachComment}</blockquote>
       {assessment.recommendation && (
@@ -308,13 +307,18 @@ function LatestAssessment({ assessment }: { assessment: ProgressAssessment }) {
   );
 }
 
-function AssessmentHistory({ assessments }: { assessments: ProgressAssessment[] }) {
+function AssessmentHistory({ assessments, scoreLevels }: { assessments: ProgressAssessment[]; scoreLevels?: ScoreLevelRange[] }) {
   const [visible, setVisible] = useState(ASSESSMENTS_PER_PAGE);
   if (assessments.length === 0) {
     return <EmptyState title="Chưa có đánh giá" description="Các lần đánh giá của Coach sẽ hiển thị tại đây, mới nhất trước." />;
   }
   return (
     <div>
+      {scoreLevels && scoreLevels.length > 0 && (
+        <div className="mb-4 flex justify-end">
+          <ScoreLevelLegend levels={scoreLevels} />
+        </div>
+      )}
       <ol className="space-y-3">
         {assessments.slice(0, visible).map((assessment) => (
           <li key={assessment.id}>

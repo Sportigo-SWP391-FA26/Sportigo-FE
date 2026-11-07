@@ -1,6 +1,7 @@
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatDate, formatNumber } from '../format';
 import { prefersReducedMotion } from '../motion';
+import type { ScoreLevel, ScoreLevelRange } from '../types';
 
 export type TrendPoint = {
   id: number;
@@ -22,7 +23,19 @@ const chartTokens = [
   '[&_.recharts-cartesian-grid_line]:stroke-line',
   '[&_.recharts-cartesian-axis-tick-value]:fill-muted',
   '[&_.recharts-tooltip-cursor]:stroke-muted/50',
+  // Dải nền theo mức đánh giá (chỉ khi xem Điểm tổng), cùng màu với chip mức
+  '[&_.band-EXCELLENT_path]:fill-accent-lime/14',
+  '[&_.band-GOOD_path]:fill-primary/8',
+  '[&_.band-AVERAGE_path]:fill-accent-energy/10',
+  '[&_.band-NEEDS_IMPROVEMENT_path]:fill-danger/7',
 ].join(' ');
+
+const bandClass: Record<ScoreLevel, string> = {
+  EXCELLENT: 'band-EXCELLENT',
+  GOOD: 'band-GOOD',
+  AVERAGE: 'band-AVERAGE',
+  NEEDS_IMPROVEMENT: 'band-NEEDS_IMPROVEMENT',
+};
 
 function TrendTooltip({ active, payload }: TooltipProps) {
   const point = payload?.[0]?.payload as TrendPoint | undefined;
@@ -38,8 +51,20 @@ function TrendTooltip({ active, payload }: TooltipProps) {
 }
 
 /** Biểu đồ đường một chỉ số qua các lần đánh giá (FR-53). Tải lazy để không tăng bundle chính. */
-export default function MetricTrendChart({ points, metricLabel }: { points: TrendPoint[]; metricLabel: string }) {
+export default function MetricTrendChart({
+  points,
+  metricLabel,
+  bands,
+}: {
+  points: TrendPoint[];
+  metricLabel: string;
+  /** Ngưỡng mức đánh giá: có thì vẽ dải nền và cố định trục theo thang điểm (Điểm tổng, 0–10) */
+  bands?: ScoreLevelRange[];
+}) {
   const lastIndex = points.length - 1;
+  const scaleMax = bands ? Math.max(...bands.map((band) => band.max)) : 0;
+  // Mỗi dải kéo tới min của dải kế trên để các dải liền nhau (vd Khá 7 → 8,5)
+  const bandTop = (min: number) => bands?.map((band) => band.min).filter((value) => value > min).sort((a, b) => a - b)[0] ?? scaleMax;
   const first = points[0];
   const last = points[lastIndex];
   const values = points.map((point) => point.value);
@@ -81,10 +106,22 @@ export default function MetricTrendChart({ points, metricLabel }: { points: Tren
             tickLine={false}
             axisLine={false}
             fontSize={12}
-            domain={[(min: number) => Math.floor(min), (max: number) => Math.ceil(max)]}
-            allowDecimals={span < 3}
+            domain={bands ? [0, scaleMax] : [(min: number) => Math.floor(min), (max: number) => Math.ceil(max)]}
+            ticks={bands ? [0, ...bands.map((band) => band.min).filter((min) => min > 0), scaleMax].sort((a, b) => a - b) : undefined}
+            allowDecimals={bands ? true : span < 3}
             tickFormatter={(value: number) => formatNumber(value)}
           />
+          {bands?.map((band) => (
+            <ReferenceArea
+              key={band.level}
+              y1={band.min}
+              y2={bandTop(band.min)}
+              className={bandClass[band.level]}
+              fillOpacity={1}
+              strokeOpacity={0}
+              ifOverflow="hidden"
+            />
+          ))}
           <Tooltip content={TrendTooltip} cursor={{ strokeWidth: 1 }} />
           <Line
             type="linear"

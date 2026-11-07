@@ -1,4 +1,5 @@
-import { formatDate, formatNumber, toScore } from '../format';
+import { formatDate, formatNumber } from '../format';
+import { ScoreChip } from './ScoreLevel';
 import type { AssessmentContext, ProgressAssessment } from '../types';
 import { Chip } from '../../../components/ui/Chip';
 import { cardClass } from '../../../components/ui/styles';
@@ -15,7 +16,6 @@ export function ContextChip({ context }: { context: AssessmentContext | null }) 
 }
 
 export function AssessmentCard({ assessment, showMember = false }: { assessment: ProgressAssessment; showMember?: boolean }) {
-  const score = toScore(assessment.score);
   const metrics = Object.entries(assessment.metrics ?? {});
 
   return (
@@ -31,7 +31,7 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           <ContextChip context={assessment.context} />
-          {score !== null && <Chip tone="success">Điểm {formatNumber(score)}</Chip>}
+          <ScoreChip assessment={assessment} />
         </div>
       </header>
 

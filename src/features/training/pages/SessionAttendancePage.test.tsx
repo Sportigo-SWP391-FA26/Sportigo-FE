@@ -57,23 +57,54 @@ afterEach(() => {
 });
 
 describe('Điểm danh buổi học (FR-47)', () => {
+  test('chỉ có 2 trạng thái Có mặt / Vắng', async () => {
+    vi.mocked(api.getSessionAttendance).mockResolvedValue(roster());
+    renderPage();
+
+    const group = await screen.findByRole('group', { name: 'Trạng thái của Trần Thị Bình' });
+    expect(within(group).getAllByRole('radio').map((radio) => radio.getAttribute('aria-label') ?? radio.closest('label')?.textContent?.trim())).toEqual([
+      'Có mặt',
+      'Vắng',
+    ]);
+  });
+
+  test('dữ liệu cũ Muộn / Có phép hiện thành Có mặt / Vắng và không bị tính là thay đổi', async () => {
+    const base = roster();
+    vi.mocked(api.getSessionAttendance).mockResolvedValue({
+      ...base,
+      students: base.students.map((student, index) => ({
+        ...student,
+        attendance: {
+          ...base.students[1]!.attendance!,
+          registrationId: student.registrationId,
+          status: index === 0 ? 'LATE' : 'EXCUSED',
+        },
+      })),
+    });
+    renderPage();
+
+    expect(within(await screen.findByRole('group', { name: 'Trạng thái của Trần Thị Bình' })).getByRole('radio', { name: 'Có mặt' })).toBeChecked();
+    expect(within(screen.getByRole('group', { name: 'Trạng thái của Phạm Minh Đức' })).getByRole('radio', { name: 'Vắng' })).toBeChecked();
+    expect(screen.getByText('Không có thay đổi')).toBeInTheDocument();
+  });
+
   test('gửi một lần PUT với đúng payload cho cả danh sách', async () => {
     vi.mocked(api.getSessionAttendance).mockResolvedValue(roster());
     vi.mocked(api.markSessionAttendance).mockResolvedValue({ sessionId: 5, records: [] });
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Tất cả có mặt' }));
-    fireEvent.click(within(studentGroup('Phạm Minh Đức')).getByRole('radio', { name: 'Muộn' }));
+    fireEvent.click(within(studentGroup('Phạm Minh Đức')).getByRole('radio', { name: 'Vắng' }));
     const row = studentGroup('Phạm Minh Đức').closest('li')!;
     fireEvent.click(within(row).getByRole('button', { name: /Thêm ghi chú/ }));
-    fireEvent.change(within(row).getByLabelText('Ghi chú cho Phạm Minh Đức'), { target: { value: '  Đến muộn 10 phút ' } });
+    fireEvent.change(within(row).getByLabelText('Ghi chú cho Phạm Minh Đức'), { target: { value: '  Báo nghỉ ốm ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm danh' }));
 
     await waitFor(() => expect(api.markSessionAttendance).toHaveBeenCalledTimes(1));
     expect(api.markSessionAttendance).toHaveBeenCalledWith(5, {
       records: [
         { classRegistrationId: 31, status: 'PRESENT' },
-        { classRegistrationId: 32, status: 'LATE', note: 'Đến muộn 10 phút' },
+        { classRegistrationId: 32, status: 'ABSENT', note: 'Báo nghỉ ốm' },
       ],
     });
   });

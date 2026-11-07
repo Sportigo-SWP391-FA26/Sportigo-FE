@@ -11,7 +11,7 @@ import { cardClass, describedBy, textareaClass } from '../../../components/ui/st
 import { parseApiError } from '../errors';
 import { formatDate, formatTime, formatWeekday } from '../format';
 import { useMarkAttendance, useSessionRoster } from '../hooks/useAttendance';
-import { attendanceStatuses, attendanceStatusLabels } from '../labels';
+import { attendanceStatuses, attendanceStatusLabels, toMarkableStatus } from '../labels';
 import type { AttendanceStatus, MarkAttendanceRecord, SessionRoster } from '../types';
 
 const NOTE_MAX = 500;
@@ -33,7 +33,11 @@ function draftsFrom(roster: SessionRoster): Drafts {
   return Object.fromEntries(
     roster.students.map((student) => [
       student.registrationId,
-      { status: student.attendance?.status ?? null, note: student.attendance?.note ?? '' },
+      // Dữ liệu cũ (Muộn / Có phép) hiện theo 2 trạng thái hiện hành
+      {
+        status: student.attendance?.status ? toMarkableStatus(student.attendance.status) : null,
+        note: student.attendance?.note ?? '',
+      },
     ]),
   );
 }
