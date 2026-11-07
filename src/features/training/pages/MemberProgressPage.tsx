@@ -315,9 +315,13 @@ function AssessmentHistory({ assessments, scoreLevels }: { assessments: Progress
   return (
     <div>
       {scoreLevels && scoreLevels.length > 0 && (
-        <div className="mb-4 flex justify-end">
+        <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4 sm:px-5">
+          <div className="min-w-0">
+            <h2 className="text-sm font-extrabold text-ink">Thang xếp loại</h2>
+            <p className="text-xs text-muted">Theo Điểm tổng, thang 10</p>
+          </div>
           <ScoreLevelLegend levels={scoreLevels} />
-        </div>
+        </Card>
       )}
       <ol className="space-y-3">
         {assessments.slice(0, visible).map((assessment) => (
