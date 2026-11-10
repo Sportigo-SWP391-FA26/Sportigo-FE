@@ -6,16 +6,26 @@ import { axiosError } from '../../training/testing/axiosError';
 import * as bookingApi from '../bookingApi';
 import * as usersApi from '../../users/api';
 import * as privateApi from '../../private-courses/api';
+import { financeApi } from '../../finance/api';
+import { useMyProfile } from '../../profile/hooks/useMyProfile';
 import { GroupClassBookingDetailPage } from './GroupClassBookingDetailPage';
 
 vi.mock('../bookingApi');
 vi.mock('../../users/api');
 vi.mock('../../private-courses/api');
+vi.mock('../../finance/api', () => ({ financeApi: { order: vi.fn(), promotions: vi.fn(), wallet: vi.fn() } }));
+vi.mock('../../profile/hooks/useMyProfile', () => ({ useMyProfile: vi.fn() }));
 
 beforeEach(() => {
   vi.mocked(bookingApi.getMyClassRegistrations).mockResolvedValue([]);
   vi.mocked(bookingApi.getMyWaitlists).mockResolvedValue([]);
   vi.mocked(privateApi.getMyPrivateEnrollments).mockResolvedValue([]);
+  // Khối thanh toán không thuộc phạm vi các test này
+  const pending = new Promise<never>(() => undefined);
+  vi.mocked(financeApi.order).mockReturnValue(pending);
+  vi.mocked(financeApi.promotions).mockReturnValue(pending);
+  vi.mocked(financeApi.wallet).mockReturnValue(pending);
+  vi.mocked(useMyProfile).mockReturnValue({ data: undefined } as never);
 });
 
 afterEach(() => {
@@ -24,6 +34,8 @@ afterEach(() => {
   localStorage.clear();
 });
 
+// Nút đăng ký chỉ bật sau khi tải xong đăng ký và danh sách chờ của hội viên
+const actionReady = (name: string) => waitFor(() => expect(screen.getByRole('button', { name })).toBeEnabled());
 
 function classDetail() {
   return {
@@ -70,6 +82,7 @@ test('shows detail and submits registration for authenticated Member', async () 
 
   expect(await screen.findByText('Bơi cơ bản')).toBeInTheDocument();
   expect(screen.getByText('Hồ bơi 1')).toBeInTheDocument();
+  await actionReady('Đăng ký lớp');
   fireEvent.click(screen.getByRole('button', { name: 'Đăng ký lớp' }));
   const dialog = screen.getByRole('dialog', { name: 'Xác nhận đăng ký' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Xác nhận đăng ký' }));
@@ -87,6 +100,7 @@ test('keeps API conflict visible and does not retry registration automatically',
   );
   renderWithProviders(<GroupClassBookingDetailPage />, { path: '/member/classes/:classId', route: '/member/classes/8' });
   await screen.findByText('Bơi cơ bản');
+  await actionReady('Đăng ký lớp');
   fireEvent.click(screen.getByRole('button', { name: 'Đăng ký lớp' }));
   const confirm = screen.getByRole('dialog', { name: 'Xác nhận đăng ký' });
   fireEvent.click(within(confirm).getByRole('button', { name: 'Xác nhận đăng ký' }));
@@ -102,6 +116,7 @@ test('allows an active Member to join the waitlist when the class is full', asyn
   });
   renderWithProviders(<GroupClassBookingDetailPage />, { path: '/member/classes/:classId', route: '/member/classes/8' });
   await screen.findByText('Bơi cơ bản');
+  await actionReady('Vào danh sách chờ');
   fireEvent.click(screen.getByRole('button', { name: 'Vào danh sách chờ' }));
   expect(await screen.findByText('Đã vào danh sách chờ (đang chờ).')).toBeInTheDocument();
   expect(bookingApi.joinClassWaitlist).toHaveBeenCalledWith(8);
@@ -138,6 +153,7 @@ test('requires confirmation and reports backend result when cancelling a registr
   vi.mocked(bookingApi.cancelClassRegistration).mockResolvedValue({ status: 'CANCELLED' });
   renderWithProviders(<GroupClassBookingDetailPage />, { path: '/member/classes/:classId', route: '/member/classes/8' });
   await screen.findByText('Bơi cơ bản');
+  await actionReady('Đăng ký lớp');
   fireEvent.click(screen.getByRole('button', { name: 'Đăng ký lớp' }));
   const registrationDialog = screen.getByRole('dialog', { name: 'Xác nhận đăng ký' });
   fireEvent.click(within(registrationDialog).getByRole('button', { name: 'Xác nhận đăng ký' }));
