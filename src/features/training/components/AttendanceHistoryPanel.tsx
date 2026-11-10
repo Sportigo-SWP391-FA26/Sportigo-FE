@@ -12,6 +12,7 @@ import { SelectInput } from './SelectInput';
 import { Button } from '../../../components/ui/Button';
 import { Field } from '../../../components/ui/Field';
 import { Pagination } from '../../../components/ui/Pagination';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { cardClass, describedBy, inputClass } from '../../../components/ui/styles';
 
@@ -155,17 +156,16 @@ export function AttendanceHistoryPanel({ scope }: { scope: AttendanceScope }) {
             </div>
           </Field>
           <Field id={`${id}-from`} label="Từ ngày">
-            <input id={`${id}-from`} type="date" className={inputClass} value={from} onChange={(event) => updateParams({ from: event.target.value })} />
+            <DateInput id={`${id}-from`} className={inputClass} value={from} onValueChange={(value) => updateParams({ from: value })} />
           </Field>
           <Field id={`${id}-to`} label="Đến ngày" error={rangeError}>
-            <input
+            <DateInput
               id={`${id}-to`}
-              type="date"
               className={inputClass}
               value={to}
               aria-invalid={rangeError ? true : undefined}
               aria-describedby={describedBy(`${id}-to`, { error: rangeError })}
-              onChange={(event) => updateParams({ to: event.target.value })}
+              onValueChange={(value) => updateParams({ to: value })}
             />
           </Field>
           <Field id={`${id}-status`} label="Trạng thái">

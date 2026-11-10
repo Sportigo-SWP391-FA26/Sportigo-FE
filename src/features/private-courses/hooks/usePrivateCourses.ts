@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
-import { changePrivateOccurrence, completePrivateSession, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses, updatePrivateCourse } from '../api';
-import type { OccurrenceActionInput, UpdatePrivateCourseInput } from '../types';
+import { assignPrivateCourseCoach, changePrivateOccurrence, completePrivateSession, createPrivateCourse, deletePrivateCourse, getMyPrivateEnrollments, getPrivateCourse, getPrivateCourses, unassignPrivateCourseCoach, updatePrivateCourse } from '../api';
+import type { CreatePrivateCourseInput, OccurrenceActionInput, UpdatePrivateCourseInput } from '../types';
 
 export const privateCourseKeys = {
   all: ['private-courses'] as const,
@@ -28,22 +28,47 @@ export function usePrivateCourse(courseId: number) {
   });
 }
 
+export function useCreatePrivateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreatePrivateCourseInput) => createPrivateCourse(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: privateCourseKeys.list() }),
+  });
+}
+
 export function useUpdatePrivateCourse(courseId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdatePrivateCourseInput) => updatePrivateCourse(courseId, input),
-    onSuccess: (course) => {
-      queryClient.setQueryData(privateCourseKeys.detail(courseId), course);
+    onSuccess: () => {
+      // PATCH chỉ trả các cột của PrivateCourse, không có sport/coaches/availabilities.
+      // Luôn nạp lại chi tiết đầy đủ trước khi render trang.
+      queryClient.invalidateQueries({ queryKey: privateCourseKeys.detail(courseId) });
       queryClient.invalidateQueries({ queryKey: privateCourseKeys.list() });
     },
   });
 }
 
-export function useMyPrivateEnrollments() {
+export function useDeletePrivateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: deletePrivateCourse, onSuccess: () => queryClient.invalidateQueries({ queryKey: privateCourseKeys.all }) });
+}
+
+export function usePrivateCourseCoachAssignment(courseId: number) {
+  const queryClient = useQueryClient();
+  const refresh = () => queryClient.invalidateQueries({ queryKey: privateCourseKeys.all });
+  const assign = useMutation({ mutationFn: (coachId: number) => assignPrivateCourseCoach(courseId, coachId), onSuccess: refresh });
+  const unassign = useMutation({ mutationFn: (coachId: number) => unassignPrivateCourseCoach(courseId, coachId), onSuccess: refresh });
+  return { assign, unassign };
+}
+
+export function useMyPrivateEnrollments(enabled = true) {
   return useQuery({
     queryKey: privateCourseKeys.enrollments(),
     queryFn: getMyPrivateEnrollments,
     retry: retryServerErrors,
+    enabled,
+    refetchInterval: (query) => query.state.data?.some((enrollment) => enrollment.status === 'PENDING_PAYMENT') ? 15_000 : false,
   });
 }
 

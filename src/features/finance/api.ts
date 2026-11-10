@@ -16,9 +16,9 @@ export type ServiceOrder = {
   payments: Array<{ id: number; amount: string; status: string; channel: string }>;
   promotion?: { id: number; code: string; name: string } | null;
 };
-export type Promotion = { id: number; code: string; name: string; discountType: string; discountValue: string; isPublic: boolean; status: string; startAt: string; endAt: string };
+export type Promotion = { id: number; code: string; name: string; discountType: string; discountValue: string; isPublic?: boolean; status?: string; startAt: string; endAt: string; minOrderAmount?: string | number; maxDiscount?: string | number | null; applicableType?: 'ALL' | 'GROUP_CLASS' | 'PRIVATE_COURSE' | 'MEMBERSHIP' };
 export type RefundRequest = { id: number; requestedAmount: string; reason: string; status: string; requestedAt: string; member: { user: { displayName: string; email: string } }; payment?: { reference: string; order: { orderNumber: string } } | null; orderItem: { id: number; itemNameSnapshot: string; order: { orderNumber: string } }; adjustments: Array<{ id: number; amount: string; payment: { reference: string } }> };
-export type RevenueFilters = { from: string; to: string; channel?: 'ONLINE' | 'COUNTER' | 'WALLET'; itemType?: 'GROUP_CLASS' | 'PRIVATE_COURSE' };
+export type RevenueFilters = { from: string; to: string; channel?: 'ONLINE' | 'COUNTER' | 'WALLET'; itemType?: 'GROUP_CLASS' | 'PRIVATE_COURSE' | 'MEMBERSHIP' };
 export type Revenue = {
   period: { from: string; to: string };
   filters: { channel: RevenueFilters['channel'] | null; itemType: RevenueFilters['itemType'] | null };
@@ -30,6 +30,7 @@ export type Revenue = {
   walletTopUps: number;
   byChannel: Record<string, number>;
   byService: Record<string, { orders: number; transactions: number; gross: number; discount: number; refunds: number; net: number }>;
+  bySport?: { sportId: number | null; name: string; orders: number; transactions: number; gross: number; discount: number; refunds: number; net: number }[];
 };
 export type AuditLogItem = {
   id: number;
@@ -67,6 +68,7 @@ export const financeApi = {
   completeRefund: (id: number) => apiClient.post(`/refund-requests/${id}/complete`).then((r) => r.data),
   revenue: (params: RevenueFilters) => apiClient.get<Revenue>('/reports/revenue', { params }).then((r) => r.data),
   audit: (params: AuditQuery) => apiClient.get<AuditPage>('/audit-logs', { params }).then((r) => r.data),
+  auditExcel: (filters: AuditQuery) => apiClient.get<Blob>('/audit-logs/export', { params: { ...filters, page: undefined, limit: undefined }, responseType: 'blob' }).then((r) => r.data),
   classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),
   verifyVnpayReturn: (query: string) => apiClient.get<{ valid: boolean; confirmed: boolean; paymentStatus: string; responseCode?: string; transactionStatus?: string; reference?: string }>(`/payments/vnpay/verify?${query}`).then((r) => r.data),
   invoicePdf: (id: number) => apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),

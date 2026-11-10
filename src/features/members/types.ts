@@ -59,6 +59,7 @@ export type MemberProfile = {
     id: number;
     assessmentDate: string | null;
     score: number | null;
+    passingScore?: number | null;
     coachComment: string;
     recommendation: string | null;
     nextAssessmentDate: string | null;

@@ -149,7 +149,7 @@ export function MemberDetailPage({ backTo, backLabel }: Props) {
                           : ''}
                       </p>
                       <p className="mt-1 text-xs text-ink">
-                        Điểm danh: {attendance.present} có mặt · {attendance.late} trễ · {attendance.absent} vắng · {attendance.excused} có phép
+                        Điểm danh: {attendance.present + attendance.late} có mặt · {attendance.absent + attendance.excused} vắng
                         {attendance.total > 0 && ` (${Math.round(((attendance.present + attendance.late) / attendance.total) * 100)}% tham gia)`}
                       </p>
                     </li>
@@ -196,6 +196,7 @@ export function MemberDetailPage({ backTo, backLabel }: Props) {
                     <p className="text-xs text-muted">
                       {assessment.assessmentDate ? formatDate(assessment.assessmentDate) : '—'} · Coach {assessment.coach.displayName}
                       {assessment.score !== null && ` · Điểm ${assessment.score}`}
+                      {assessment.score !== null && assessment.passingScore != null && ` · ${assessment.score >= assessment.passingScore ? 'Đạt' : 'Chưa đạt'} (ngưỡng ${assessment.passingScore})`}
                     </p>
                     <p className="mt-1 text-ink">{assessment.coachComment}</p>
                     {assessment.recommendation && <p className="mt-1 text-xs text-muted">Đề xuất: {assessment.recommendation}</p>}

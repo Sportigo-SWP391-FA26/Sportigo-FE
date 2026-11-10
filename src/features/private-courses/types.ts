@@ -42,6 +42,8 @@ export type UpdatePrivateCourseInput = {
   status?: PrivateCourse['status'];
 };
 
+export type CreatePrivateCourseInput = Required<Pick<UpdatePrivateCourseInput, 'sportId' | 'name' | 'totalSessions' | 'sessionDurationMinutes' | 'validityDays' | 'price'>> & { description?: string | null };
+
 export type PrivateSchedule = {
   id: number;
   enrollmentId: number;
@@ -63,6 +65,7 @@ export type PrivateEnrollment = {
   purchasedSessions: number;
   remainingSessions: number;
   purchasedPrice: string | number;
+  enrolledAt: string;
   startDate: string;
   expiryDate: string;
   status: string;

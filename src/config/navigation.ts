@@ -36,7 +36,9 @@ export const centerManagerNavigation: NavigationEntry[] = [
   {
     label: 'Tài chính & báo cáo',
     items: [
+      { label: 'Check-in phòng tập', path: '/app/check-in' },
       { label: 'Thu tiền tại quầy', path: '/app/cashier' },
+      { label: 'Gói membership', path: '/app/memberships' },
       { label: 'Khuyến mãi', path: '/app/promotions' },
       { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
       { label: 'Báo cáo doanh thu', path: '/app/revenue' },
@@ -49,12 +51,14 @@ export const centerManagerNavigation: NavigationEntry[] = [
       { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
       { label: 'Audit Log', path: '/app/audit-logs' },
       { label: 'Nội dung Website', path: '/app/website-content' },
+      { label: 'Cấu hình trung tâm', path: '/app/center-settings' },
     ],
   },
 ];
 
 // FR-09: trước đây Receptionist dùng chung menu Manager nên thấy cả mục không có quyền
 export const receptionistNavigation: NavigationItem[] = [
+  { label: 'Check-in phòng tập', path: '/app/check-in' },
   { label: 'Tra cứu Hội viên', path: '/app/users' },
   { label: 'Đăng ký lớp cho Hội viên', path: '/app/class-bookings' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
@@ -62,15 +66,17 @@ export const receptionistNavigation: NavigationItem[] = [
   { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
 ];
 
-export const coachNavigation: NavigationItem[] = [
-  { label: 'Dashboard', path: '/coach/dashboard' },
-  // FR-11
-  { label: 'Học viên của tôi', path: '/coach/members' },
-  { label: 'Lịch của tôi', path: '/coach/schedule' },
-  { label: 'Đăng ký lịch dạy', path: '/coach/availability' },
-  { label: 'Điểm danh', path: '/coach/attendance' },
-  { label: 'Giáo án', path: '/coach/workout-plans' },
-  // FR-51
-  { label: 'Khóa 1-1', path: '/coach/private-enrollments' },
-  { label: 'Đánh giá tiến độ', path: '/coach/assessments' },
+export const coachNavigation: NavigationEntry[] = [
+  { label: 'Tổng quan', path: '/coach/dashboard' },
+  { label: 'Lịch & buổi học', items: [
+    { label: 'Lịch dạy', path: '/coach/schedule' },
+    { label: 'Đăng ký ca dạy', path: '/coach/availability' },
+    { label: 'Điểm danh', path: '/coach/attendance' },
+  ] },
+  { label: 'Học viên & đào tạo', items: [
+    { label: 'Học viên', path: '/coach/members' },
+    { label: 'Khóa 1–1', path: '/coach/private-enrollments' },
+    { label: 'Giáo án', path: '/coach/workout-plans' },
+    { label: 'Đánh giá', path: '/coach/assessments' },
+  ] },
 ];

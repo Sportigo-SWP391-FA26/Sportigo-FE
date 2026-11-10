@@ -92,6 +92,7 @@ describe('Quản lý nhân sự (FR-07)', () => {
 
     await waitFor(() =>
       expect(api.createStaff).toHaveBeenCalledWith({
+        hiredAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         role: 'COACH',
         displayName: 'Ngô Huy',
         email: 'huy@sportigo.vn',

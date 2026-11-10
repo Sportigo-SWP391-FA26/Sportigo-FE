@@ -29,6 +29,7 @@ function enrollment(): PrivateEnrollment {
     purchasedSessions: 24,
     remainingSessions: 24,
     purchasedPrice: 1200000,
+    enrolledAt: '2029-12-01T00:00:00.000Z',
     startDate: start,
     expiryDate: '2030-12-31',
     status: 'ACTIVE',

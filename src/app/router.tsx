@@ -55,10 +55,18 @@ const PrivateCourseDetailPage = lazy(() => import('../features/private-courses/p
 const PrivateCoursesPage = lazy(() => import('../features/private-courses/pages/PrivateCoursesPage').then((module) => ({ default: module.PrivateCoursesPage })));
 const RoomsManagementPage = lazy(() => import('../features/catalog/pages/RoomsManagementPage').then((module) => ({ default: module.RoomsManagementPage })));
 const SportsManagementPage = lazy(() => import('../features/catalog/pages/SportsManagementPage').then((module) => ({ default: module.SportsManagementPage })));
+const CheckInPage = lazy(() => import('../features/membership/pages/CheckInPage').then((module) => ({ default: module.CheckInPage })));
+const MemberMembershipPage = lazy(() => import('../features/membership/pages/MemberMembershipPage').then((module) => ({ default: module.MemberMembershipPage })));
+const MembershipPlansPage = lazy(() => import('../features/membership/pages/MembershipPlansPage').then((module) => ({ default: module.MembershipPlansPage })));
+const CenterSettingsPage = lazy(() => import('../features/center-settings/pages/CenterSettingsPage').then((module) => ({ default: module.CenterSettingsPage })));
 const LandingContentPage = lazy(() => import('../features/content/pages/LandingContentPage').then((module) => ({ default: module.LandingContentPage })));
 
 function WaitlistRouteLayout() {
   return getSessionRole() === 'CENTER_MANAGER' ? <AppLayout /> : <MemberLayout />;
+}
+
+function LegacyWaitlistPage() {
+  return getSessionRole() === 'MEMBER' ? <Navigate to="/member/my-schedule/waitlist" replace /> : <WaitlistPage />;
 }
 
 export const router = createBrowserRouter([
@@ -73,7 +81,7 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <WaitlistRouteLayout />,
-        children: [{ index: true, element: <WaitlistPage /> }],
+        children: [{ index: true, element: <LegacyWaitlistPage /> }],
       },
     ],
   },
@@ -91,10 +99,12 @@ export const router = createBrowserRouter([
               { path: 'dashboard', element: <DashboardPage /> },
               { path: 'revenue', element: <ManagerFinancePage view="revenue" /> },
               { path: 'operations-report', element: <ManagerFinancePage view="classes" /> },
+              { path: 'memberships', element: <MembershipPlansPage /> },
               { path: 'promotions', element: <ManagerFinancePage view="promotions" /> },
               { path: 'refunds', element: <ManagerFinancePage view="refunds" /> },
               { path: 'audit-logs', element: <ManagerFinancePage view="audit" /> },
               { path: 'website-content', element: <LandingContentPage /> },
+              { path: 'center-settings', element: <CenterSettingsPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
               { path: 'members', element: <MembersPage /> },
@@ -114,6 +124,7 @@ export const router = createBrowserRouter([
             element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
             children: [
               { path: 'cashier', element: <CashierPage /> },
+              { path: 'check-in', element: <CheckInPage /> },
               { path: 'class-bookings', element: <ClassSchedulePage receptionistMode /> },
               { path: 'class-bookings/:classId', element: <GroupClassBookingDetailPage /> },
               // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist
@@ -142,6 +153,7 @@ export const router = createBrowserRouter([
           { path: 'home', element: <MemberHomePage /> },
           { path: 'classes', element: <ClassSchedulePage /> },
           { path: 'classes/:classId', element: <GroupClassBookingDetailPage /> },
+          { path: 'membership', element: <MemberMembershipPage /> },
           { path: 'payments', element: <MemberPaymentsPage /> },
           { path: 'payments/result', element: <PaymentResultPage /> },
           { path: 'training-plan', element: <MemberTrainingPlanPage /> },
@@ -149,6 +161,7 @@ export const router = createBrowserRouter([
           { path: 'private-courses', element: <Navigate to="/member/classes?type=private" replace /> },
           { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
           { path: 'my-schedule', element: <MemberPrivateSchedulePage /> },
+          { path: 'my-schedule/waitlist', element: <WaitlistPage /> },
           { path: 'profile', element: <ProfilePage /> },
           // FR-55: yêu cầu hỗ trợ của Member
           { path: 'support', element: <MemberSupportPage /> },

@@ -14,6 +14,8 @@ import { Field, SegmentedControl } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 import { SelectInput } from './SelectInput';
+import { useMyProfile } from '../../profile/hooks/useMyProfile';
+import { useCoachSports } from '../../coaches/hooks/useCoachManagement';
 
 type Props = {
   open: boolean;
@@ -49,6 +51,9 @@ export function WorkoutPlanFormDialog({ open, onClose, plan, onCreated }: Props)
 function PlanForm({ plan, onClose, onCreated }: Omit<Props, 'open'>) {
   const id = useId();
   const sports = useSports();
+  const profile = useMyProfile();
+  const coachSports = useCoachSports(profile.data?.id ?? 0);
+  const availableSports = coachSports.data ?? [];
   const create = useCreateWorkoutPlan();
   const update = useUpdateWorkoutPlan(plan?.id ?? 0);
   const [formError, setFormError] = useState<string | null>(null);
@@ -121,8 +126,8 @@ function PlanForm({ plan, onClose, onCreated }: Omit<Props, 'open'>) {
         {...form.register('sportId')}
       >
         <option value="">{sports.isPending ? 'Đang tải danh sách môn…' : 'Chọn môn'}</option>
-        {plan && !sports.data?.some((sport) => sport.id === plan.sport.id) && <option value={plan.sport.id}>{plan.sport.name}</option>}
-        {sports.data?.map((sport) => (
+        {plan && !availableSports.some((sport) => sport.id === plan.sport.id) && <option value={plan.sport.id}>{plan.sport.name}</option>}
+        {availableSports.map((sport) => (
           <option key={sport.id} value={sport.id}>
             {sport.name}
           </option>

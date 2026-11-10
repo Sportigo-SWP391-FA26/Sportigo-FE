@@ -18,6 +18,9 @@ import { useSports } from '../hooks/usePendingApis';
 import { useWorkoutPlans } from '../hooks/useWorkoutPlans';
 import { levelLabel, planLevels, planStatusLabels, planStatusTones } from '../labels';
 import type { PlanLevel, PlanStatus, WorkoutPlan } from '../types';
+import { getSessionRole } from '../../../components/auth/session';
+import { useMyProfile } from '../../profile/hooks/useMyProfile';
+import { useCoachSports } from '../../coaches/hooks/useCoachManagement';
 
 const PAGE_SIZE = 20;
 const planStatuses: PlanStatus[] = ['DRAFT', 'ACTIVE', 'INACTIVE'];
@@ -32,6 +35,10 @@ export function WorkoutPlansPage() {
   const [formPlan, setFormPlan] = useState<WorkoutPlan | 'new' | null>(null);
   const [statusPlan, setStatusPlan] = useState<WorkoutPlan | null>(null);
   const sports = useSports();
+  const coachView = getSessionRole() === 'COACH';
+  const profile = useMyProfile(coachView);
+  const coachSports = useCoachSports(coachView ? (profile.data?.id ?? 0) : 0);
+  const visibleSports = coachView ? (coachSports.data ?? []) : (sports.data ?? []);
 
   const sportId = Number(params.get('sportId')) || undefined;
   const level = (planLevels as string[]).includes(params.get('level') ?? '') ? (params.get('level') as PlanLevel) : undefined;
@@ -112,8 +119,8 @@ export function WorkoutPlansPage() {
               aria-describedby={sports.isError ? `${id}-sport-hint` : undefined}
               onChange={(event) => updateParams({ sportId: event.target.value })}
             >
-              <option value="">Tất cả môn</option>
-              {sports.data?.map((sport) => (
+              <option value="">{coachView ? 'Môn chuyên môn của tôi' : 'Tất cả môn'}</option>
+              {visibleSports.map((sport) => (
                 <option key={sport.id} value={sport.id}>
                   {sport.name}
                 </option>

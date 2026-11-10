@@ -351,7 +351,7 @@ test.describe('C. Coach – điểm danh buổi học', () => {
     await expect(page.getByText('Đang mở điểm danh')).toBeVisible();
 
     // Cả 4 trạng thái đều chọn được
-    for (const label of ['Có mặt', 'Muộn', 'Vắng', 'Có phép']) await chooseStatus(page, SEED.member2.name, label);
+    for (const label of ['Có mặt', 'Vắng']) await chooseStatus(page, SEED.member2.name, label);
 
     await page.getByRole('button', { name: 'Tất cả có mặt' }).click();
     await expect(attendanceGroup(page, SEED.member1.name).getByRole('radio', { name: 'Có mặt' })).toBeChecked();
@@ -364,11 +364,10 @@ test.describe('C. Coach – điểm danh buổi học', () => {
     const duc = first.body.items.find((item) => item.member.id === SEED.member2.id)!;
     expect(duc.status).toBe('ABSENT');
 
-    // Ghi lặp: đổi sang Muộn kèm ghi chú → vẫn 2 bản ghi, cùng id
-    await chooseStatus(page, SEED.member2.name, 'Muộn');
+    // Ghi lặp: đổi sang Vắng kèm ghi chú → vẫn 2 bản ghi, cùng id
+    await chooseStatus(page, SEED.member2.name, 'Vắng');
     const row = attendanceGroup(page, SEED.member2.name).locator('xpath=ancestor::li[1]');
     const note = row.getByLabel(`Ghi chú cho ${SEED.member2.name}`);
-    if (!(await note.isVisible())) await row.getByRole('button', { name: /Thêm ghi chú/ }).click();
     await note.fill('Đến muộn 10 phút');
     await page.getByRole('button', { name: 'Lưu điểm danh' }).click();
     await expect(toast(page, 'Đã lưu điểm danh cho 2 học viên.')).toBeVisible();
@@ -376,11 +375,11 @@ test.describe('C. Coach – điểm danh buổi học', () => {
     const second = await api<Paginated<AttendanceRow>>(request, 'coach', 'GET', `/attendance?sessionId=${SEED.ongoingSessionId}`);
     expect(second.body.total, 'Không tạo bản ghi trùng (BR-43)').toBe(2);
     const ducAgain = second.body.items.find((item) => item.member.id === SEED.member2.id)!;
-    expect(ducAgain).toMatchObject({ id: duc.id, status: 'LATE', note: 'Đến muộn 10 phút' });
+    expect(ducAgain).toMatchObject({ id: duc.id, status: 'ABSENT', note: 'Đến muộn 10 phút' });
 
     // Tải lại trang vẫn thấy trạng thái đã lưu
     await page.reload();
-    await expect(attendanceGroup(page, SEED.member2.name).getByRole('radio', { name: 'Muộn' })).toBeChecked();
+    await expect(attendanceGroup(page, SEED.member2.name).getByRole('radio', { name: 'Vắng' })).toBeChecked();
     await expect(page.getByLabel(`Ghi chú cho ${SEED.member2.name}`)).toHaveValue('Đến muộn 10 phút');
   });
 
@@ -414,14 +413,14 @@ test.describe('C. Coach – điểm danh buổi học', () => {
   test('C4 · Cảnh báo khi rời trang lúc chưa lưu', async ({ page, request }) => {
     await signIn(page, request, 'coach');
     await page.goto(sessionPath);
-    await chooseStatus(page, SEED.member1.name, 'Có phép');
+    await chooseStatus(page, SEED.member1.name, 'Vắng');
 
     await page.getByRole('link', { name: 'Giáo án', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Rời trang khi chưa lưu?' });
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Hủy' }).click();
     await expect(page).toHaveURL(new RegExp(`${sessionPath}$`));
-    await expect(attendanceGroup(page, SEED.member1.name).getByRole('radio', { name: 'Có phép' })).toBeChecked();
+    await expect(attendanceGroup(page, SEED.member1.name).getByRole('radio', { name: 'Vắng' })).toBeChecked();
 
     await page.getByRole('link', { name: 'Giáo án', exact: true }).click();
     await page.getByRole('dialog', { name: 'Rời trang khi chưa lưu?' }).getByRole('button', { name: 'Rời trang' }).click();
@@ -516,11 +515,11 @@ test.describe('D. Lịch sử điểm danh', () => {
     for (const text of await page.locator('table tbody tr').allTextContents()) expect(text).toContain(SEED.member2.name);
 
     await Promise.all([
-      waitForAttendance(page, 'status=LATE'),
-      page.getByRole('combobox', { name: 'Trạng thái' }).selectOption('LATE'),
+      waitForAttendance(page, 'status=ABSENT'),
+      page.getByRole('combobox', { name: 'Trạng thái' }).selectOption('ABSENT'),
     ]);
     await expect(page.locator('table tbody tr').first().or(page.getByText('Không có buổi điểm danh phù hợp'))).toBeVisible();
-    for (const text of await page.locator('table tbody tr').allTextContents()) expect(text).toContain('Muộn');
+    for (const text of await page.locator('table tbody tr').allTextContents()) expect(text).toContain('Vắng');
 
     await page.getByRole('button', { name: 'Xóa bộ lọc' }).first().click();
     await expect(page).not.toHaveURL(/memberId=|status=/);

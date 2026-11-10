@@ -5,6 +5,8 @@ export type GroupClass = {
   name: string;
   description: string | null;
   capacity: number;
+  totalSessions?: number | null;
+  sessionsPerWeek?: number | null;
   tuitionFee: string | number;
   registrationOpenAt: string;
   registrationCloseAt: string;
@@ -34,6 +36,8 @@ export type UpdateGroupClassInput = {
   name: string;
   description: string | null;
   capacity: number;
+  totalSessions?: number;
+  sessionsPerWeek?: number;
   tuitionFee: number;
   registrationOpenAt: string;
   registrationCloseAt: string;

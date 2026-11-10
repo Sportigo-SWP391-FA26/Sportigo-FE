@@ -4,6 +4,7 @@ export type Sport = {
   description: string | null;
   imageUrl: string | null;
   isActive: boolean;
+  passingScore?: string | number | null;
 };
 
 export type RoomStatus = 'AVAILABLE' | 'MAINTENANCE' | 'INACTIVE';
@@ -22,6 +23,7 @@ export type SportInput = {
   description?: string | null;
   imageUrl?: string | null;
   isActive: boolean;
+  passingScore?: number | null;
 };
 
 export type AssessmentMetric = {

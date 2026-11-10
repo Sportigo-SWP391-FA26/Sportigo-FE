@@ -1,14 +1,16 @@
-import { ArrowCounterClockwise, Eye, Funnel, ShieldCheck } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, Eye, FileXls, Funnel, ShieldCheck } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { toast } from '../../../components/feedback/toast';
 import { Button } from '../../../components/ui/Button';
 import { Card, SectionHeading } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Pagination } from '../../../components/ui/Pagination';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
-import { financeApi, type AuditLogItem, type AuditQuery } from '../api';
+import { financeApi, saveBlob, type AuditLogItem, type AuditQuery } from '../api';
 
 const actionLabels: Record<string, string> = {
   STAFF_CREATED: 'Tạo tài khoản nhân sự', STAFF_UPDATED: 'Cập nhật nhân sự', USER_ACTIVATED: 'Kích hoạt tài khoản',
@@ -35,7 +37,18 @@ const toneForAction = (action: string) => action.includes('DELETED') || action.i
 export function AuditLogView() {
   const [filters, setFilters] = useState<AuditQuery>({ page: 1, limit: 20 });
   const [selected, setSelected] = useState<AuditLogItem | null>(null);
+  const [exporting, setExporting] = useState(false);
   const query = useQuery({ queryKey: ['audit', filters], queryFn: () => financeApi.audit(filters) });
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      saveBlob(await financeApi.auditExcel(filters), 'Sportigo_NhatKyHeThong.xlsx');
+    } catch {
+      toast('Không xuất được file. Tối đa 5.000 dòng, hãy thu hẹp bộ lọc rồi thử lại.', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (query.isPending) return <ListSkeleton rows={7} label="Đang tải nhật ký hệ thống…" />;
   if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} retrying={query.isRefetching} pendingApi="GET /api/audit-logs" />;
@@ -52,13 +65,13 @@ export function AuditLogView() {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label><span className="mb-1.5 block text-xs font-bold text-muted">Hành động</span><select className={inputClass} value={filters.action ?? ''} onChange={(event) => setFilters((current) => ({ ...current, page: 1, action: event.target.value || undefined }))}><option value="">Tất cả hành động</option>{facets.actions.map((action) => <option key={action} value={action}>{labelAction(action)}</option>)}</select></label>
         <label><span className="mb-1.5 block text-xs font-bold text-muted">Đối tượng</span><select className={inputClass} value={filters.entityType ?? ''} onChange={(event) => setFilters((current) => ({ ...current, page: 1, entityType: event.target.value || undefined }))}><option value="">Tất cả đối tượng</option>{facets.entityTypes.map((entity) => <option key={entity} value={entity}>{labelEntity(entity)}</option>)}</select></label>
-        <label><span className="mb-1.5 block text-xs font-bold text-muted">Từ ngày</span><input type="date" className={inputClass} value={filters.from?.slice(0, 10) ?? ''} onChange={(event) => setFilters((current) => ({ ...current, page: 1, from: event.target.value || undefined }))} /></label>
-        <label><span className="mb-1.5 block text-xs font-bold text-muted">Đến ngày</span><input type="date" className={inputClass} value={filters.to?.slice(0, 10) ?? ''} onChange={(event) => setFilters((current) => ({ ...current, page: 1, to: event.target.value ? `${event.target.value}T23:59:59.999` : undefined }))} /></label>
+        <label><span className="mb-1.5 block text-xs font-bold text-muted">Từ ngày</span><DateInput className={inputClass} value={filters.from?.slice(0, 10) ?? ''} onValueChange={(value) => setFilters((current) => ({ ...current, page: 1, from: value || undefined }))} /></label>
+        <label><span className="mb-1.5 block text-xs font-bold text-muted">Đến ngày</span><DateInput className={inputClass} value={filters.to?.slice(0, 10) ?? ''} onValueChange={(value) => setFilters((current) => ({ ...current, page: 1, to: value ? `${value}T23:59:59.999` : undefined }))} /></label>
       </div>
     </Card>
 
     <Card className="p-4 sm:p-6">
-      <SectionHeading title="Lịch sử thay đổi" description={`${data.total.toLocaleString('vi-VN')} bản ghi${activeFilters ? ` · ${activeFilters} bộ lọc đang áp dụng` : ''}.`} actions={<Chip tone="neutral" dot>{query.isFetching ? 'Đang cập nhật' : 'Dữ liệu mới nhất'}</Chip>} />
+      <SectionHeading title="Lịch sử thay đổi" description={`${data.total.toLocaleString('vi-VN')} bản ghi${activeFilters ? ` · ${activeFilters} bộ lọc đang áp dụng` : ''}.`} actions={<div className="flex flex-wrap items-center gap-2"><Chip tone="neutral" dot>{query.isFetching ? 'Đang cập nhật' : 'Dữ liệu mới nhất'}</Chip><Button size="sm" variant="secondary" icon={<FileXls aria-hidden="true" />} loading={exporting} disabled={data.total === 0} onClick={exportExcel}>Xuất Excel</Button></div>} />
       {data.items.length === 0 ? <EmptyState compact icon={<Funnel />} title="Không có nhật ký phù hợp" description="Thử thay đổi khoảng thời gian hoặc bỏ bớt bộ lọc." /> : <div className="overflow-x-auto"><table className="manager-table w-full min-w-[980px]"><thead><tr><th>Sự kiện</th><th>Đối tượng</th><th>Người thực hiện</th><th>Thời gian / IP</th><th><span className="sr-only">Chi tiết</span></th></tr></thead><tbody>{data.items.map((item) => <tr key={item.id}><td><Chip tone={toneForAction(item.action)}>{labelAction(item.action)}</Chip><small className="mt-1.5 font-mono text-[10px] text-muted">{item.action}</small></td><td><strong>{labelEntity(item.entityType)}</strong><small>#{item.entityId}</small></td><td><strong>{item.actor?.displayName ?? 'Hệ thống tự động'}</strong><small>{item.actor?.email ?? 'Không có tài khoản thực hiện'}</small></td><td><span className="tabular-nums">{dateTime(item.createdAt)}</span><small>{item.ipAddress ? `IP ${item.ipAddress}` : 'Không ghi nhận IP'}</small></td><td><Button size="sm" variant="secondary" icon={<Eye />} onClick={() => setSelected(item)}>Chi tiết</Button></td></tr>)}</tbody></table></div>}
       <Pagination page={data.page} pageSize={data.limit} total={data.total} disabled={query.isFetching} onChange={(page) => setFilters((current) => ({ ...current, page }))} />
     </Card>

@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { describedBy, inputClass } from '../../../components/ui/styles';
 import { useCreateMember } from '../hooks/useUsers';
 import type { CreateMemberInput } from '../types';
@@ -106,7 +107,7 @@ function MemberForm({ onClose }: { onClose: () => void }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id={fieldId('dateOfBirth')} label="Ngày sinh" error={errors.dateOfBirth?.message}>
-          <input type="date" className={inputClass} max={today()} {...aria('dateOfBirth')} {...form.register('dateOfBirth')} />
+          <DateInput className={inputClass} {...aria('dateOfBirth')} value={form.watch('dateOfBirth') ?? ''} onValueChange={(value) => form.setValue('dateOfBirth', value, { shouldDirty: true, shouldValidate: true })} />
         </Field>
         <Field id={fieldId('gender')} label="Giới tính">
           <select className={inputClass} {...aria('gender')} {...form.register('gender')}>

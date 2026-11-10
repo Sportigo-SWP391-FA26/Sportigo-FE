@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarBlank, CaretDown, ChalkboardTeacher, Clock, UserCircle } from '@phosphor-icons/react';
+import { CalendarBlank, ChalkboardTeacher, Clock, UserCircle } from '@phosphor-icons/react';
 import { useId, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PlanItemList } from '../components/PlanItemList';
@@ -10,7 +10,6 @@ import { cardClass } from '../../../components/ui/styles';
 import { formatDate } from '../format';
 import { useMyTraining } from '../hooks/useMemberTraining';
 import { assignmentStatusLabels, levelLabel } from '../labels';
-import { isDesktopViewport, scrollToElement } from '../motion';
 import { currentPlanWeek, groupPlanItems, planWeekNumbers } from '../planStructure';
 import type { MemberPlanAssignment } from '../types';
 
@@ -25,14 +24,10 @@ export function MemberTrainingPlanPage() {
   const requestedWeek = Number(params.get('week')) || undefined;
 
   return (
-    <div className="mx-auto w-full max-w-[1240px]">
+    <div className="mx-auto w-full max-w-[1240px] space-y-5">
       <PageHeader
-        eyebrow="Tập luyện"
         title="Kế hoạch tập luyện"
-        description={
-          // Màn hình rộng: mô tả nằm trên một dòng; màn hình hẹp vẫn xuống dòng để không tràn ngang
-          <span className="lg:whitespace-nowrap">Giáo án do Coach phụ trách khóa 1-1 gán cho bạn. Nội dung chỉ để xem; hãy trao đổi với Coach nếu cần điều chỉnh.</span>
-        }
+        description="Theo dõi nội dung Coach đã gán và tiến độ từng buổi học."
       />
 
       {isPending ? (
@@ -49,21 +44,12 @@ export function MemberTrainingPlanPage() {
       ) : !selected ? (
         <EmptyState title="Chưa có giáo án" description={NO_PLAN_MESSAGE} />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
-          {/* Mobile: đang xem chi tiết thì ẩn danh sách; desktop luôn hiện cả hai */}
-          <nav aria-label="Giáo án của bạn" className={requested ? 'hidden lg:block' : ''}>
+        <div className="space-y-5">
+          {assignments.length > 1 && <nav aria-label="Giáo án của bạn" className="flex flex-wrap gap-4">
             <AssignmentGroup title="Đang áp dụng" assignments={assignments.filter((item) => item.status === 'ACTIVE')} selectedId={selected.id} />
             <AssignmentGroup title="Đã kết thúc" assignments={assignments.filter((item) => item.status !== 'ACTIVE')} selectedId={selected.id} />
-          </nav>
-          <div className={requested ? 'min-w-0' : 'hidden min-w-0 lg:block'}>
-            {requested && (
-              <Link
-                to="/member/training-plan"
-                className="mb-3 inline-flex min-h-11 items-center gap-2 rounded-control text-sm font-bold text-primary-deep hover:underline lg:hidden"
-              >
-                <ArrowLeft aria-hidden="true" /> Tất cả giáo án
-              </Link>
-            )}
+          </nav>}
+          <div className="min-w-0">
             <AssignmentDetail key={selected.id} assignment={selected} initialWeek={requestedWeek} />
           </div>
         </div>
@@ -76,22 +62,19 @@ function AssignmentGroup({ title, assignments, selectedId }: { title: string; as
   const headingId = useId();
   if (assignments.length === 0) return null;
   return (
-    <section aria-labelledby={headingId} className="mb-5 last:mb-0">
+    <section aria-labelledby={headingId} className="min-w-0 flex-1">
       <h2 id={headingId} className="mb-2 text-[11px] font-extrabold tracking-[.08em] text-muted uppercase">
         {title} · {assignments.length}
       </h2>
-      <ul className="space-y-2.5">
+      <ul className="flex flex-wrap gap-2.5">
         {assignments.map((assignment) => {
           const selected = assignment.id === selectedId;
           return (
-            <li key={assignment.id}>
+            <li key={assignment.id} className="min-w-[220px] flex-1 sm:max-w-[300px]">
               <Link
                 to={`?assignment=${assignment.id}`}
                 aria-current={selected ? 'true' : undefined}
-                onClick={() => {
-                  if (!isDesktopViewport()) window.scrollTo({ top: 0 });
-                }}
-                className={`block rounded-2xl border p-4 transition-[border-color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                className={`block h-full rounded-2xl border p-3 transition-[border-color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   selected ? 'border-primary bg-surface shadow-raised' : 'border-line bg-surface hover:border-primary/40'
                 }`}
               >
@@ -103,11 +86,7 @@ function AssignmentGroup({ title, assignments, selectedId }: { title: string; as
                     {assignmentStatusLabels[assignment.status]}
                   </Chip>
                 </div>
-                <p className="mt-2.5 text-xs leading-relaxed text-muted">
-                  Coach {assignment.enrollment.coach.displayName} · {assignment.enrollment.course.name}
-                  <br />
-                  Gán ngày {formatDate(assignment.assignedAt)}
-                </p>
+                <p className="mt-2 text-xs text-muted">Coach {assignment.enrollment.coach.displayName} · {formatDate(assignment.assignedAt)}</p>
               </Link>
             </li>
           );
@@ -122,44 +101,28 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
   const progress = assignment.status === 'ACTIVE' ? currentPlanWeek(enrollment.startDate, plan.durationWeeks) : null;
   const weekNumbers = planWeekNumbers(plan.durationWeeks, plan.items);
   const weeks = new Map(groupPlanItems(plan.items).map((week) => [week.weekNumber, week]));
-  const [openWeeks, setOpenWeeks] = useState(() => new Set([initialWeek ?? progress?.week ?? 1]));
-  const idPrefix = `plan-${assignment.id}`;
+  const [selectedWeek, setSelectedWeek] = useState(() => initialWeek ?? progress?.week ?? weekNumbers[0] ?? 1);
   const completionByItemId = new Map(assignment.completedItems.map((completion) => [completion.workoutPlanItemId, completion]));
 
-  const toggleWeek = (weekNumber: number) =>
-    setOpenWeeks((current) => {
-      const next = new Set(current);
-      if (next.has(weekNumber)) next.delete(weekNumber);
-      else next.add(weekNumber);
-      return next;
-    });
-
-  const jumpToWeek = (weekNumber: number) => {
-    setOpenWeeks((current) => new Set(current).add(weekNumber));
-    requestAnimationFrame(() => {
-      const heading = document.getElementById(`${idPrefix}-week-${weekNumber}`);
-      scrollToElement(heading);
-      heading?.focus({ preventScroll: true });
-    });
-  };
+  const week = weeks.get(selectedWeek);
+  const isCurrentWeek = progress?.state === 'in-progress' && progress.week === selectedWeek;
 
   return (
-    <div className="space-y-5">
-      <Card className="p-5 sm:p-6">
-        <div className="flex flex-wrap gap-1.5">
+    <div className="space-y-4">
+      <Card className="p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Chip tone="primary">{plan.sport.name}</Chip>
           <Chip>{levelLabel(plan.level)}</Chip>
           <Chip tone={assignment.status === 'ACTIVE' ? 'success' : 'neutral'} dot>
             {assignmentStatusLabels[assignment.status]}
           </Chip>
         </div>
-        <h2 className="mt-3 text-2xl leading-tight font-extrabold tracking-[-.02em] text-ink">{plan.name}</h2>
-        {plan.description && <p className="mt-2 text-sm leading-relaxed text-muted">{plan.description}</p>}
-        <div className="mt-5 rounded-2xl bg-canvas p-4">
-          <div className="flex items-center justify-between gap-3 text-sm"><strong className="text-ink">Tiến độ toàn giáo án</strong><span className="font-extrabold text-primary-deep">{assignment.progress.completedItems}/{assignment.progress.totalItems} mục · {assignment.progress.percentage}%</span></div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${assignment.progress.percentage}%` }} /></div>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div><h2 className="text-2xl leading-tight font-extrabold tracking-[-.02em] text-ink">{plan.name}</h2>{plan.description && <p className="mt-1 max-w-[75ch] text-sm leading-relaxed text-muted">{plan.description}</p>}</div>
+          <div className="text-right"><span className="block text-xs text-muted">Đã hoàn thành</span><strong className="text-lg text-primary-deep">{assignment.progress.completedItems}/{assignment.progress.totalItems} mục</strong></div>
         </div>
-        <dl className="mt-5 grid gap-4 border-t border-line pt-5 text-sm sm:grid-cols-2">
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-line" role="progressbar" aria-label="Tiến độ giáo án" aria-valuenow={assignment.progress.percentage} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${assignment.progress.percentage}%` }} /></div>
+        <dl className="mt-4 grid gap-x-5 gap-y-3 border-t border-line pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Meta icon={<ChalkboardTeacher />} label="Coach phụ trách" value={enrollment.coach.displayName} />
           <Meta icon={<UserCircle />} label="Khóa 1-1" value={enrollment.course.name} />
           <Meta
@@ -170,22 +133,22 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
           <Meta
             icon={<Clock />}
             label="Thời lượng giáo án"
-            value={`${plan.durationWeeks ? `${plan.durationWeeks} tuần · ` : ''}gán ngày ${formatDate(assignment.assignedAt)} bởi ${assignment.assignedBy.displayName}`}
+            value={`${plan.durationWeeks} tuần · từ ${formatDate(assignment.assignedAt)}`}
           />
         </dl>
       </Card>
 
-      <nav aria-label="Chọn tuần" className="flex flex-wrap gap-2">
+      <nav aria-label="Chọn tuần" className="flex gap-2 overflow-x-auto pb-1">
         {weekNumbers.map((weekNumber) => {
           const isCurrent = progress?.state === 'in-progress' && progress.week === weekNumber;
           return (
             <button
               key={weekNumber}
               type="button"
-              onClick={() => jumpToWeek(weekNumber)}
-              aria-controls={`${idPrefix}-week-panel-${weekNumber}`}
+              onClick={() => setSelectedWeek(weekNumber)}
+              aria-current={selectedWeek === weekNumber ? 'true' : undefined}
               className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                isCurrent ? 'border-primary bg-primary text-white' : 'border-line bg-surface text-ink hover:border-primary/40'
+                selectedWeek === weekNumber ? 'border-primary bg-primary text-white' : 'border-line bg-surface text-ink hover:border-primary/40'
               }`}
             >
               Tuần {weekNumber}
@@ -195,49 +158,25 @@ function AssignmentDetail({ assignment, initialWeek }: { assignment: MemberPlanA
         })}
       </nav>
 
-      <div className="space-y-3">
-        {weekNumbers.map((weekNumber) => {
-          const week = weeks.get(weekNumber);
-          const open = openWeeks.has(weekNumber);
-          const isCurrent = progress?.state === 'in-progress' && progress.week === weekNumber;
-          return (
-            <section key={weekNumber} className={`${cardClass} overflow-hidden ${isCurrent ? 'ring-2 ring-primary/50' : ''}`}>
-              <h3 id={`${idPrefix}-week-${weekNumber}`} tabIndex={-1} className="scroll-mt-24 focus:outline-none">
-                <button
-                  type="button"
-                  onClick={() => toggleWeek(weekNumber)}
-                  aria-expanded={open}
-                  aria-controls={`${idPrefix}-week-panel-${weekNumber}`}
-                  className="flex min-h-14 w-full items-center gap-3 px-5 py-3 text-left hover:bg-canvas focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
-                >
-                  <span className="text-base font-extrabold text-ink">Tuần {weekNumber}</span>
-                  {isCurrent && <Chip tone="primary">Tuần này</Chip>}
-                  <span className="ml-auto text-xs whitespace-nowrap text-muted">
-                    {week ? `${week.sessions.length} buổi · ${week.itemCount} mục` : 'Chưa có nội dung'}
-                  </span>
-                  <CaretDown className={`shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
-                </button>
-              </h3>
-              <div id={`${idPrefix}-week-panel-${weekNumber}`} hidden={!open} className="border-t border-line px-5 py-4">
-                {week ? (
-                  <div className="space-y-5">
-                    {week.sessions.map((session) => (
-                      <div key={session.sessionNumber}>
-                        <h4 className="mb-3 text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">
-                          Buổi {session.sessionNumber}
-                        </h4>
-                        <PlanItemList items={session.items} completionByItemId={completionByItemId} />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted">Coach chưa thêm nội dung cho tuần này.</p>
-                )}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+      <section className={`${cardClass} overflow-hidden`} aria-labelledby={`plan-${assignment.id}-week-heading`}>
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 sm:px-5">
+          <h3 id={`plan-${assignment.id}-week-heading`} className="font-extrabold text-ink">Tuần {selectedWeek}</h3>
+          {isCurrentWeek && <Chip tone="primary">Tuần này</Chip>}
+          <span className="ml-auto text-xs text-muted">{week ? `${week.sessions.length} buổi · ${week.itemCount} mục` : 'Chưa có nội dung'}</span>
+        </div>
+        <div className="p-4 sm:p-5">
+          {week ? (
+            <div className="space-y-5">
+              {week.sessions.map((session) => (
+                <div key={session.sessionNumber}>
+                  <h4 className="mb-3 text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">Buổi {session.sessionNumber}</h4>
+                  <PlanItemList items={session.items} completionByItemId={completionByItemId} />
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-sm text-muted">Coach chưa thêm nội dung cho tuần này.</p>}
+        </div>
+      </section>
     </div>
   );
 }

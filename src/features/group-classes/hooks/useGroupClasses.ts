@@ -6,6 +6,7 @@ import {
   changeClassSession,
   createClassSession,
   createGroupClass,
+  deleteGroupClass,
   createRecurringClassSessions,
   getGroupClassSessions,
   getGroupClasses,
@@ -66,6 +67,14 @@ export function useUpdateGroupClassStatus() {
   return useMutation({
     mutationFn: ({ classId, status }: { classId: number; status: GroupClassStatus }) =>
       updateGroupClassStatus(classId, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: groupClassKeys.all }),
+  });
+}
+
+export function useDeleteGroupClass() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteGroupClass,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: groupClassKeys.all }),
   });
 }

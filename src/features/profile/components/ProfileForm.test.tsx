@@ -37,7 +37,7 @@ afterEach(() => {
 describe('Form hồ sơ cá nhân (FR-05)', () => {
   test('Member thấy trường hội viên, không thấy Giới thiệu', () => {
     renderWithProviders(<ProfileForm profile={member} />);
-    expect(screen.getByLabelText('Ngày sinh')).toHaveValue('2004-10-14');
+    expect(screen.getByLabelText('Ngày sinh')).toHaveValue('14/10/2004');
     expect(screen.getByLabelText('Giới tính')).toBeInTheDocument();
     expect(screen.getByLabelText('Liên hệ khẩn cấp')).toBeInTheDocument();
     expect(screen.getByLabelText('Mục tiêu tập luyện')).toHaveValue('Tăng sức bền');

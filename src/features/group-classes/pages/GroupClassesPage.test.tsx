@@ -50,8 +50,8 @@ test('creates a draft using active sport and coach data without sending a status
   await within(dialog).findByRole('option', { name: 'Cầu lông' });
   fireEvent.change(within(dialog).getByLabelText(/Môn thể thao/), { target: { value: '2' } });
   await waitFor(() => expect(coachApi.getQualifiedCoaches).toHaveBeenCalledWith(2));
-  await within(dialog).findByRole('option', { name: /Coach An/ });
-  fireEvent.change(within(dialog).getByLabelText(/Coach/), { target: { value: '8' } });
+  fireEvent.click(within(dialog).getByRole('combobox', { name: /Coach/ }));
+  fireEvent.click(await within(dialog).findByRole('option', { name: /Coach An/ }));
   fireEvent.change(within(dialog).getByLabelText(/Tên lớp/), { target: { value: 'Lớp cầu lông mới' } });
   fireEvent.change(within(dialog).getByLabelText(/Sức chứa/), { target: { value: '10' } });
   fireEvent.change(within(dialog).getByLabelText(/Học phí/), { target: { value: '500000' } });

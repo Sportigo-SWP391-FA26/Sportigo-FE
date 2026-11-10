@@ -14,7 +14,7 @@ export function CoachLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[224px_1fr]">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
         <BrandLogo className="block h-11 w-36 [&_img]:h-full [&_img]:w-full [&_img]:object-contain" />
         <button

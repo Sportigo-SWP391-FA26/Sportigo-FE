@@ -68,7 +68,7 @@ describe('Hồ sơ tổng hợp hội viên (FR-10)', () => {
     expect(await screen.findByRole('heading', { name: 'Trần Bình' })).toBeInTheDocument();
     expect(api.getMemberProfile).toHaveBeenCalledWith(20);
     expect(screen.getByText('binh@gmail.com')).toBeInTheDocument();
-    expect(screen.getByText(/2 có mặt · 1 trễ · 1 vắng · 0 có phép \(75% tham gia\)/)).toBeInTheDocument();
+    expect(screen.getByText(/3 có mặt · 1 vắng \(75% tham gia\)/)).toBeInTheDocument();
     expect(screen.getByText('Đã học 4/10 buổi · còn 6 buổi')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Thanh toán gần đây' })).toBeInTheDocument();
     expect(screen.getByText('Đã thanh toán')).toBeInTheDocument();

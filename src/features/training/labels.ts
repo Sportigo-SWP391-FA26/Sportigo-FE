@@ -21,20 +21,21 @@ export function traineeLabel(member: TraineeMember) {
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 
-export const attendanceStatuses: AttendanceStatus[] = ['PRESENT', 'LATE', 'ABSENT', 'EXCUSED'];
+export const attendanceStatuses: AttendanceStatus[] = ['PRESENT', 'ABSENT'];
 
 export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
   PRESENT: 'Có mặt',
-  LATE: 'Muộn',
+  // Bản ghi cũ hiển thị theo 2 trạng thái hiện hành
+  LATE: 'Có mặt',
   ABSENT: 'Vắng',
-  EXCUSED: 'Có phép',
+  EXCUSED: 'Vắng',
 };
 
 export const attendanceStatusTones: Record<AttendanceStatus, Tone> = {
   PRESENT: 'success',
-  LATE: 'warning',
+  LATE: 'success',
   ABSENT: 'danger',
-  EXCUSED: 'info',
+  EXCUSED: 'danger',
 };
 
 export const planStatusLabels: Record<PlanStatus, string> = {

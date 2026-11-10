@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
 import { Field } from '../../../components/ui/Field';
+import { CurrencyInput } from '../../../components/ui/LocalizedInputs';
 import { InlineAlert } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
 import { financeApi, type CashOrderResult } from '../api';
 
 export function CashierPage() {
   const [id, setId] = useState('');
+  const [selectedOrderNumber, setSelectedOrderNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -33,10 +35,16 @@ export function CashierPage() {
 
   const selectOrder = (order: CashOrderResult) => {
     setId(String(order.id));
+    setSelectedOrderNumber(order.orderNumber);
     setAmount(String(order.remainingAmount));
   };
 
   const submit = async () => {
+    if (!Number.isInteger(Number(id))) {
+      setIsSuccess(false);
+      setMessage('Hãy tra cứu rồi chọn giao dịch trong danh sách, hoặc nhập mã giao dịch dạng số.');
+      return;
+    }
     setSubmitting(true);
     setMessage('');
     try {
@@ -44,6 +52,7 @@ export function CashierPage() {
       setIsSuccess(true);
       setMessage('Đã ghi nhận thanh toán tiền mặt và phát hành hóa đơn.');
       setId('');
+      setSelectedOrderNumber('');
       setAmount('');
     } catch {
       setIsSuccess(false);
@@ -58,14 +67,14 @@ export function CashierPage() {
       <PageHeader
         eyebrow="Giao dịch tại quầy"
         title="Thu tiền mặt"
-        description="Đối chiếu mã đơn và ghi nhận đúng số tiền khách hàng cần thanh toán."
+        description="Đối chiếu mã giao dịch và ghi nhận đúng số tiền khách hàng cần thanh toán."
       />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card className="p-5 sm:p-6">
           <SectionHeading title="Thông tin thanh toán" description="Hệ thống sẽ kiểm tra số tiền còn thiếu trước khi xác nhận giao dịch." />
-          <Field id="cash-order-search" label="Tìm đơn chờ thanh toán" hint="Nhập mã đơn, họ tên hoặc mã hội viên mà khách cung cấp.">
+          <Field id="cash-order-search" label="Tìm giao dịch chờ thanh toán" hint="Nhập mã giao dịch, họ tên hoặc mã hội viên mà khách cung cấp.">
             <div className="flex gap-2">
-              <input id="cash-order-search" className={inputClass} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void search(); }} placeholder="Mã đơn, tên hội viên hoặc mã hội viên" />
+              <input id="cash-order-search" className={inputClass} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void search(); }} placeholder="Mã giao dịch, tên hội viên hoặc mã hội viên" />
               <Button variant="secondary" loading={searching} icon={<MagnifyingGlass weight="bold" />} onClick={search}>Tra cứu</Button>
             </div>
           </Field>
@@ -80,11 +89,11 @@ export function CashierPage() {
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="cash-order-id" label="Mã đơn hàng" required>
-              <input id="cash-order-id" className={inputClass} value={id} onChange={(event) => setId(event.target.value)} inputMode="numeric" placeholder="Tự điền sau khi chọn đơn" />
+            <Field id="cash-order-id" label="Mã giao dịch" required>
+              <input id="cash-order-id" className={inputClass} value={selectedOrderNumber || id} onChange={(event) => { setSelectedOrderNumber(''); setId(event.target.value); }} placeholder="Tự điền sau khi chọn giao dịch" />
             </Field>
-            <Field id="cash-amount" label="Số tiền đã nhận" required hint="Nhập số tiền bằng VND, không dùng dấu chấm.">
-              <input id="cash-amount" className={inputClass} value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" placeholder="Ví dụ: 1200000" />
+            <Field id="cash-amount" label="Số tiền đã nhận" required hint="Số tiền được tự động định dạng theo VND.">
+              <CurrencyInput id="cash-amount" className={inputClass} value={amount} onValueChange={setAmount} placeholder="Ví dụ: 1.200.000" />
             </Field>
           </div>
           {message && <div className="mt-5"><InlineAlert tone={isSuccess ? 'info' : 'danger'}>{message}</InlineAlert></div>}
@@ -101,7 +110,7 @@ export function CashierPage() {
             <p className="mt-2 text-sm leading-relaxed text-white/75">Giao dịch thành công sẽ được lưu cùng người thu và thời điểm xác nhận.</p>
           </div>
           <ol className="space-y-4 p-5 text-sm text-muted">
-            {['Xác nhận đúng mã đơn hàng', 'Đếm và đối chiếu số tiền nhận', 'Xác nhận giao dịch và giao hóa đơn'].map((step, index) => (
+            {['Xác nhận đúng mã giao dịch', 'Đếm và đối chiếu số tiền nhận', 'Xác nhận giao dịch và giao hóa đơn'].map((step, index) => (
               <li key={step} className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-extrabold text-primary-deep">{index + 1}</span><span className="pt-1 font-semibold text-ink">{step}</span></li>
             ))}
           </ol>

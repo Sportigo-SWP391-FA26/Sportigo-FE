@@ -1,20 +1,29 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { loginAs } from '../../users/testing/session';
 import { renderWithProviders } from '../../training/testing/renderWithProviders';
 import { axiosError } from '../../training/testing/axiosError';
 import * as bookingApi from '../bookingApi';
 import * as usersApi from '../../users/api';
+import * as privateApi from '../../private-courses/api';
 import { GroupClassBookingDetailPage } from './GroupClassBookingDetailPage';
 
 vi.mock('../bookingApi');
 vi.mock('../../users/api');
+vi.mock('../../private-courses/api');
+
+beforeEach(() => {
+  vi.mocked(bookingApi.getMyClassRegistrations).mockResolvedValue([]);
+  vi.mocked(bookingApi.getMyWaitlists).mockResolvedValue([]);
+  vi.mocked(privateApi.getMyPrivateEnrollments).mockResolvedValue([]);
+});
 
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
   localStorage.clear();
 });
+
 
 function classDetail() {
   return {
@@ -67,7 +76,7 @@ test('shows detail and submits registration for authenticated Member', async () 
   await waitFor(() => expect(bookingApi.registerForClass).toHaveBeenCalledWith(8));
   expect(await screen.findByRole('dialog', { name: 'Đăng ký thành công' })).toBeInTheDocument();
   expect(screen.getByText('ORD-GC-102')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Thanh toán ngay' })).toHaveAttribute('href', '/member/payments?orderId=102');
+  expect(screen.getByRole('link', { name: 'Xem chi tiết đơn' })).toHaveAttribute('href', '/member/payments?orderId=102');
 });
 
 test('keeps API conflict visible and does not retry registration automatically', async () => {

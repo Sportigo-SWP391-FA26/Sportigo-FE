@@ -206,6 +206,7 @@ export async function getCoachTrainees(): Promise<Trainee[]> {
       name: privateCourse.name,
       sport: { id: privateCourse.sport.id, name: privateCourse.sport.name },
       status: enrollment.status,
+      enrolledAt: enrollment.enrolledAt,
     });
     byMember.set(member.userId, trainee);
   }

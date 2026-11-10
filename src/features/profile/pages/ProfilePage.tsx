@@ -5,6 +5,7 @@ import { ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { Tabs } from '../../../components/ui/Tabs';
 import { tabPanelProps } from '../../../components/ui/styles';
 import { ChangePasswordForm } from '../components/ChangePasswordForm';
+import { MemberQrCard } from '../components/MemberQrCard';
 import { ProfileForm } from '../components/ProfileForm';
 import { useMyProfile } from '../hooks/useMyProfile';
 
@@ -41,10 +42,13 @@ export function ProfilePage() {
           ) : profile.isError ? (
             <ErrorState error={profile.error} onRetry={() => profile.refetch()} retrying={profile.isRefetching} />
           ) : (
+            <>
+            {profile.data.member && <MemberQrCard memberCode={profile.data.member.memberCode} />}
             <Card className="profile-form-card p-5 sm:p-7">
               {/* note: key theo id để form khởi tạo lại defaultValues nếu đổi tài khoản */}
               <ProfileForm key={profile.data.id} profile={profile.data} />
             </Card>
+            </>
           )
         ) : (
           // note: FR-62 không phụ thuộc dữ liệu hồ sơ nên hiện được ngay, kể cả khi GET /users/me đang tải hoặc lỗi

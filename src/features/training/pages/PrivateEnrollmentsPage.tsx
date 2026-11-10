@@ -1,8 +1,11 @@
 import { ArrowRight, Student } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, PageHeader } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
+import { DateSortButton, sortByDate, type DateSortOrder } from '../../../components/ui/DateSortButton';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
+import { formatDate } from '../format';
 import { useCoachTrainees } from '../hooks/usePendingApis';
 import { enrollmentStatusLabels, traineeName, type Tone } from '../labels';
 import type { EnrollmentStatus, TraineeContext, TraineeMember } from '../types';
@@ -21,10 +24,15 @@ const statusTones: Record<EnrollmentStatus, Tone> = {
 // FR-51 · /coach/private-enrollments: lối vào trang gán giáo án của từng khóa 1-1 Coach phụ trách
 export function PrivateEnrollmentsPage() {
   const trainees = useCoachTrainees();
-  const rows: EnrollmentRow[] = (trainees.data ?? []).flatMap((trainee) =>
-    trainee.contexts
-      .filter((context): context is Extract<TraineeContext, { type: 'PRIVATE_COURSE' }> => context.type === 'PRIVATE_COURSE')
-      .map((context) => ({ ...context, member: trainee.member })),
+  const [sortOrder, setSortOrder] = useState<DateSortOrder>('newest');
+  const rows: EnrollmentRow[] = sortByDate(
+    (trainees.data ?? []).flatMap((trainee) =>
+      trainee.contexts
+        .filter((context): context is Extract<TraineeContext, { type: 'PRIVATE_COURSE' }> => context.type === 'PRIVATE_COURSE')
+        .map((context) => ({ ...context, member: trainee.member })),
+    ),
+    (row) => row.enrolledAt,
+    sortOrder,
   );
 
   return (
@@ -46,6 +54,10 @@ export function PrivateEnrollmentsPage() {
       ) : rows.length === 0 ? (
         <EmptyState icon={<Student />} title="Chưa có khóa 1-1" description="Bạn chưa phụ trách khóa 1-1 nào." />
       ) : (
+        <>
+        <div className="mb-3 flex justify-end">
+          <DateSortButton order={sortOrder} onChange={setSortOrder} />
+        </div>
         <Card className="overflow-hidden">
           {/* Hàng tự có khoảng đệm để vùng hover phủ kín thẻ (overflow-hidden cắt theo góc bo) */}
           <ul className="divide-y divide-line">
@@ -62,6 +74,9 @@ export function PrivateEnrollmentsPage() {
                       {row.member.displayName && ` · ${row.member.memberCode}`} · {row.sport.name}
                     </p>
                   </div>
+                  {row.enrolledAt && (
+                    <span className="hidden shrink-0 text-xs text-muted sm:inline">Đăng ký {formatDate(row.enrolledAt)}</span>
+                  )}
                   <Chip tone={statusTones[row.status]} dot>
                     {enrollmentStatusLabels[row.status]}
                   </Chip>
@@ -74,6 +89,7 @@ export function PrivateEnrollmentsPage() {
             ))}
           </ul>
         </Card>
+        </>
       )}
     </div>
   );

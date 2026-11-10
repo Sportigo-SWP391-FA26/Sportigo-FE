@@ -29,7 +29,7 @@ test('creates a sport using backend fields and updates active state', async () =
   fireEvent.change(within(dialog).getByLabelText(/Tên bộ môn/), { target: { value: 'Yoga' } });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu bộ môn' }));
   await waitFor(() => expect(api.createSport).toHaveBeenCalledWith({
-    name: 'Yoga', description: null, imageUrl: null, isActive: true,
+    name: 'Yoga', description: null, imageUrl: null, isActive: true, passingScore: null,
   }));
   await screen.findByRole('button', { name: 'Ngừng' });
   fireEvent.click(screen.getByRole('button', { name: 'Ngừng' }));

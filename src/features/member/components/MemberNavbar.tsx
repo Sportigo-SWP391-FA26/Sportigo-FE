@@ -15,11 +15,11 @@ function initials(name: string) {
 const items = [
   ['Trang chủ', '/member/home'],
   ['Khám phá', '/member/classes'],
-  ['Waitlist', '/waitlist'],
   ['Lịch của tôi', '/member/my-schedule'],
   // Nhãn ngắn để navbar 7 mục không tràn ở màn 1170–1280px; tiêu đề trang dùng tên đầy đủ
   ['Kế hoạch', '/member/training-plan'],
   ['Tiến độ', '/member/progress'],
+  ['Gói tập', '/member/membership'],
   ['Thanh toán & ví', '/member/payments'],
 ] as const;
 

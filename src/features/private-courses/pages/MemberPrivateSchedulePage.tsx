@@ -3,14 +3,16 @@ import { useEffect, useState } from 'react';
 import { toast } from '../../../components/feedback/toast';
 import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Chip } from '../../../components/ui/Chip';
-import { Dialog } from '../../../components/ui/Dialog';
+import { DateSortButton, sortByDate, type DateSortOrder } from '../../../components/ui/DateSortButton';
+import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
+import { DateTimeInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { MemberWeekCalendar } from '../../../components/schedule/MemberWeekCalendar';
 import { addDays, formatDate, formatDateTime, fromCenterDateTimeInput, todayInCenter } from '../../training/format';
 import { parseApiError } from '../../training/errors';
-import { useMyClassRegistrations } from '../../member/bookingHooks';
+import { useCancelClassRegistration, useMyClassRegistrations } from '../../member/bookingHooks';
 import type { MyClassRegistration } from '../../member/bookingTypes';
 import { useChangePrivateOccurrence, useMyPrivateEnrollments } from '../hooks/usePrivateCourses';
 import type { OccurrenceChange, PrivateEnrollment, PrivateSchedule } from '../types';
@@ -39,7 +41,9 @@ const money = (value: string | number) => `${new Intl.NumberFormat('vi-VN').form
 
 const weekday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
 const hour = (value: string) => value.slice(11, 16);
-const makeIso = (date: string, time: string) => `${date}T${time}:00.000Z`;
+// PrivateSchedule stores wall-clock hours as a time-only value. Convert that
+// hour in the center's timezone before placing it on the member calendar.
+const makeIso = (date: string, time: string) => fromCenterDateTimeInput(`${date}T${time}`);
 const occurrenceKey = (scheduleId: number, sessionDate: string) => `${scheduleId}:${sessionDate}`;
 
 function nextOccurrences(enrollment: PrivateEnrollment, schedule: PrivateSchedule, now: number) {
@@ -75,6 +79,8 @@ export function MemberPrivateSchedulePage() {
   const enrollments = useMyPrivateEnrollments();
   const classRegistrations = useMyClassRegistrations();
   const changeOccurrence = useChangePrivateOccurrence();
+  const cancelClassRegistration = useCancelClassRegistration();
+  const [cancelClass, setCancelClass] = useState<MyClassRegistration | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [changes, setChanges] = useState<Record<string, OccurrenceChange>>({});
   const [target, setTarget] = useState<Occurrence | null>(null);
@@ -82,6 +88,7 @@ export function MemberPrivateSchedulePage() {
   const [reason, setReason] = useState('');
   const [newStartsAt, setNewStartsAt] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [enrollmentSort, setEnrollmentSort] = useState<DateSortOrder>('newest');
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
@@ -99,6 +106,11 @@ export function MemberPrivateSchedulePage() {
     })
     .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
   const pendingRegistrations = classRegistrations.data.filter((registration) => registration.status === 'PENDING_PAYMENT');
+  const pendingPrivateEnrollments = sortByDate(
+    enrollments.data.filter((enrollment) => enrollment.status === 'PENDING_PAYMENT'),
+    (enrollment) => enrollment.enrolledAt,
+    enrollmentSort,
+  );
   const groupOccurrences: GroupOccurrence[] = classRegistrations.data
     .filter((registration) => registration.status === 'CONFIRMED')
     .flatMap((registration) => registration.groupClass.sessions
@@ -109,6 +121,17 @@ export function MemberPrivateSchedulePage() {
     ...groupOccurrences.map((occurrence): TimelineItem => ({ kind: 'GROUP', occurrence, startsAt: occurrence.startsAt })),
   ].sort((left, right) => left.startsAt.localeCompare(right.startsAt));
   const calendarFocusDate = Object.values(changes).filter((change) => change.action === 'RESCHEDULED').at(-1)?.rescheduledStartsAt;
+  const firstClassSession = cancelClass?.groupClass.sessions[0];
+  const hoursUntilFirstClass = firstClassSession ? (new Date(firstClassSession.startsAt).getTime() - now) / 3_600_000 : (cancelClass ? (new Date(cancelClass.groupClass.startDate).getTime() - now) / 3_600_000 : 0);
+  const refundRate = hoursUntilFirstClass >= 48 ? 1 : 0.5;
+  const confirmClassCancellation = async () => {
+    if (!cancelClass) return;
+    try {
+      const result = await cancelClassRegistration.mutateAsync(cancelClass.id) as { refundedAmount?: number; message?: string };
+      toast(result.message ?? 'Đã hủy đăng ký lớp.');
+      setCancelClass(null);
+    } catch { /* The API error remains visible in the confirmation dialog. */ }
+  };
 
   const submit = async () => {
     if (!target || changeOccurrence.isPending) return;
@@ -145,29 +168,40 @@ export function MemberPrivateSchedulePage() {
         </div>
         <div className="schedule-hub-stats" aria-label="Tổng quan lịch học">
           <span><CalendarCheck /><b>{timeline.length} buổi</b> sắp tới</span>
-          <span><Receipt /><b>{pendingRegistrations.length} đăng ký</b> cần xử lý</span>
+          <span><Receipt /><b>{pendingRegistrations.length + pendingPrivateEnrollments.length} đăng ký</b> cần xử lý</span>
           <span><ShieldCheck />Đổi hoặc hủy 1–1 trước <b>24 giờ</b></span>
         </div>
       </section>
-      {pendingRegistrations.length > 0 && (
+      <nav className="member-schedule-subnav" aria-label="Lịch của tôi"><ButtonLink to="/member/my-schedule/waitlist" variant="secondary"><span>Danh sách chờ & lời mời</span><ArrowRight aria-hidden="true" /></ButtonLink></nav>
+      {(pendingRegistrations.length > 0 || pendingPrivateEnrollments.length > 0) && (
         <section className="schedule-action-zone" aria-labelledby="pending-payment-heading">
-          <div className="schedule-section-heading"><div><h2 id="pending-payment-heading">Đăng ký cần hoàn tất</h2><p>Thanh toán trước thời hạn để giữ chỗ và đưa các buổi học vào lịch.</p></div><Chip tone="warning">{pendingRegistrations.length} cần xử lý</Chip></div>
+          <div className="schedule-section-heading"><div><h2 id="pending-payment-heading">Giao dịch thanh toán chưa hoàn thành</h2><p>Đăng ký và lịch học chỉ được xác nhận khi hệ thống ghi nhận đủ tiền. Nếu trả tiền mặt, đưa mã đơn, họ tên hoặc mã hội viên cho lễ tân hoặc Center Manager.</p></div><Chip tone="warning">{pendingRegistrations.length + pendingPrivateEnrollments.length} chờ thanh toán</Chip></div>
+          {pendingPrivateEnrollments.length > 0 && <div className="mb-3 flex justify-end"><DateSortButton order={enrollmentSort} onChange={setEnrollmentSort} /></div>}
           <div className="pending-registration-list">
             {pendingRegistrations.map((registration) => (
               <article key={registration.id} className="pending-registration">
-                <div className="pending-registration__identity"><h3>{registration.groupClass.name}</h3><p>{registration.groupClass.sport.name} · Lớp nhóm · Coach {registration.groupClass.coach.user.displayName}</p></div>
+                <div className="pending-registration__identity"><span>Chưa hoàn tất thanh toán</span><h3>{registration.groupClass.name}</h3><p>{registration.groupClass.sport.name} · Lớp nhóm · Coach {registration.groupClass.coach.user.displayName}</p></div>
                 <div className="pending-registration__detail"><CurrencyCircleDollar /><span>Học phí</span><strong>{money(registration.order?.finalAmount ?? registration.price)}</strong></div>
                 <div className="pending-registration__detail"><Clock /><span>Giữ chỗ đến</span><strong>{registration.order?.expiresAt ? formatDateTime(registration.order.expiresAt) : 'Theo thời hạn đơn'}</strong></div>
                 <div className="pending-registration__action"><small>{registration.order?.orderNumber ?? `Đăng ký #${registration.id}`}</small>{registration.order && <ButtonLink size="sm" to={`/member/payments?orderId=${registration.order.id}`}>Thanh toán ngay <ArrowRight /></ButtonLink>}</div>
               </article>
             ))}
+            {pendingPrivateEnrollments.map((enrollment) => (
+              <article key={`private-${enrollment.id}`} className="pending-registration">
+                <div className="pending-registration__identity"><span>Chưa hoàn tất thanh toán</span><h3>{enrollment.privateCourse.name}</h3><p>{enrollment.privateCourse.sport.name} · Khóa 1–1 · Coach {enrollment.coach.user.displayName}</p></div>
+                <div className="pending-registration__detail"><CurrencyCircleDollar /><span>Học phí</span><strong>{money(enrollment.purchasedPrice)}</strong></div>
+                <div className="pending-registration__detail"><CalendarBlank /><span>Số buổi</span><strong>{enrollment.purchasedSessions} buổi</strong></div>
+                <div className="pending-registration__action"><small>Đăng ký 1–1 #{enrollment.id}</small><ButtonLink size="sm" to="/member/payments">Xem thanh toán <ArrowRight /></ButtonLink></div>
+              </article>
+            ))}
           </div>
         </section>
       )}
+      <div className="schedule-main-grid">
       <section className="schedule-timeline-section">
       <div className="schedule-section-heading"><div><h2>Buổi học sắp tới</h2><p>Lịch đã xác nhận, sắp xếp theo thời gian gần nhất.</p></div>{timeline.length > 0 && <Chip tone="success">{timeline.length} buổi</Chip>}</div>
       {timeline.length === 0 ? (
-        <EmptyState icon={<CalendarBlank />} title="Chưa có buổi học sắp tới" description={pendingRegistrations.length ? 'Hoàn tất thanh toán các đăng ký phía trên để xác nhận lịch học.' : 'Các buổi lớp nhóm và khóa 1–1 đã xác nhận sẽ xuất hiện tại đây.'} />
+        <EmptyState icon={<CalendarBlank />} title="Chưa có buổi học sắp tới" description={pendingRegistrations.length + pendingPrivateEnrollments.length ? 'Hoàn tất thanh toán các đăng ký phía trên để xác nhận lịch học.' : 'Các buổi lớp nhóm và khóa 1–1 đã xác nhận sẽ xuất hiện tại đây.'} />
       ) : (
         <MemberWeekCalendar key={calendarFocusDate ?? 'current-schedule'} focusDate={calendarFocusDate ?? undefined} items={timeline.map((item) => {
           if (item.kind === 'GROUP') {
@@ -181,6 +215,22 @@ export function MemberPrivateSchedulePage() {
       )}
       <div className="schedule-policy-note"><ShieldCheck /><p><strong>Lưu ý về thay đổi lịch:</strong> khóa 1–1 chỉ nhận yêu cầu đổi hoặc hủy trước buổi gốc ít nhất 24 giờ. Lớp nhóm áp dụng chính sách hủy riêng của lớp.</p></div>
       </section>
+      <aside className="schedule-enrolled" aria-labelledby="enrolled-classes-heading">
+        <div className="schedule-section-heading"><div><h2 id="enrolled-classes-heading">Lớp đã đăng ký</h2><p>Chỗ của bạn và trạng thái thanh toán.</p></div><Chip tone="neutral">{classRegistrations.data.length}</Chip></div>
+        {classRegistrations.data.length === 0 ? <div className="schedule-enrolled__empty"><EmptyState compact title="Chưa đăng ký lớp nhóm" description="Các lớp bạn đăng ký sẽ xuất hiện ở đây." /></div> : <div className="schedule-enrolled__list">{classRegistrations.data.map((registration) => {
+          const firstSession = registration.groupClass.sessions[0];
+          const start = firstSession?.startsAt ?? registration.groupClass.startDate;
+          const canCancel = new Date(start).getTime() > now;
+          return <article key={registration.id} className="schedule-enrolled__item">
+            <div className="schedule-enrolled__head"><Chip tone={registration.status === 'CONFIRMED' ? 'success' : 'warning'} dot>{registration.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Chờ thanh toán'}</Chip><span>{registration.groupClass.sport.name}</span></div>
+            <h3>{registration.groupClass.name}</h3><p>Coach {registration.groupClass.coach.user.displayName}</p><p>Bắt đầu {formatDate(start)}</p>
+            <div className="schedule-enrolled__actions">{registration.status === 'PENDING_PAYMENT' && registration.order && <ButtonLink size="sm" to={`/member/payments?orderId=${registration.order.id}`}>Thanh toán</ButtonLink>}{canCancel && <Button size="sm" variant="secondary" onClick={() => { cancelClassRegistration.reset(); setCancelClass(registration); }}>Hủy đăng ký</Button>}</div>
+          </article>;
+        })}</div>}
+        <div className="schedule-enrolled__policy"><strong>Chính sách hủy lớp nhóm</strong><p>Trước buổi đầu từ 48 giờ: hoàn 100%. Trong 48 giờ cuối: hoàn 50%. Sau khi lớp bắt đầu: không thể hủy. Tiền hoàn tự động vào ví Sportigo.</p></div>
+      </aside>
+      </div>
+      <ConfirmDialog open={cancelClass !== null} title="Hủy đăng ký lớp?" description={<div className="space-y-2"><p>{cancelClass?.groupClass.name}</p><p>{cancelClass?.status === 'PENDING_PAYMENT' ? 'Đơn chưa thanh toán sẽ bị hủy, không phát sinh hoàn tiền.' : hoursUntilFirstClass > 0 ? `Bạn sẽ được hoàn ${refundRate * 100}% số tiền đã thanh toán vào ví Sportigo. ${refundRate === 0.5 ? 'Bạn đang hủy trong 48 giờ trước buổi học đầu tiên và mất 50% học phí.' : ''}` : 'Lớp đã bắt đầu, không thể hủy.'}</p></div>} confirmLabel="Xác nhận hủy" tone="danger" loading={cancelClassRegistration.isPending} error={cancelClassRegistration.isError ? <InlineAlert>{parseApiError(cancelClassRegistration.error).message}</InlineAlert> : undefined} onCancel={() => { if (!cancelClassRegistration.isPending) { setCancelClass(null); cancelClassRegistration.reset(); } }} onConfirm={confirmClassCancellation} />
       <OccurrenceDialog
         target={target}
         action={action}
@@ -242,7 +292,7 @@ function OccurrenceDialog({
           <label className={`flex min-h-11 cursor-pointer items-center justify-center rounded-control border text-sm font-bold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${action === 'CANCELLED' ? 'border-primary bg-primary text-white' : 'border-line bg-surface'}`}><input className="sr-only" type="radio" name="occurrenceAction" checked={action === 'CANCELLED'} onChange={() => onAction('CANCELLED')} />Hủy buổi</label>
           <label className={`flex min-h-11 cursor-pointer items-center justify-center rounded-control border text-sm font-bold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${action === 'RESCHEDULED' ? 'border-primary bg-primary text-white' : 'border-line bg-surface'}`}><input className="sr-only" type="radio" name="occurrenceAction" checked={action === 'RESCHEDULED'} onChange={() => onAction('RESCHEDULED')} />Đổi lịch buổi</label>
         </fieldset>
-        {action === 'RESCHEDULED' && <Field id="occurrence-new-start" label="Giờ bắt đầu mới" required error={validationError.includes('bắt đầu mới') ? validationError : undefined} hint="Thời lượng hiện tại được giữ nguyên. Phòng hiện tại sẽ được giữ; không gửi newRoomId."><input id="occurrence-new-start" type="datetime-local" className={inputClass} value={newStartsAt} onChange={(event) => onNewStartsAt(event.target.value)} aria-invalid={Boolean(validationError.includes('bắt đầu mới'))} /></Field>}
+        {action === 'RESCHEDULED' && <Field id="occurrence-new-start" label="Giờ bắt đầu mới" required error={validationError.includes('bắt đầu mới') ? validationError : undefined} hint="Thời lượng hiện tại được giữ nguyên. Phòng hiện tại sẽ được giữ; không gửi newRoomId."><DateTimeInput id="occurrence-new-start" className={inputClass} value={newStartsAt} onValueChange={onNewStartsAt} aria-invalid={Boolean(validationError.includes('bắt đầu mới'))} /></Field>}
         <Field id="occurrence-reason" label="Lý do" required error={validationError.includes('lý do') ? validationError : undefined}><textarea id="occurrence-reason" className={textareaClass} value={reason} onChange={(event) => onReason(event.target.value)} aria-invalid={Boolean(validationError.includes('lý do'))} /></Field>
         {validationError && !validationError.includes('lý do') && !validationError.includes('ngày giờ') && <InlineAlert>{validationError}</InlineAlert>}
         {apiError !== null && <InlineAlert>{errorMessage}</InlineAlert>}

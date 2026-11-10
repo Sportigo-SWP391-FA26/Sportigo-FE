@@ -1,6 +1,6 @@
 import { Clock, MagnifyingGlass, UsersThree } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
 import { Button } from '../../../components/ui/Button';
 import { Card, SectionHeading } from '../../../components/ui/Card';
@@ -8,7 +8,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { Tabs } from '../../../components/ui/Tabs';
-import { formatDateTime } from '../../training/format';
+import { addDays, formatDate, formatDateTime, formatTime, toCenterDate, weekRange } from '../../training/format';
 import { parseApiError } from '../../training/errors';
 import { isClassBookable } from '../bookingEligibility';
 import { getPublicClass, getWaitlists } from '../bookingApi';
@@ -38,7 +38,6 @@ const EMPTY_WAITLIST_RECORDS: WaitlistRecord[] = [];
 
 const memberTabs = [
   { value: 'classes', label: 'Lớp có thể tham gia' },
-  { value: 'mine', label: 'Waitlist của tôi' },
   { value: 'invitations', label: 'Lời mời của tôi' },
   { value: 'history', label: 'Lịch sử' },
 ] as const;
@@ -169,10 +168,10 @@ function MemberWaitlistView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1480px] space-y-6 px-4 py-6 sm:px-6">
+      <Link to="/member/my-schedule" className="inline-flex items-center text-sm font-bold text-primary-deep hover:underline">← Lịch học của tôi</Link>
       <header className="rounded-card bg-primary-deep px-5 py-7 text-white sm:px-8">
-        <p className="text-xs font-extrabold uppercase tracking-[.16em] text-white/70">FR-25 · FR-26</p>
-        <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Danh sách chờ & lời mời</h1>
+        <h1 className="text-2xl font-extrabold sm:text-3xl">Danh sách chờ & lời mời</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/80">
           Theo dõi lớp đã kín chỗ, vị trí chờ do hệ thống xử lý và phản hồi lời mời vào lớp.
         </p>
@@ -190,7 +189,7 @@ function MemberWaitlistView() {
                 classes.isError ? <ErrorState error={classes.error} onRetry={() => classes.refetch()} retrying={classes.isRefetching} pendingApi="GET /api/bookings/classes" /> :
                   classDetails.isError ? <ErrorState error={classDetails.error} onRetry={() => classDetails.refetch()} retrying={classDetails.isRefetching} pendingApi="GET /api/bookings/classes/:id" /> :
                     bookableFullClasses.length === 0 ? <EmptyState title="Chưa có lớp phù hợp" description="Hiện không có lớp nào vừa hết chỗ vừa còn trong thời hạn đăng ký." /> :
-                      <div className="grid gap-4 xl:grid-cols-2">
+                      <div className="grid gap-4">
                         {bookableFullClasses.map((item) => (
                           <MemberWaitlistClassCard
                             key={item.id}
@@ -210,10 +209,6 @@ function MemberWaitlistView() {
               </div>
             )}
           </div>
-        )}
-
-        {tab === 'mine' && (
-          <MemberWaitlistList entries={waitlists.data ?? []} query={waitlists} />
         )}
 
         {tab === 'invitations' && (
@@ -309,13 +304,7 @@ function MemberWaitlistClassCard({
           {pendingPaymentSeats > 0 && <dd className="text-xs text-muted">{pendingPaymentSeats} chỗ đang chờ thanh toán</dd>}
         </div>
       </dl>
-      <div>
-        <p className="text-sm font-bold">Lịch học</p>
-        {item.sessions.length === 0 ? <p className="mt-1 text-sm text-muted">Chưa có lịch buổi học.</p> :
-          <ul className="mt-1 space-y-1 text-sm text-muted">
-            {item.sessions.map((session) => <li key={session.id}>{formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt)}</li>)}
-          </ul>}
-      </div>
+      <ClassWaitlistTimetable sessions={item.sessions} />
       {message && <p role={message === 'Đã tham gia danh sách chờ.' ? 'status' : 'alert'} className={`text-sm ${message === 'Đã tham gia danh sách chờ.' ? 'text-success' : 'text-danger'}`}>{message}</p>}
       {!canCheckDuplicates && <p role="alert" className="text-sm text-danger">Không thể kiểm tra danh sách chờ hiện tại. Hãy tải lại trước khi tham gia.</p>}
       <div className="mt-auto">
@@ -325,6 +314,19 @@ function MemberWaitlistClassCard({
       </div>
     </Card>
   );
+}
+
+function ClassWaitlistTimetable({ sessions }: { sessions: PublicClassDetail['sessions'] }) {
+  const [page, setPage] = useState(0);
+  const active = sessions.filter((session) => session.status !== 'CANCELLED').sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  if (!active.length) return <p className="text-sm text-muted">Chưa có lịch buổi học.</p>;
+  const firstWeek = weekRange(toCenterDate(new Date(active[0].startsAt))).from;
+  const lastWeek = weekRange(toCenterDate(new Date(active.at(-1)!.startsAt))).from;
+  const totalWeeks = Math.floor((Date.parse(`${lastWeek}T00:00:00Z`) - Date.parse(`${firstWeek}T00:00:00Z`)) / 604800000) + 1;
+  const maxPage = Math.max(0, Math.ceil(totalWeeks / 4) - 1);
+  const shownPage = Math.min(page, maxPage);
+  const weeks = Array.from({ length: Math.min(4, totalWeeks - shownPage * 4) }, (_, index) => addDays(firstWeek, (shownPage * 4 + index) * 7));
+  return <div><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-bold text-ink">Thời khóa biểu · {active.length} buổi</h3><div className="flex items-center gap-2 text-xs"><button type="button" className="rounded-lg border border-line px-2 py-1 disabled:opacity-40" disabled={shownPage === 0} onClick={() => setPage(shownPage - 1)} aria-label="4 tuần trước">←</button><span>{shownPage + 1}/{maxPage + 1}</span><button type="button" className="rounded-lg border border-line px-2 py-1 disabled:opacity-40" disabled={shownPage === maxPage} onClick={() => setPage(shownPage + 1)} aria-label="4 tuần sau">→</button></div></div><div className="overflow-x-auto rounded-xl border border-line" role="region" aria-label="Thời khóa biểu lớp" tabIndex={0}><table className="w-full min-w-[680px] table-fixed border-collapse text-xs"><thead><tr className="bg-canvas text-ink"><th className="w-20 border-b border-r border-line p-2 text-left">Tuần</th>{['T2','T3','T4','T5','T6','T7','CN'].map((day) => <th className="border-b border-r border-line p-2" key={day}>{day}</th>)}</tr></thead><tbody>{weeks.map((week, index) => <tr key={week}><th className="border-b border-r border-line bg-canvas p-2 text-left text-primary-deep">Tuần {shownPage * 4 + index + 1}<small className="mt-1 block font-normal text-muted">{formatDate(week)}</small></th>{Array.from({ length: 7 }, (_, dayIndex) => { const date = addDays(week, dayIndex); const daySessions = active.filter((session) => toCenterDate(new Date(session.startsAt)) === date); return <td className="h-16 border-b border-r border-line p-1.5 align-top" key={date}>{daySessions.map((session) => <div key={session.id} className="rounded-lg bg-primary/10 p-1.5 font-semibold text-primary-deep"><span className="block">{formatTime(session.startsAt)}–{formatTime(session.endsAt)}</span><span className="block text-[10px] font-normal">{formatDate(session.startsAt)}</span></div>)}</td>; })}</tr>)}</tbody></table></div></div>;
 }
 
 function MemberWaitlistList({

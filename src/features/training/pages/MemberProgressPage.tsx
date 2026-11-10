@@ -160,7 +160,7 @@ function AttendanceStats({ latest, trainingPending }: { latest?: ProgressAssessm
                 ? '—'
                 : pending
           }
-          hint="(Có mặt + Muộn) / số buổi đã điểm danh"
+          hint="Có mặt / số buổi đã điểm danh"
         />
         <StatTile
           icon={<Medal />}

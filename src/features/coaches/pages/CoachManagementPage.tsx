@@ -7,14 +7,16 @@ import { getSessionRole } from '../../../components/auth/session';
 import { toast } from '../../../components/feedback/toast';
 import { useMyProfile } from '../../profile/hooks/useMyProfile';
 import { getSports } from '../../training/api';
+import { Avatar } from '../../../components/ui/Avatar';
 import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ConfirmDialog, Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
-import { addDays, formatDate, formatDateTime, formatTime, todayInCenter } from '../../training/format';
+import { addDays, formatDate, formatDateTime, formatTime, todayInCenter, toCenterDate, weekRange } from '../../training/format';
 import { parseApiError, retryServerErrors } from '../../training/errors';
 import { trainingKeys } from '../../training/queryKeys';
 import { useQuery } from '@tanstack/react-query';
@@ -90,29 +92,16 @@ export function CoachManagementListPage() {
 }
 
 function CoachAvatar({ name, src }: { name: string; src: string | null }) {
-  const [failed, setFailed] = useState(false);
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((part) => part[0]?.toLocaleUpperCase('vi'))
-    .join('');
-
   return (
     <div className="relative w-28 shrink-0 overflow-hidden bg-primary/10 sm:w-36">
-      {src && !failed ? (
-        <img
-          src={src}
-          alt={`Ảnh Coach ${name}`}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          loading="lazy"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="grid h-full min-h-40 place-items-center bg-primary/10 text-2xl font-extrabold text-primary-deep" aria-label={`Coach ${name} chưa có ảnh đại diện`}>
-          {initials || 'C'}
-        </div>
-      )}
+      <Avatar
+        name={name}
+        src={src}
+        alt={`Ảnh Coach ${name}`}
+        className="h-full min-h-40 w-full"
+        imageClassName="transition-transform duration-300 group-hover:scale-[1.03]"
+        fallbackClassName="text-2xl"
+      />
     </div>
   );
 }
@@ -152,10 +141,26 @@ export function CoachOwnSchedulePage() {
   }
   return (
     <div className="mx-auto w-full max-w-[1240px]">
-      <PageHeader eyebrow="Lịch Coach" title="Lịch dạy của tôi" description="Lịch lớp nhóm và từng occurrence khóa học 1–1 được gộp từ backend." />
-      <CoachProfileContent coachId={profile.data.id} manager={false} coachName={profile.data.displayName} />
+      <PageHeader eyebrow="Lịch Coach" title="Lịch dạy của tôi" description="Chọn một buổi trong thời khóa biểu để điểm danh và đánh giá học viên." />
+      <CoachWeeklyTimetable coachId={profile.data.id} />
     </div>
   );
+}
+
+function CoachWeeklyTimetable({ coachId }: { coachId: number }) {
+  const [week, setWeek] = useState(() => weekRange(todayInCenter()).from);
+  const [selected, setSelected] = useState<CoachScheduleItem | null>(null);
+  const days = Array.from({ length: 7 }, (_, index) => addDays(week, index));
+  const schedule = useCoachSchedule(coachId, week, days[6]);
+  const items = schedule.data ?? [];
+  const times = [...new Set(items.map((item) => formatTime(item.startsAt)))].sort();
+  return <div className="space-y-5">
+    <Card className="p-4 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold text-ink">Tuần {formatDate(week)} – {formatDate(days[6])}</h2><p className="text-sm text-muted">{items.length} buổi dạy · Lớp nhóm và khóa 1–1</p></div><div className="flex gap-2"><Button variant="secondary" size="sm" onClick={() => { setWeek(addDays(week, -7)); setSelected(null); }}>Tuần trước</Button><Button variant="secondary" size="sm" onClick={() => { setWeek(weekRange(todayInCenter()).from); setSelected(null); }}>Hôm nay</Button><Button variant="secondary" size="sm" onClick={() => { setWeek(addDays(week, 7)); setSelected(null); }}>Tuần sau</Button></div></div>
+      {schedule.isPending ? <ListSkeleton rows={4} label="Đang tải lịch dạy…" /> : schedule.isError ? <ErrorState compact error={schedule.error} onRetry={() => schedule.refetch()} /> : <div className="coach-week-scroll" role="region" aria-label="Thời khóa biểu lịch dạy trong tuần" tabIndex={0}><table className="coach-week-table"><thead><tr><th scope="col">Giờ</th>{days.map((day, index) => <th scope="col" key={day}><span>{['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'][index]}</span><small>{formatDate(day)}</small></th>)}</tr></thead><tbody>{(times.length ? times : ['07:00','09:00','11:00','13:30','15:30','17:30','19:30']).map((time) => <tr key={time}><th scope="row">{time}</th>{days.map((day) => <td key={day}>{items.filter((item) => toCenterDate(new Date(item.startsAt)) === day && formatTime(item.startsAt) === time).map((item) => <button key={`${item.type}-${item.id}`} type="button" className={`coach-week-event ${item.type === 'GROUP_CLASS' ? 'coach-week-event--group' : 'coach-week-event--private'}`} onClick={() => setSelected(item)}><strong>{item.type === 'GROUP_CLASS' ? item.groupClass.name : item.enrollment.privateCourse.name}</strong><span>{formatTime(item.startsAt)}–{formatTime(item.endsAt)}</span><small>{item.type === 'GROUP_CLASS' ? 'Lớp nhóm' : `1–1 · ${item.enrollment.member.user.displayName}`}</small></button>)}</td>)}</tr>)}</tbody></table></div>}
+    </Card>
+    {selected && <Card className="p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-primary">{selected.type === 'GROUP_CLASS' ? 'Lớp nhóm' : 'Khóa 1–1'}</p><h3 className="mt-1 text-xl font-extrabold text-ink">{selected.type === 'GROUP_CLASS' ? selected.groupClass.name : selected.enrollment.privateCourse.name}</h3><p className="mt-1 text-sm text-muted">{formatDateTime(selected.startsAt)} – {formatTime(selected.endsAt)}{selected.room ? ` · ${selected.room.name}` : ''}</p></div><Button variant="secondary" size="sm" onClick={() => setSelected(null)}>Đóng</Button></div>{selected.type === 'GROUP_CLASS' ? <div className="mt-5"><ButtonLink to={`/coach/sessions/${selected.id}/attendance`}>Mở danh sách học viên & điểm danh</ButtonLink></div> : <ScheduleItem key={`${selected.id}-${selected.originalDate}`} item={selected} />}<p className="mt-3 text-sm text-muted">Đánh giá mở sau khi điểm danh buổi học đã kết thúc.</p></Card>}
+  </div>;
 }
 
 function CoachProfileContent({ coachId, manager, coachName }: { coachId: number; manager: boolean; coachName: string }) {
@@ -372,8 +377,8 @@ function AvailabilityFormDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="availability-start" label="Giờ bắt đầu" required error={field('startTime')}><input id="availability-start" type="time" className={inputClass} aria-invalid={Boolean(field('startTime'))} {...form.register('startTime')} /></Field>
           <Field id="availability-end" label="Giờ kết thúc" required error={field('endTime')}><input id="availability-end" type="time" className={inputClass} aria-invalid={Boolean(field('endTime'))} {...form.register('endTime')} /></Field>
-          <Field id="availability-from" label="Ngày bắt đầu hiệu lực" required error={field('effectiveFrom')}><input id="availability-from" type="date" className={inputClass} aria-invalid={Boolean(field('effectiveFrom'))} {...form.register('effectiveFrom')} /></Field>
-          <Field id="availability-to" label="Ngày kết thúc hiệu lực" error={field('effectiveTo')} hint="Để trống nếu không có ngày kết thúc."><input id="availability-to" type="date" className={inputClass} aria-invalid={Boolean(field('effectiveTo'))} {...form.register('effectiveTo')} /></Field>
+          <Field id="availability-from" label="Ngày bắt đầu hiệu lực" required error={field('effectiveFrom')}><DateInput id="availability-from" className={inputClass} aria-invalid={Boolean(field('effectiveFrom'))} value={form.watch('effectiveFrom')} onValueChange={(value) => form.setValue('effectiveFrom', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          <Field id="availability-to" label="Ngày kết thúc hiệu lực" error={field('effectiveTo')} hint="Để trống nếu không có ngày kết thúc."><DateInput id="availability-to" className={inputClass} aria-invalid={Boolean(field('effectiveTo'))} value={form.watch('effectiveTo') ?? ''} onValueChange={(value) => form.setValue('effectiveTo', value, { shouldDirty: true, shouldValidate: true })} /></Field>
         </div>
         {form.formState.errors.root?.server?.message && <InlineAlert>{form.formState.errors.root.server.message}</InlineAlert>}
         <button type="submit" className="sr-only" disabled={save.isPending}>Lưu availability</button>
@@ -393,8 +398,8 @@ function CoachSchedulePanel({ coachId, coachName }: { coachId: number; coachName
     <Card className="p-5 sm:p-6">
       <SectionHeading title="Lịch tổng hợp Coach" description={`${coachName}: lớp nhóm và từng buổi khóa học 1–1 theo response từ API.`} />
       <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-        <label className="text-[13px] font-bold text-ink">Từ ngày<input className={`${inputClass} mt-1.5`} type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-        <label className="text-[13px] font-bold text-ink">Đến ngày<input className={`${inputClass} mt-1.5`} type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+        <label className="text-[13px] font-bold text-ink">Từ ngày<DateInput className={`${inputClass} mt-1.5`} value={from} onValueChange={setFrom} /></label>
+        <label className="text-[13px] font-bold text-ink">Đến ngày<DateInput className={`${inputClass} mt-1.5`} value={to} onValueChange={setTo} /></label>
         <p className="self-end pb-2 text-xs text-muted">Tối đa 90 ngày mỗi lần truy vấn.</p>
       </div>
       {!rangeValid ? (
@@ -417,6 +422,7 @@ function CoachSchedulePanel({ coachId, coachName }: { coachId: number; coachName
 function ScheduleItem({ item }: { item: CoachScheduleItem }) {
   const navigate = useNavigate();
   const completePrivate = useCompletePrivateSession();
+  const [completedAttendanceId, setCompletedAttendanceId] = useState<number | null>(null);
   const privateCourse = item.type === 'PRIVATE_COURSE';
   const typeLabel = privateCourse ? 'Khóa 1–1' : 'Lớp nhóm';
   const name = privateCourse ? item.enrollment.privateCourse.name : item.groupClass.name;
@@ -427,23 +433,22 @@ function ScheduleItem({ item }: { item: CoachScheduleItem }) {
       <div className="w-28 shrink-0 text-sm"><p className="font-extrabold text-ink">{formatTime(item.startsAt)}–{formatTime(item.endsAt)}</p><p className="text-xs text-muted">{formatDateTime(item.startsAt).split(' ')[0]}</p></div>
       <div className="min-w-0 flex-1"><p className="truncate font-bold text-ink">{name}</p><p className="text-xs text-muted">{typeLabel}{item.room ? ` · ${item.room.name}` : ''}{privateCourse ? ` · ${item.enrollment.member.user.displayName}` : ''}{privateCourse && item.status === 'RESCHEDULED' ? ` · Buổi gốc ${formatDate(item.originalDate)}` : ''}</p></div>
       <Chip tone={tone} dot>{statusLabel}</Chip>
-      {privateCourse && getSessionRole() === 'COACH' && item.status !== 'CANCELLED' && new Date(item.endsAt) <= new Date() && (
+      {privateCourse && getSessionRole() === 'COACH' && item.status !== 'CANCELLED' && new Date(item.endsAt) <= new Date() && !completedAttendanceId && (
         <Button
           size="sm"
           loading={completePrivate.isPending}
           onClick={() => completePrivate.mutate(
             { enrollmentId: item.enrollment.id, scheduleId: item.id, sessionDate: item.originalDate },
             {
-              onSuccess: (attendance) => navigate(
-                `/coach/assessments/new?memberId=${item.enrollment.member.user.id}&privateEnrollmentId=${item.enrollment.id}&privateCourseAttendanceId=${attendance.id}&sessionDate=${attendance.sessionDate}`,
-              ),
+              onSuccess: (attendance) => { setCompletedAttendanceId(attendance.id); toast('Đã ghi nhận hoàn thành buổi học. Bạn có thể đánh giá học viên.'); },
               onError: (error) => toast(parseApiError(error).message, 'error'),
             },
           )}
         >
-          Hoàn thành & đánh giá
+          Ghi nhận đã học
         </Button>
       )}
+      {privateCourse && completedAttendanceId && <Button size="sm" variant="secondary" onClick={() => navigate(`/coach/assessments/new?memberId=${item.enrollment.member.user.id}&privateEnrollmentId=${item.enrollment.id}&privateCourseAttendanceId=${completedAttendanceId}&sessionDate=${item.originalDate}`)}>Đánh giá học viên</Button>}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getSessionRole } from '../../../components/auth/session';
 import { Button } from '../../../components/ui/Button';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { getSports } from '../../training/api';
 import { parseApiError } from '../../training/errors';
@@ -103,7 +104,7 @@ export function ClassSchedulePage({ receptionistMode = false }: { receptionistMo
           </select>
         </label>
         <label>Ngày lớp diễn ra
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+          <DateInput value={date} onValueChange={setDate} aria-label="Chọn ngày" />
         </label>
         <Button type="submit" icon={<FunnelSimple aria-hidden="true" />}>Lọc lớp</Button></>}
         {view === 'group' && sports.isError && <p role="alert" className="class-catalog__filter-error">Không tải được danh sách môn: {parseApiError(sports.error).message}</p>}

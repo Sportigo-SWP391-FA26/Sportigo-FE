@@ -1,7 +1,9 @@
-import { ArrowLeft, Clock, PencilSimple } from '@phosphor-icons/react';
+import { ArrowLeft, PencilSimple, Plus, UserMinus } from '@phosphor-icons/react';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
+import { CurrencyInput } from '../../../components/ui/LocalizedInputs';
 import { getSessionRole } from '../../../components/auth/session';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
@@ -9,14 +11,34 @@ import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
-import { WeeklyTimetable } from '../../../components/schedule/WeeklyTimetable';
+import { getQualifiedCoaches } from '../../coaches/api';
+import { coachKeys } from '../../coaches/hooks/useCoachManagement';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { formatDate } from '../../training/format';
 import { parseApiError } from '../../training/errors';
-import { usePrivateCourse, useUpdatePrivateCourse } from '../hooks/usePrivateCourses';
-import type { PrivateCourse } from '../types';
+import { usePrivateCourse, usePrivateCourseCoachAssignment, useUpdatePrivateCourse } from '../hooks/usePrivateCourses';
+import type { CourseAvailability, PrivateCourse } from '../types';
 
 const clock = (value: string) => value.slice(11, 16);
+const weekDays = [1, 2, 3, 4, 5, 6, 0];
+const dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const coachColors = ['blue', 'orange', 'green', 'violet', 'cyan', 'rose'];
+
+function CoachTimetable({ availability, color }: { availability: CourseAvailability[]; color: string }) {
+  const times = [...new Set(availability.map((slot) => `${clock(slot.startTime)}–${clock(slot.endTime)}`))].sort();
+  if (!times.length) return <p className="mt-4 text-sm text-muted">Coach chưa có lịch khả dụng đã duyệt. Hội viên chưa thể chọn giờ với Coach này.</p>;
+  return (
+    <div className="private-coach-timetable-scroll mt-4" role="region" aria-label="Thời khóa biểu Coach" tabIndex={0}>
+      <table className="private-coach-timetable">
+        <thead><tr><th scope="col">Ca học</th>{dayLabels.map((day) => <th scope="col" key={day}>{day}</th>)}</tr></thead>
+        <tbody>{times.map((time) => <tr key={time}><th scope="row">{time}</th>{weekDays.map((day) => {
+          const slots = availability.filter((slot) => slot.dayOfWeek === day && `${clock(slot.startTime)}–${clock(slot.endTime)}` === time);
+          return <td key={day}>{slots.map((slot) => <div key={slot.id} className={`private-coach-slot private-coach-slot--${color}`}><strong>Có thể dạy</strong><small>{formatDate(slot.effectiveFrom)} – {slot.effectiveTo ? formatDate(slot.effectiveTo) : 'không giới hạn'}</small></div>)}</td>;
+        })}</tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
 
 export function PrivateCourseDetailPage() {
   const courseId = Number(useParams().courseId);
@@ -24,7 +46,10 @@ export function PrivateCourseDetailPage() {
   const isManager = getSessionRole() === 'CENTER_MANAGER';
   const basePath = isManager ? '/app/private-courses' : '/member/private-courses';
   const [editing, setEditing] = useState(false);
-  const frameClass = `mx-auto w-full max-w-[1100px] ${isManager ? '' : 'px-4 py-8 sm:px-6 lg:py-10'}`;
+  const [selectedCoachId, setSelectedCoachId] = useState('');
+  const qualifiedCoaches = useQuery({ queryKey: coachKeys.qualified(course.data?.sportId), queryFn: () => getQualifiedCoaches(course.data!.sportId), enabled: isManager && Boolean(course.data) });
+  const coachAssignment = usePrivateCourseCoachAssignment(courseId);
+  const frameClass = `mx-auto w-full max-w-[1400px] ${isManager ? '' : 'px-4 py-8 sm:px-6 lg:py-10'}`;
 
   if (!Number.isInteger(courseId) || courseId <= 0) return <ErrorState error={new Error('ID khóa học không hợp lệ.')} />;
   if (course.isPending) return <div className={frameClass}><ListSkeleton label="Đang tải chi tiết khóa học…" /></div>;
@@ -33,6 +58,16 @@ export function PrivateCourseDetailPage() {
 
   const item = course.data;
   const coaches = item.coaches.filter((assignment) => assignment.isActive);
+  const availableCoaches = qualifiedCoaches.data?.filter((coach) => !coaches.some((assignment) => assignment.coachId === coach.id)) ?? [];
+  const addCoach = async () => {
+    if (!selectedCoachId) return;
+    try { await coachAssignment.assign.mutateAsync(Number(selectedCoachId)); setSelectedCoachId(''); toast('Đã thêm Coach vào khóa học.'); }
+    catch (error) { toast(parseApiError(error).message, 'error'); }
+  };
+  const removeCoach = async (coachId: number) => {
+    try { await coachAssignment.unassign.mutateAsync(coachId); toast('Đã ngừng phân công Coach.'); }
+    catch (error) { toast(parseApiError(error).message, 'error'); }
+  };
   return (
     <div className={frameClass}>
       <PageHeader
@@ -55,26 +90,24 @@ export function PrivateCourseDetailPage() {
       </div>
 
       <Card className="mt-6 p-5 sm:p-6">
-        <SectionHeading title="Coach được phân công" description="Availability hiển thị theo dữ liệu lịch khả dụng mà API trả về." />
+        <SectionHeading title="Coach của khóa học" description="Hội viên chọn một Coach trong danh sách này, sau đó chọn các ca phù hợp khi đăng ký." />
+        {isManager && <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl bg-canvas p-4"><Field id="private-course-coach" label="Thêm Coach đúng chuyên môn" className="min-w-56 flex-1"><select id="private-course-coach" className={inputClass} value={selectedCoachId} onChange={(event) => setSelectedCoachId(event.target.value)} disabled={qualifiedCoaches.isPending || coachAssignment.assign.isPending}><option value="">{qualifiedCoaches.isPending ? 'Đang tải Coach…' : 'Chọn Coach'}</option>{availableCoaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.displayName} · {coach.coachCode}</option>)}</select></Field><Button icon={<Plus />} onClick={addCoach} disabled={!selectedCoachId} loading={coachAssignment.assign.isPending}>Thêm Coach</Button>{qualifiedCoaches.isError && <p className="w-full text-sm text-red-700">Không tải được Coach phù hợp. Hãy thử tải lại trang.</p>}{qualifiedCoaches.isSuccess && availableCoaches.length === 0 && <p className="w-full text-sm text-muted">Không còn Coach phù hợp để thêm. Hãy kiểm tra chuyên môn trong hồ sơ Coach.</p>}</div>}
         {coaches.length === 0 ? (
           <EmptyState compact title="Chưa có Coach được phân công" description="Vui lòng liên hệ trung tâm để biết thêm thông tin." />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {coaches.map((assignment) => {
-              const availability = assignment.coach.availabilities.filter((slot) => slot.status === 'AVAILABLE');
+          <div className="grid gap-5">
+            {coaches.map((assignment, index) => {
+              const availability = (assignment.coach.availabilities ?? []).filter((slot) => slot.status === 'AVAILABLE');
               return (
-                <article key={assignment.coachId} className="rounded-card border border-line p-4">
+                <article key={assignment.coachId} className={`private-coach-schedule private-coach-schedule--${coachColors[index % coachColors.length]}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3">{assignment.coach.user.avatarUrl ? <img src={assignment.coach.user.avatarUrl} alt={`Coach ${assignment.coach.user.displayName}`} className="size-12 rounded-xl object-cover" /> : <span className="grid size-12 place-items-center rounded-xl bg-primary/10 font-extrabold text-primary">{assignment.coach.user.displayName.slice(0, 1)}</span>}<h3 className="font-extrabold text-ink">{assignment.coach.user.displayName}</h3></div>
                     <Chip tone="success" dot>Được phân công</Chip>
                   </div>
                   {assignment.customPrice !== null && <p className="mt-2 text-sm text-muted">Giá áp dụng với Coach này: <strong className="text-ink">{new Intl.NumberFormat('vi-VN').format(Number(assignment.customPrice))} ₫</strong></p>}
-                  <h4 className="mt-4 flex items-center gap-2 text-sm font-bold text-ink"><Clock aria-hidden="true" /> Availability</h4>
-                  {availability.length === 0 ? (
-                    <p className="mt-2 text-sm text-muted">API không trả khung availability đang hoạt động.</p>
-                  ) : (
-                    <div className="mt-3"><WeeklyTimetable items={availability.map((slot) => ({ id: slot.id, dayOfWeek: slot.dayOfWeek, time: `${clock(slot.startTime)}–${clock(slot.endTime)}`, title: 'Có thể nhận lịch', subtitle: `${formatDate(slot.effectiveFrom)} – ${slot.effectiveTo ? formatDate(slot.effectiveTo) : 'Không giới hạn'}`, tone: 'primary' }))} /></div>
-                  )}
+                  <h4 className="mt-5 text-sm font-bold text-ink">Lịch có thể nhận học viên · {availability.length} ca</h4>
+                  <CoachTimetable availability={availability} color={coachColors[index % coachColors.length]} />
+                  {isManager && <Button size="sm" variant="secondary" icon={<UserMinus />} className="mt-4" disabled={coachAssignment.unassign.isPending} onClick={() => removeCoach(assignment.coachId)}>Ngừng phân công</Button>}
                 </article>
               );
             })}
@@ -98,5 +131,5 @@ function EditPrivateCourseDialog({ course, onClose }: { course: PrivateCourse; o
       toast('Đã cập nhật khóa học 1–1.'); onClose();
     } catch (error) { toast(parseApiError(error).message, 'error'); }
   };
-  return <Dialog open onClose={() => { if (!update.isPending) onClose(); }} size="lg" title="Sửa khóa học 1–1" description={`Môn ${course.sport.name} · Ảnh minh họa lấy từ ảnh bộ môn.`} footer={<><Button variant="secondary" onClick={onClose} disabled={update.isPending}>Đóng</Button><Button onClick={submit} loading={update.isPending}>Lưu thay đổi</Button></>}><div className="grid gap-4 sm:grid-cols-2"><Field id="private-name" label="Tên khóa học" required className="sm:col-span-2"><input id="private-name" className={inputClass} value={values.name} onChange={(event) => set('name', event.target.value)} /></Field><Field id="private-description" label="Mô tả" className="sm:col-span-2"><textarea id="private-description" className={textareaClass} value={values.description} onChange={(event) => set('description', event.target.value)} /></Field><Field id="private-sessions" label="Tổng số buổi" required><input id="private-sessions" type="number" min="2" className={inputClass} value={values.totalSessions} onChange={(event) => set('totalSessions', event.target.value)} /></Field><Field id="private-duration" label="Phút mỗi buổi" required><input id="private-duration" type="number" min="1" className={inputClass} value={values.sessionDurationMinutes} onChange={(event) => set('sessionDurationMinutes', event.target.value)} /></Field><Field id="private-validity" label="Thời hạn (ngày)" required><input id="private-validity" type="number" min="1" className={inputClass} value={values.validityDays} onChange={(event) => set('validityDays', event.target.value)} /></Field><Field id="private-price" label="Học phí (₫)" required><input id="private-price" type="number" min="1" className={inputClass} value={values.price} onChange={(event) => set('price', event.target.value)} /></Field><Field id="private-status" label="Trạng thái"><select id="private-status" className={inputClass} value={values.status} onChange={(event) => set('status', event.target.value)}><option value="DRAFT">Bản nháp</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="ARCHIVED">Lưu trữ</option></select></Field></div></Dialog>;
+  return <Dialog open onClose={() => { if (!update.isPending) onClose(); }} size="lg" title="Sửa khóa học 1–1" description={`Môn ${course.sport.name} · Ảnh minh họa lấy từ ảnh bộ môn.`} footer={<><Button variant="secondary" onClick={onClose} disabled={update.isPending}>Đóng</Button><Button onClick={submit} loading={update.isPending}>Lưu thay đổi</Button></>}><div className="grid gap-4 sm:grid-cols-2"><Field id="private-name" label="Tên khóa học" required className="sm:col-span-2"><input id="private-name" className={inputClass} value={values.name} onChange={(event) => set('name', event.target.value)} /></Field><Field id="private-description" label="Mô tả" className="sm:col-span-2"><textarea id="private-description" className={textareaClass} value={values.description} onChange={(event) => set('description', event.target.value)} /></Field><Field id="private-sessions" label="Tổng số buổi" required><input id="private-sessions" type="number" min="2" className={inputClass} value={values.totalSessions} onChange={(event) => set('totalSessions', event.target.value)} /></Field><Field id="private-duration" label="Phút mỗi buổi" required><input id="private-duration" type="number" min="1" className={inputClass} value={values.sessionDurationMinutes} onChange={(event) => set('sessionDurationMinutes', event.target.value)} /></Field><Field id="private-validity" label="Thời hạn (ngày)" required><input id="private-validity" type="number" min="1" className={inputClass} value={values.validityDays} onChange={(event) => set('validityDays', event.target.value)} /></Field><Field id="private-price" label="Học phí (₫)" required><CurrencyInput id="private-price" className={inputClass} value={values.price} onValueChange={(value) => set('price', value)} /></Field><Field id="private-status" label="Trạng thái"><select id="private-status" className={inputClass} value={values.status} onChange={(event) => set('status', event.target.value)}><option value="DRAFT">Bản nháp</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="ARCHIVED">Lưu trữ</option></select></Field></div></Dialog>;
 }

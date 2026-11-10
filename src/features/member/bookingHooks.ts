@@ -13,11 +13,13 @@ export const bookingKeys = {
   waitlistHistory: (waitlistId: number) => [...bookingKeys.all, 'waitlist-history', waitlistId] as const,
 };
 
-export function useMyClassRegistrations() {
+export function useMyClassRegistrations(enabled = true) {
   return useQuery({
     queryKey: bookingKeys.mine(),
     queryFn: getMyClassRegistrations,
     retry: retryServerErrors,
+    enabled,
+    refetchInterval: (query) => query.state.data?.some((registration) => registration.status === 'PENDING_PAYMENT') ? 15_000 : false,
   });
 }
 
@@ -104,6 +106,6 @@ export function useCancelClassRegistration() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (registrationId: number) => cancelClassRegistration(registrationId),
-    onSuccess: async () => client.invalidateQueries({ queryKey: bookingKeys.all }),
+    onSuccess: () => { void client.invalidateQueries({ queryKey: bookingKeys.all }); },
   });
 }

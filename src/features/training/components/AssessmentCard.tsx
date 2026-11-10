@@ -16,6 +16,8 @@ export function ContextChip({ context }: { context: AssessmentContext | null }) 
 
 export function AssessmentCard({ assessment, showMember = false }: { assessment: ProgressAssessment; showMember?: boolean }) {
   const score = toScore(assessment.score);
+  const sport = assessment.context?.type === 'GROUP_CLASS' ? assessment.context.class.sport : assessment.context?.course.sport;
+  const passingScore = toScore(sport?.passingScore ?? null);
   const metrics = Object.entries(assessment.metrics ?? {});
 
   return (
@@ -36,7 +38,12 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           <ContextChip context={assessment.context} />
-          {score !== null && <Chip tone="success">Điểm {formatNumber(score)}</Chip>}
+          {score !== null && <Chip tone="neutral">Điểm {formatNumber(score)}</Chip>}
+          {score !== null && passingScore !== null && (
+            <Chip tone={score >= passingScore ? 'success' : 'warning'} dot title={`Ngưỡng đạt: ${formatNumber(passingScore)} điểm`}>
+              {score >= passingScore ? 'Đạt' : 'Chưa đạt'}
+            </Chip>
+          )}
         </div>
       </header>
 

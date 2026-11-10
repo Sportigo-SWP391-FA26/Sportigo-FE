@@ -38,6 +38,10 @@ export async function updateGroupClassStatus(classId: number, status: GroupClass
   return data.data;
 }
 
+export async function deleteGroupClass(classId: number) {
+  await apiClient.delete(`/group-classes/${classId}`);
+}
+
 export async function createClassSession(classId: number, input: CreateSessionInput) {
   const { data } = await apiClient.post<DataResponse<ClassSession>>(`/group-classes/${classId}/sessions`, input);
   return data.data;

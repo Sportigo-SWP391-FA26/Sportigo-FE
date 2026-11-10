@@ -4,11 +4,13 @@ import { useForm, useWatch, type Path } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from '../../../components/feedback/toast';
 import { applyFieldErrors, parseApiError } from '../../training/errors';
+import { todayInCenter } from '../../training/format';
 import { Button } from '../../../components/ui/Button';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { describedBy, inputClass, textareaClass } from '../../../components/ui/styles';
 import { useCreateStaff, useUpdateStaff } from '../hooks/useStaff';
 import { coachStatusOptions, staffRoleLabel, staffRoleOptions } from '../labels';
@@ -87,7 +89,7 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
       email: staff?.email ?? '',
       password: '',
       avatarUrl: staff?.avatarUrl ?? '',
-      hiredAt: staff?.hiredAt ?? '',
+      hiredAt: staff ? (staff.hiredAt ?? '') : todayInCenter(),
       bio: staff?.bio ?? '',
       coachStatus: staff?.coachStatus ?? 'ACTIVE',
     },
@@ -221,7 +223,7 @@ function StaffForm({ staff, onClose }: { staff: StaffMember | null; onClose: () 
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id={fieldId('hiredAt')} label="Ngày vào làm" error={errors.hiredAt?.message}>
-          <input type="date" className={inputClass} {...aria('hiredAt')} {...form.register('hiredAt')} />
+          <DateInput className={inputClass} {...aria('hiredAt')} value={form.watch('hiredAt') ?? ''} onValueChange={(value) => form.setValue('hiredAt', value, { shouldDirty: true, shouldValidate: true })} />
         </Field>
         {staff && isCoach && (
           <Field id={fieldId('coachStatus')} label="Tình trạng làm việc">

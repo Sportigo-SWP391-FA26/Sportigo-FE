@@ -11,8 +11,9 @@ import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
+import { CurrencyInput, DateInput, DateTimeInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
-import { fromCenterDateTimeInput, formatDateTime, toCenterDateTimeInput } from '../../training/format';
+import { addDays, formatDate, fromCenterDateTimeInput, formatDateTime, toCenterDateTimeInput } from '../../training/format';
 import { parseApiError, retryServerErrors } from '../../training/errors';
 import { trainingKeys } from '../../training/queryKeys';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +31,8 @@ const editSchema = z
     name: z.string().trim().min(1, 'Tên lớp không được để trống.'),
     description: z.string(),
     capacity: z.string().regex(/^[1-9]\d*$/, 'Sức chứa phải là số nguyên dương.'),
+    totalSessions: z.string().regex(/^(?:[1-9]\d*)?$/, 'Tổng số buổi phải là số nguyên dương.'),
+    sessionsPerWeek: z.string().regex(/^(?:[1-9]\d*)?$/, 'Số buổi mỗi tuần phải là số nguyên dương.'),
     tuitionFee: z.string().regex(/^(?:\d+)(?:\.\d{1,2})?$/, 'Học phí phải là số không âm.'),
     registrationOpenAt: z.string().min(1, 'Nhập thời gian mở đăng ký.'),
     registrationCloseAt: z.string().min(1, 'Nhập thời gian đóng đăng ký.'),
@@ -37,6 +40,8 @@ const editSchema = z
     endDate: z.string().min(1, 'Chọn ngày kết thúc lớp.'),
   })
   .superRefine((values, context) => {
+    if (Boolean(values.totalSessions) !== Boolean(values.sessionsPerWeek)) context.addIssue({ code: 'custom', path: ['sessionsPerWeek'], message: 'Hãy nhập đủ tổng số buổi và số buổi mỗi tuần.' });
+    if (values.totalSessions && values.sessionsPerWeek && Number(values.sessionsPerWeek) > Number(values.totalSessions)) context.addIssue({ code: 'custom', path: ['sessionsPerWeek'], message: 'Số buổi mỗi tuần không vượt tổng số buổi.' });
     if (values.registrationOpenAt >= values.registrationCloseAt) {
       context.addIssue({ code: 'custom', path: ['registrationCloseAt'], message: 'Thời gian đóng đăng ký phải sau thời gian mở.' });
     }
@@ -60,6 +65,8 @@ function initialValues(groupClass: GroupClass): EditValues {
     name: groupClass.name,
     description: groupClass.description ?? '',
     capacity: String(groupClass.capacity),
+    totalSessions: String(groupClass.totalSessions ?? ''),
+    sessionsPerWeek: String(groupClass.sessionsPerWeek ?? ''),
     tuitionFee: String(groupClass.tuitionFee),
     registrationOpenAt: toCenterDateTimeInput(groupClass.registrationOpenAt),
     registrationCloseAt: toCenterDateTimeInput(groupClass.registrationCloseAt),
@@ -112,17 +119,18 @@ export function GroupClassDetailPage() {
         </div>}
       />
       {updateStatus.isError && <div className="mb-4"><InlineAlert>{errorText(updateStatus.error)}</InlineAlert></div>}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="p-4"><p className="text-xs font-bold text-muted">Sức chứa</p><p className="mt-1 text-lg font-extrabold">{groupClass.capacity}</p></Card>
         <Card className="p-4"><p className="text-xs font-bold text-muted">Học phí</p><p className="mt-1 text-lg font-extrabold">{new Intl.NumberFormat('vi-VN').format(Number(groupClass.tuitionFee))} ₫</p></Card>
         <Card className="p-4"><p className="text-xs font-bold text-muted">Đăng ký</p><p className="mt-1 text-sm font-bold">{formatDateTime(groupClass.registrationOpenAt)} – {formatDateTime(groupClass.registrationCloseAt)}</p></Card>
         <Card className="p-4"><p className="text-xs font-bold text-muted">Thời gian lớp</p><p className="mt-1 text-sm font-bold">{groupClass.startDate.slice(0, 10)} – {groupClass.endDate.slice(0, 10)}</p></Card>
+        <Card className="p-4"><p className="text-xs font-bold text-muted">Số buổi học</p><p className="mt-1 text-lg font-extrabold">{groupClass.totalSessions ?? '—'}</p><p className="text-xs text-muted">{groupClass.sessionsPerWeek ? `${groupClass.sessionsPerWeek} buổi/tuần` : 'Lớp cũ chưa có chỉ tiêu'}</p></Card>
       </div>
       {groupClass.description && <Card className="mb-6 p-5"><h2 className="font-extrabold">Mô tả</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted">{groupClass.description}</p></Card>}
 
       <Card className="p-5 sm:p-6">
         <SectionHeading title="Các buổi học" description="Hủy hoặc đổi ở đây chỉ áp dụng cho buổi đã chọn, không thay đổi toàn bộ lớp."
-          actions={<div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" icon={<Plus aria-hidden="true" />} onClick={() => setCreatingSession('single')}>Thêm buổi</Button><Button size="sm" variant="secondary" onClick={() => setCreatingSession('recurring')}>Tạo lịch lặp</Button></div>} />
+          actions={<div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" icon={<Plus aria-hidden="true" />} onClick={() => setCreatingSession('single')}>Thêm buổi</Button>{(!groupClass.totalSessions || !sessions.data?.length) && <Button size="sm" variant="secondary" onClick={() => setCreatingSession('recurring')}>Tạo lịch lặp</Button>}</div>} />
         {sessions.isPending ? (
           <ListSkeleton rows={4} label="Đang tải các buổi học…" />
         ) : sessions.isError ? (
@@ -143,7 +151,7 @@ export function GroupClassDetailPage() {
           </div>
         )}
       </Card>
-      {editing && <EditGroupClassDialog groupClass={groupClass} onClose={() => setEditing(false)} />}
+      {editing && <EditGroupClassDialog groupClass={groupClass} hasScheduledSessions={Boolean(sessions.data?.some((session) => session.status === 'SCHEDULED'))} onClose={() => setEditing(false)} />}
       {creatingSession === 'single' && <CreateSessionDialog classId={classId} onClose={() => setCreatingSession(null)} />}
       {creatingSession === 'recurring' && <RecurringScheduleDialog groupClass={groupClass} onClose={() => setCreatingSession(null)} />}
       {changeTarget && <ChangeSessionDialog classId={classId} target={changeTarget} onClose={() => setChangeTarget(null)} />}
@@ -159,7 +167,7 @@ export function GroupClassDetailPage() {
   );
 }
 
-function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass; onClose: () => void }) {
+function EditGroupClassDialog({ groupClass, hasScheduledSessions, onClose }: { groupClass: GroupClass; hasScheduledSessions: boolean; onClose: () => void }) {
   const update = useUpdateGroupClass(groupClass.id);
   const sports = useQuery({ queryKey: trainingKeys.sports(), queryFn: getSports, retry: retryServerErrors });
   const form = useForm<EditValues>({ resolver: zodResolver(editSchema), defaultValues: initialValues(groupClass) });
@@ -174,6 +182,18 @@ function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass;
     }
   }, [form, selectedSport]);
   const values = form.formState.errors;
+  const totalSessions = useWatch({ control: form.control, name: 'totalSessions' });
+  const sessionsPerWeek = useWatch({ control: form.control, name: 'sessionsPerWeek' });
+  const startDate = useWatch({ control: form.control, name: 'startDate' });
+  const plannedWeeks = Math.ceil(Number(totalSessions) / Number(sessionsPerWeek));
+  const plannedEndDate = startDate && Number.isFinite(plannedWeeks) && plannedWeeks > 0 ? addDays(startDate, plannedWeeks * 7 - 1) : '';
+  const updateScheduleField = (field: 'totalSessions' | 'sessionsPerWeek' | 'startDate', value: string) => {
+    form.setValue(field, value, { shouldDirty: true, shouldValidate: true });
+    if (hasScheduledSessions) return;
+    const next = { ...form.getValues(), [field]: value };
+    const weeks = Math.ceil(Number(next.totalSessions) / Number(next.sessionsPerWeek));
+    if (next.startDate && Number.isFinite(weeks) && weeks > 0) form.setValue('endDate', addDays(next.startDate, weeks * 7 - 1), { shouldDirty: true, shouldValidate: true });
+  };
 
   const submit = form.handleSubmit(async (formValues) => {
     try {
@@ -183,6 +203,7 @@ function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass;
         name: formValues.name.trim(),
         description: formValues.description.trim() || null,
         capacity: Number(formValues.capacity),
+        ...(formValues.totalSessions && formValues.sessionsPerWeek ? { totalSessions: Number(formValues.totalSessions), sessionsPerWeek: Number(formValues.sessionsPerWeek) } : {}),
         tuitionFee: Number(formValues.tuitionFee),
         registrationOpenAt: fromCenterDateTimeInput(formValues.registrationOpenAt),
         registrationCloseAt: fromCenterDateTimeInput(formValues.registrationCloseAt),
@@ -237,11 +258,15 @@ function EditGroupClassDialog({ groupClass, onClose }: { groupClass: GroupClass;
           <Field id="class-name" label="Tên lớp" required error={inputError('name')} className="sm:col-span-2"><input id="class-name" className={inputClass} aria-invalid={Boolean(inputError('name'))} {...form.register('name')} /></Field>
           <Field id="class-description" label="Mô tả" className="sm:col-span-2"><textarea id="class-description" className={textareaClass} {...form.register('description')} /></Field>
           <Field id="class-capacity" label="Sức chứa" required error={inputError('capacity')}><input id="class-capacity" type="number" min="1" step="1" className={inputClass} aria-invalid={Boolean(inputError('capacity'))} {...form.register('capacity')} /></Field>
-          <Field id="class-fee" label="Học phí (₫)" required error={inputError('tuitionFee')}><input id="class-fee" type="number" min="0" step="0.01" className={inputClass} aria-invalid={Boolean(inputError('tuitionFee'))} {...form.register('tuitionFee')} /></Field>
-          <Field id="class-registration-open" label="Mở đăng ký" required error={inputError('registrationOpenAt')}><input id="class-registration-open" type="datetime-local" className={inputClass} aria-invalid={Boolean(inputError('registrationOpenAt'))} {...form.register('registrationOpenAt')} /></Field>
-          <Field id="class-registration-close" label="Đóng đăng ký" required error={inputError('registrationCloseAt')}><input id="class-registration-close" type="datetime-local" className={inputClass} aria-invalid={Boolean(inputError('registrationCloseAt'))} {...form.register('registrationCloseAt')} /></Field>
-          <Field id="class-start-date" label="Ngày bắt đầu lớp" required error={inputError('startDate')}><input id="class-start-date" type="date" className={inputClass} aria-invalid={Boolean(inputError('startDate'))} {...form.register('startDate')} /></Field>
-          <Field id="class-end-date" label="Ngày kết thúc lớp" required error={inputError('endDate')}><input id="class-end-date" type="date" className={inputClass} aria-invalid={Boolean(inputError('endDate'))} {...form.register('endDate')} /></Field>
+          <Field id="class-total" label="Tổng số buổi" required error={inputError('totalSessions')}><input id="class-total" type="number" min="1" step="1" className={inputClass} aria-invalid={Boolean(inputError('totalSessions'))} readOnly={hasScheduledSessions} value={totalSessions} onChange={(event) => updateScheduleField('totalSessions', event.target.value)} /></Field>
+          <Field id="class-weekly" label="Số buổi mỗi tuần" required error={inputError('sessionsPerWeek')}><input id="class-weekly" type="number" min="1" step="1" className={inputClass} aria-invalid={Boolean(inputError('sessionsPerWeek'))} readOnly={hasScheduledSessions} value={sessionsPerWeek} onChange={(event) => updateScheduleField('sessionsPerWeek', event.target.value)} /></Field>
+          {hasScheduledSessions && <p className="text-xs text-muted sm:col-span-2">Chỉ tiêu số buổi được khóa sau khi lớp đã có lịch học.</p>}
+          <Field id="class-fee" label="Học phí (₫)" required error={inputError('tuitionFee')}><CurrencyInput id="class-fee" className={inputClass} aria-invalid={Boolean(inputError('tuitionFee'))} value={form.watch('tuitionFee')} onValueChange={(value) => form.setValue('tuitionFee', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          <Field id="class-registration-open" label="Mở đăng ký" required error={inputError('registrationOpenAt')}><DateTimeInput id="class-registration-open" className={inputClass} aria-invalid={Boolean(inputError('registrationOpenAt'))} value={form.watch('registrationOpenAt')} onValueChange={(value) => form.setValue('registrationOpenAt', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          <Field id="class-registration-close" label="Đóng đăng ký" required error={inputError('registrationCloseAt')}><DateTimeInput id="class-registration-close" className={inputClass} aria-invalid={Boolean(inputError('registrationCloseAt'))} value={form.watch('registrationCloseAt')} onValueChange={(value) => form.setValue('registrationCloseAt', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          <Field id="class-start-date" label="Ngày bắt đầu lớp" required error={inputError('startDate')}><DateInput id="class-start-date" className={inputClass} aria-invalid={Boolean(inputError('startDate'))} value={startDate} onValueChange={(value) => updateScheduleField('startDate', value)} /></Field>
+          <Field id="class-end-date" label="Ngày kết thúc lớp" required error={inputError('endDate')}><DateInput id="class-end-date" className={inputClass} aria-invalid={Boolean(inputError('endDate'))} value={form.watch('endDate')} onValueChange={(value) => form.setValue('endDate', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          {plannedEndDate && <p className="text-xs text-muted sm:col-span-2">Ngày kết thúc dự kiến theo số buổi: {formatDate(plannedEndDate)}. Có thể điều chỉnh theo lịch thực tế.</p>}
           {values.root?.server?.message && <div className="sm:col-span-2"><InlineAlert>{values.root.server.message}</InlineAlert></div>}
         </form>
       )}
@@ -345,8 +370,8 @@ function CreateSessionDialog({ classId, onClose }: { classId: number; onClose: (
           <Field id="session-room" label="Phòng học" required error={error('roomId')} className="sm:col-span-2">
             <select id="session-room" className={inputClass} {...form.register('roomId')}><option value="">Chọn phòng đang khả dụng</option>{rooms.data?.filter((room) => room.status === 'AVAILABLE').map((room) => <option key={room.id} value={room.id}>{room.name} · sức chứa {room.capacity}{room.location ? ` · ${room.location}` : ''}</option>)}</select>
           </Field>
-          <Field id="session-start" label="Giờ bắt đầu" required error={error('startsAt')}><input id="session-start" type="datetime-local" className={inputClass} {...form.register('startsAt')} /></Field>
-          <Field id="session-end" label="Giờ kết thúc" required error={error('endsAt')}><input id="session-end" type="datetime-local" className={inputClass} {...form.register('endsAt')} /></Field>
+          <Field id="session-start" label="Giờ bắt đầu" required error={error('startsAt')}><DateTimeInput id="session-start" className={inputClass} value={form.watch('startsAt')} onValueChange={(value) => form.setValue('startsAt', value, { shouldDirty: true, shouldValidate: true })} /></Field>
+          <Field id="session-end" label="Giờ kết thúc" required error={error('endsAt')}><DateTimeInput id="session-end" className={inputClass} value={form.watch('endsAt')} onValueChange={(value) => form.setValue('endsAt', value, { shouldDirty: true, shouldValidate: true })} /></Field>
           <Field id="session-note" label="Ghi chú" className="sm:col-span-2"><textarea id="session-note" className={textareaClass} {...form.register('note')} /></Field>
           {errors.root?.server?.message && <div className="sm:col-span-2"><InlineAlert>{errors.root.server.message}</InlineAlert></div>}
         </form>
@@ -373,7 +398,9 @@ const slotKey = (dayOfWeek: number, startTime: string, endTime: string) => `${da
 
 function RecurringScheduleDialog({ groupClass, onClose }: { groupClass: GroupClass; onClose: () => void }) {
   const startDate = groupClass.startDate.slice(0, 10);
-  const endDate = groupClass.endDate.slice(0, 10);
+  const endDate = groupClass.totalSessions && groupClass.sessionsPerWeek
+    ? addDays(startDate, Math.ceil(groupClass.totalSessions / groupClass.sessionsPerWeek) * 7 - 1)
+    : groupClass.endDate.slice(0, 10);
   const availability = useCoachAvailability(groupClass.coachId);
   const schedule = useCoachSchedule(groupClass.coachId, startDate, endDate);
   const rooms = useRooms();
@@ -414,7 +441,8 @@ function RecurringScheduleDialog({ groupClass, onClose }: { groupClass: GroupCla
     effectiveTo: endDate,
     ...(note.trim() ? { note: note.trim() } : {}),
   });
-  const canPreview = selected.length > 0 && selected.every((key) => Number(roomsBySlot[key]) > 0);
+  const expectedWeekly = groupClass.sessionsPerWeek;
+  const canPreview = selected.length > 0 && (!expectedWeekly || selected.length === expectedWeekly) && selected.every((key) => Number(roomsBySlot[key]) > 0);
   const pending = preview.isPending || create.isPending;
   const closeWhenIdle = () => { if (!pending) onClose(); };
   const toggle = (key: string) => {
@@ -422,7 +450,7 @@ function RecurringScheduleDialog({ groupClass, onClose }: { groupClass: GroupCla
     setSelected((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
     setRoomsBySlot((current) => current[key] || !availableRooms[0] ? current : { ...current, [key]: String(availableRooms[0].id) });
   };
-  const runPreview = async () => { if (canPreview) await preview.mutateAsync(buildInput()); };
+  const runPreview = async () => { if (canPreview) { try { await preview.mutateAsync(buildInput()); } catch { /* InlineAlert shows the API error. */ } } };
   const confirm = async () => {
     if (!preview.data?.canCreate) return;
     try {
@@ -438,10 +466,11 @@ function RecurringScheduleDialog({ groupClass, onClose }: { groupClass: GroupCla
       {availability.isPending || schedule.isPending || rooms.isPending ? <ListSkeleton rows={5} label="Đang tải availability, lịch Coach và phòng học…" /> : availability.isError || schedule.isError || rooms.isError ? <InlineAlert>Không tải được dữ liệu xếp lịch. Vui lòng thử lại.</InlineAlert> : (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary/6 px-4 py-3 text-sm">
-            <p><strong>{selected.length} ca đã chọn</strong><span className="ml-2 text-muted">Có thể chọn một hoặc nhiều ca mỗi tuần.</span></p>
+            <p><strong>{selected.length}{expectedWeekly ? `/${expectedWeekly}` : ''} ca đã chọn</strong><span className="ml-2 text-muted">{expectedWeekly ? `Chọn đúng ${expectedWeekly} ca mỗi tuần để hoàn thành ${groupClass.totalSessions} buổi.` : 'Có thể chọn một hoặc nhiều ca mỗi tuần.'}</span></p>
             <div className="flex flex-wrap gap-3 text-xs font-bold"><span className="text-primary-deep">● Khả dụng</span><span className="text-orange-700">● Coach đã bận</span></div>
           </div>
           {availableRooms.length === 0 && <InlineAlert>Chưa có phòng đang hoạt động đủ sức chứa {groupClass.capacity} học viên. Hãy cập nhật phòng trước khi xếp lịch.</InlineAlert>}
+          {availability.data && !availability.data.some((item) => item.status === 'AVAILABLE' && (!item.effectiveTo || item.effectiveTo.slice(0, 10) >= endDate)) && <InlineAlert>Lịch Coach chưa được duyệt đến {endDate}. Hãy duyệt availability của tháng còn thiếu trước khi tạo đủ {groupClass.totalSessions ?? 'các'} buổi.</InlineAlert>}
           {slots.length === 0 ? <EmptyState compact icon={<CalendarBlank />} title="Coach chưa có availability phù hợp" description="Coach cần gửi lịch và được Center Manager duyệt trước khi xếp lớp." /> : (
             <div className="overflow-x-auto rounded-card border border-line">
               <table className="w-full min-w-[820px] table-fixed">
@@ -500,7 +529,7 @@ function ChangeSessionDialog({ classId, target, onClose }: { classId: number; ta
       footer={<><Button variant="secondary" onClick={closeWhenIdle} disabled={pending}>Đóng</Button><Button onClick={submit} loading={pending} disabled={rooms.isPending || rooms.isError}>Lưu lịch mới</Button></>}>
       {rooms.isPending ? <ListSkeleton rows={2} label="Đang tải danh sách phòng…" /> : rooms.isError ? <InlineAlert>Không tải được danh sách phòng: {errorText(rooms.error)}</InlineAlert> : (
         <form className="space-y-4" onSubmit={submit} noValidate>
-          <Field id="change-start" label="Giờ bắt đầu mới" required error={form.formState.errors.startsAt?.message}><input id="change-start" type="datetime-local" className={inputClass} {...form.register('startsAt')} /></Field>
+          <Field id="change-start" label="Giờ bắt đầu mới" required error={form.formState.errors.startsAt?.message}><DateTimeInput id="change-start" className={inputClass} value={form.watch('startsAt')} onValueChange={(value) => form.setValue('startsAt', value, { shouldDirty: true, shouldValidate: true })} /></Field>
           <Field id="change-room" label="Phòng" required error={form.formState.errors.roomId?.message}>
             <select id="change-room" className={inputClass} {...form.register('roomId')}>
               <option value={target.roomId}>{rooms.data?.find((room) => room.id === target.roomId)?.name ?? 'Giữ nguyên phòng hiện tại'}</option>

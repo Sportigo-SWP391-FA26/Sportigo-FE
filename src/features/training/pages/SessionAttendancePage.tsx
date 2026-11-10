@@ -29,11 +29,18 @@ const checkedStyles: Record<AttendanceStatus, string> = {
   EXCUSED: 'border-accent-sky bg-accent-sky text-ink',
 };
 
+// Bản ghi cũ được quy về 2 trạng thái hiện hành để lưu lại không bị API từ chối
+const currentStatus = (status: AttendanceStatus | undefined): AttendanceStatus | null => {
+  if (status === 'LATE') return 'PRESENT';
+  if (status === 'EXCUSED') return 'ABSENT';
+  return status ?? null;
+};
+
 function draftsFrom(roster: SessionRoster): Drafts {
   return Object.fromEntries(
     roster.students.map((student) => [
       student.registrationId,
-      { status: student.attendance?.status ?? null, note: student.attendance?.note ?? '' },
+      { status: currentStatus(student.attendance?.status), note: student.attendance?.note ?? '' },
     ]),
   );
 }
@@ -108,9 +115,6 @@ type SheetProps = {
 function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps) {
   const [baseline, setBaseline] = useState(() => draftsFrom(roster));
   const [drafts, setDrafts] = useState(baseline);
-  const [openNotes, setOpenNotes] = useState<Set<number>>(
-    () => new Set(roster.students.filter((student) => student.attendance?.note).map((student) => student.registrationId)),
-  );
   const [lockedMessage, setLockedMessage] = useState<string | null>(roster.isLocked ? lockReason(roster) : null);
   const [invalidIds, setInvalidIds] = useState<number[]>([]);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -285,21 +289,12 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
                 code={student.member.memberCode}
                 registrationId={student.registrationId}
                 draft={drafts[student.registrationId]}
-                noteOpen={openNotes.has(student.registrationId)}
-                onToggleNote={() =>
-                  setOpenNotes((current) => {
-                    const next = new Set(current);
-                    if (next.has(student.registrationId)) next.delete(student.registrationId);
-                    else next.add(student.registrationId);
-                    return next;
-                  })
-                }
                 invalid={invalidIds.includes(student.registrationId)}
                 disabled={locked || mark.isPending}
                 readOnly={locked}
                 onChange={(patch) => updateDraft(student.registrationId, patch)}
                 assessmentPath={`/coach/assessments/new?memberId=${student.member.id}&classRegistrationId=${student.registrationId}&classSessionId=${sessionId}&sessionDate=${session.startsAt.slice(0, 10)}`}
-                canAssess={new Date(session.endsAt) <= new Date() && ['PRESENT', 'LATE'].includes(drafts[student.registrationId]?.status ?? '')}
+                canAssess={new Date(session.endsAt) <= new Date() && ['PRESENT', 'LATE'].includes(student.attendance?.status ?? '')}
               />
             ))}
           </ul>
@@ -332,8 +327,6 @@ type StudentRowProps = {
   code: string;
   registrationId: number;
   draft: Draft | undefined;
-  noteOpen: boolean;
-  onToggleNote: () => void;
   invalid: boolean;
   disabled: boolean;
   readOnly: boolean;
@@ -342,7 +335,7 @@ type StudentRowProps = {
   canAssess: boolean;
 };
 
-function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote, invalid, disabled, readOnly, onChange, assessmentPath, canAssess }: StudentRowProps) {
+function StudentRow({ name, code, registrationId, draft, invalid, disabled, readOnly, onChange, assessmentPath, canAssess }: StudentRowProps) {
   const noteId = useId();
   const errorId = `${noteId}-row-error`;
   const note = draft?.note ?? '';
@@ -389,8 +382,8 @@ function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote,
             <NotePencil aria-hidden="true" /> Đánh giá sau buổi học
           </Link>
         )}
-        {noteOpen ? (
-          <div className="mt-4">
+        {(!readOnly || note) && (
+          <div className="mt-2">
             <label htmlFor={noteId} className="mb-1.5 block text-xs font-bold text-ink">
               Ghi chú cho {name}
             </label>
@@ -400,7 +393,7 @@ function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote,
               value={note}
               maxLength={NOTE_MAX}
               disabled={disabled}
-              placeholder="Ví dụ: Đến muộn 10 phút"
+              placeholder="Ghi chú nếu cần, ví dụ: Đến muộn 10 phút"
               aria-describedby={describedBy(noteId, { hint: true })}
               onChange={(event) => onChange({ note: event.target.value })}
             />
@@ -408,15 +401,6 @@ function StudentRow({ name, code, registrationId, draft, noteOpen, onToggleNote,
               {note.length}/{NOTE_MAX}
             </p>
           </div>
-        ) : readOnly ? null : (
-          <button
-            type="button"
-            onClick={onToggleNote}
-            disabled={disabled}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-1 text-[13px] font-bold text-primary-deep hover:underline disabled:text-muted disabled:no-underline"
-          >
-            <NotePencil aria-hidden="true" /> Thêm ghi chú
-          </button>
         )}
       </div>
     </li>

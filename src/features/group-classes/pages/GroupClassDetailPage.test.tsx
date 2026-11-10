@@ -78,7 +78,7 @@ test('hydrates all editable values and does not expose status in the edit form',
   expect(within(dialog).getByLabelText(/Tên lớp/)).toHaveValue('Lớp cầu lông cơ bản');
   expect(within(dialog).getByLabelText('Mô tả')).toHaveValue('Mô tả lớp hiện tại');
   expect(within(dialog).getByLabelText(/Sức chứa/)).toHaveValue(12);
-  expect(within(dialog).getByLabelText(/Mở đăng ký/)).toHaveValue('2030-01-01T10:00');
+  expect(within(dialog).getByLabelText(/Mở đăng ký/)).toHaveValue('01/01/2030 10:00');
   expect(within(dialog).queryByLabelText(/trạng thái/i)).not.toBeInTheDocument();
 
   fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu thay đổi' }));

@@ -21,6 +21,7 @@ const schema = z.object({
   description: z.string(),
   imageUrl: z.string(),
   isActive: z.boolean(),
+  passingScore: z.string().refine((value) => value.trim() === '' || (Number(value) >= 0 && Number(value) <= 100), 'Ngưỡng điểm phải từ 0 đến 100.'),
 });
 type Values = z.infer<typeof schema>;
 
@@ -112,6 +113,7 @@ function SportFormDialog({ sport, onClose }: { sport: Sport | null; onClose: () 
       description: sport?.description ?? '',
       imageUrl: sport?.imageUrl ?? '',
       isActive: sport?.isActive ?? true,
+      passingScore: sport?.passingScore == null ? '' : String(Number(sport.passingScore)),
     },
   });
   const pending = form.formState.isSubmitting || create.isPending || update.isPending;
@@ -122,6 +124,7 @@ function SportFormDialog({ sport, onClose }: { sport: Sport | null; onClose: () 
       description: values.description.trim() || null,
       imageUrl: values.imageUrl.trim() || null,
       isActive: values.isActive,
+      passingScore: values.passingScore.trim() === '' ? null : Number(values.passingScore),
     };
     try {
       if (sport) await update.mutateAsync(input);
@@ -145,6 +148,7 @@ function SportFormDialog({ sport, onClose }: { sport: Sport | null; onClose: () 
       <form className="space-y-4" onSubmit={submit} noValidate>
         <Field id="sport-name" label="Tên bộ môn" required error={errors.name?.message}><input id="sport-name" className={inputClass} aria-invalid={Boolean(errors.name)} {...form.register('name')} /></Field>
         <Field id="sport-description" label="Mô tả" error={errors.description?.message}><textarea id="sport-description" className={textareaClass} {...form.register('description')} /></Field>
+        <Field id="sport-passing-score" label="Ngưỡng điểm đạt" hint="Từ 0 đến 100. Để trống nếu chưa áp dụng; đánh giá sẽ không hiện nhãn Đạt/Chưa đạt." error={errors.passingScore?.message}><input id="sport-passing-score" type="number" min="0" max="100" step="0.5" className={inputClass} aria-invalid={Boolean(errors.passingScore)} {...form.register('passingScore')} /></Field>
         <ImageUploadField label="Ảnh bộ môn" value={imageUrl} purpose="sport" disabled={pending} hint="Ảnh hiện tại được giữ nguyên nếu bạn không chọn ảnh mới hoặc upload thất bại." onChange={(url) => form.setValue('imageUrl', url, { shouldDirty: true, shouldValidate: true })} />
         <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-4 accent-primary" {...form.register('isActive')} />Đang hoạt động</label>
         {errors.root?.server?.message && <InlineAlert>{errors.root.server.message}</InlineAlert>}

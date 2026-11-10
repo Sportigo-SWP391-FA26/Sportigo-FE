@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { OccurrenceActionInput, OccurrenceChange, PrivateCourse, PrivateEnrollment, UpdatePrivateCourseInput } from './types';
+import type { CreatePrivateCourseInput, OccurrenceActionInput, OccurrenceChange, PrivateCourse, PrivateEnrollment, UpdatePrivateCourseInput } from './types';
 
 type DataResponse<T> = { success: true; data: T };
 
@@ -13,9 +13,26 @@ export async function getPrivateCourse(courseId: number) {
   return data.data;
 }
 
+export async function createPrivateCourse(input: CreatePrivateCourseInput) {
+  const { data } = await apiClient.post<DataResponse<PrivateCourse>>('/private-courses', input);
+  return data.data;
+}
+
 export async function updatePrivateCourse(courseId: number, input: UpdatePrivateCourseInput) {
   const { data } = await apiClient.patch<DataResponse<PrivateCourse>>(`/private-courses/${courseId}`, input);
   return data.data;
+}
+
+export async function deletePrivateCourse(courseId: number) {
+  await apiClient.delete(`/private-courses/${courseId}`);
+}
+
+export async function assignPrivateCourseCoach(courseId: number, coachId: number) {
+  await apiClient.post(`/private-courses/${courseId}/coaches`, { coachId });
+}
+
+export async function unassignPrivateCourseCoach(courseId: number, coachId: number) {
+  await apiClient.delete(`/private-courses/${courseId}/coaches/${coachId}`);
 }
 
 export async function getMyPrivateEnrollments() {

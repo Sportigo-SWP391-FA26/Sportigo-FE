@@ -27,7 +27,7 @@ export type PageQuery = {
   pageSize?: number;
 };
 
-export type SportRef = { id: number; name: string };
+export type SportRef = { id: number; name: string; passingScore?: string | number | null };
 export type MemberRef = { id: number; memberCode: string; displayName: string };
 export type CoachRef = { id: number; coachCode: string; displayName: string };
 
@@ -318,6 +318,7 @@ export type Sport = SportRef & { isActive?: boolean };
 export type PrivateEnrollmentRow = {
   id: number;
   status: EnrollmentStatus;
+  enrolledAt?: string;
   member: { userId: number; memberCode: string; user?: { displayName: string } | null };
   privateCourse: { name: string; sport: SportRef };
 };
@@ -373,6 +374,7 @@ export type TraineeContext =
       name: string;
       sport: SportRef;
       status: EnrollmentStatus;
+      enrolledAt?: string;
     };
 
 /** displayName = null khi API nguồn chưa trả tên; giao diện hiện mã học viên thay thế */

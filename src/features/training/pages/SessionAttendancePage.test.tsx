@@ -63,9 +63,8 @@ describe('Điểm danh buổi học (FR-47)', () => {
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Tất cả có mặt' }));
-    fireEvent.click(within(studentGroup('Phạm Minh Đức')).getByRole('radio', { name: 'Muộn' }));
+    fireEvent.click(within(studentGroup('Phạm Minh Đức')).getByRole('radio', { name: 'Vắng' }));
     const row = studentGroup('Phạm Minh Đức').closest('li')!;
-    fireEvent.click(within(row).getByRole('button', { name: /Thêm ghi chú/ }));
     fireEvent.change(within(row).getByLabelText('Ghi chú cho Phạm Minh Đức'), { target: { value: '  Đến muộn 10 phút ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm danh' }));
 
@@ -73,7 +72,7 @@ describe('Điểm danh buổi học (FR-47)', () => {
     expect(api.markSessionAttendance).toHaveBeenCalledWith(5, {
       records: [
         { classRegistrationId: 31, status: 'PRESENT' },
-        { classRegistrationId: 32, status: 'LATE', note: 'Đến muộn 10 phút' },
+        { classRegistrationId: 32, status: 'ABSENT', note: 'Đến muộn 10 phút' },
       ],
     });
   });

@@ -41,7 +41,7 @@ test('manager can view net revenue', async ({ page }) => {
 test('receptionist can record a cash payment', async ({ page }) => {
   await useTestRole(page, 'RECEPTIONIST');
   await page.goto('/app/cashier');
-  await page.getByLabel('Mã đơn hàng').fill('42');
+  await page.getByLabel('Mã giao dịch').fill('42');
   await page.getByLabel('Số tiền đã nhận').fill('500000');
   await page.getByRole('button', { name: 'Xác nhận đã thu tiền' }).click();
   await expect(page.getByText('Đã ghi nhận thanh toán tiền mặt và phát hành hóa đơn.')).toBeVisible();

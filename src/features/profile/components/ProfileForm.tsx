@@ -7,6 +7,7 @@ import { applyFieldErrors, parseApiError } from '../../training/errors';
 import { Button } from '../../../components/ui/Button';
 import { Field } from '../../../components/ui/Field';
 import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { DateInput } from '../../../components/ui/LocalizedInputs';
 import { InlineAlert } from '../../../components/ui/States';
 import {
   describedBy,
@@ -177,16 +178,15 @@ export function ProfileForm({ profile }: Props) {
               label="Ngày sinh"
               error={errors.dateOfBirth?.message}
             >
-              <input
+              <DateInput
                 id={`${id}-dateOfBirth`}
-                type="date"
-                min="1900-01-01"
                 className={inputClass}
                 aria-invalid={errors.dateOfBirth ? true : undefined}
                 aria-describedby={describedBy(`${id}-dateOfBirth`, {
                   error: errors.dateOfBirth,
                 })}
-                {...form.register('dateOfBirth')}
+                value={form.watch('dateOfBirth') ?? ''}
+                onValueChange={(value) => form.setValue('dateOfBirth', value, { shouldDirty: true, shouldValidate: true })}
               />
             </Field>
             <Field
