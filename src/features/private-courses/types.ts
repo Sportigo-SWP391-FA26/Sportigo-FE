@@ -55,6 +55,7 @@ export type PrivateSchedule = {
   effectiveTo: string;
   status: 'ACTIVE' | 'INACTIVE' | 'COMPLETED';
   room?: { id: number; code: string; name: string };
+  exceptions?: OccurrenceChange[];
 };
 
 export type PrivateEnrollment = {

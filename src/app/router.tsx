@@ -59,6 +59,13 @@ const CheckInPage = lazy(() => import('../features/membership/pages/CheckInPage'
 const MemberMembershipPage = lazy(() => import('../features/membership/pages/MemberMembershipPage').then((module) => ({ default: module.MemberMembershipPage })));
 const MembershipPlansPage = lazy(() => import('../features/membership/pages/MembershipPlansPage').then((module) => ({ default: module.MembershipPlansPage })));
 const CenterSettingsPage = lazy(() => import('../features/center-settings/pages/CenterSettingsPage').then((module) => ({ default: module.CenterSettingsPage })));
+// note: FR-66/67 dạy thay, ca làm lễ tân
+const SessionCoachesPage = lazy(() => import('../features/workforce/pages/SessionCoachesPage').then((module) => ({ default: module.SessionCoachesPage })));
+const CoachAbsencesPage = lazy(() => import('../features/workforce/pages/CoachAbsencesPage').then((module) => ({ default: module.CoachAbsencesPage })));
+const ManagerAbsencesPage = lazy(() => import('../features/workforce/pages/ManagerAbsencesPage').then((module) => ({ default: module.ManagerAbsencesPage })));
+const StaffShiftsPage = lazy(() => import('../features/workforce/pages/StaffShiftsPage').then((module) => ({ default: module.StaffShiftsPage })));
+const MyShiftsPage = lazy(() => import('../features/workforce/pages/MyShiftsPage').then((module) => ({ default: module.MyShiftsPage })));
+const SessionDisputesPage = lazy(() => import('../features/private-courses/pages/SessionDisputesPage').then((module) => ({ default: module.SessionDisputesPage })));
 const LandingContentPage = lazy(() => import('../features/content/pages/LandingContentPage').then((module) => ({ default: module.LandingContentPage })));
 
 function WaitlistRouteLayout() {
@@ -107,6 +114,10 @@ export const router = createBrowserRouter([
               { path: 'center-settings', element: <CenterSettingsPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
+              // note: FR-66/67 chỉ Manager
+              { path: 'session-coaches', element: <SessionCoachesPage /> },
+              { path: 'coach-absences', element: <ManagerAbsencesPage /> },
+              { path: 'staff-shifts', element: <StaffShiftsPage /> },
               { path: 'members', element: <MembersPage /> },
               { path: 'coaches', element: <CoachManagementListPage /> },
               { path: 'coaches/:coachId', element: <CoachManagementPage /> },
@@ -117,6 +128,7 @@ export const router = createBrowserRouter([
               { path: 'classes/:classId', element: <GroupClassDetailPage /> },
               { path: 'private-courses', element: <PrivateCoursesPage /> },
               { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
+              { path: 'private-session-disputes', element: <SessionDisputesPage /> },
               { path: ':section', element: <ComingSoonPage /> },
             ],
           },
@@ -141,6 +153,11 @@ export const router = createBrowserRouter([
               // FR-10: hồ sơ tổng hợp hội viên (khối này để Receptionist cũng vào được)
               { path: 'members/:memberId', element: <MemberDetailPage backTo="/app/users" backLabel="Danh sách người dùng" /> },
             ],
+          },
+          {
+            // note: FR-67 chỉ lễ tân có ca làm của riêng mình
+            element: <RequireRole roles={['RECEPTIONIST']} />,
+            children: [{ path: 'my-shifts', element: <MyShiftsPage /> }],
           },
         ],
       },
@@ -186,6 +203,7 @@ export const router = createBrowserRouter([
           { path: 'dashboard', element: <CoachDashboardPage /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
           { path: 'schedule', element: <CoachOwnSchedulePage /> },
+          { path: 'absences', element: <CoachAbsencesPage /> },
           { path: 'availability', element: <CoachAvailabilityPage /> },
           { path: 'sessions/:sessionId/attendance', element: <SessionAttendancePage /> },
           { path: 'workout-plans', element: <WorkoutPlansPage /> },

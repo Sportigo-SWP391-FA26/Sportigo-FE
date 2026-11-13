@@ -440,7 +440,7 @@ function ScheduleItem({ item }: { item: CoachScheduleItem }) {
           onClick={() => completePrivate.mutate(
             { enrollmentId: item.enrollment.id, scheduleId: item.id, sessionDate: item.originalDate },
             {
-              onSuccess: (attendance) => { setCompletedAttendanceId(attendance.id); toast('Đã ghi nhận hoàn thành buổi học. Bạn có thể đánh giá học viên.'); },
+              onSuccess: (attendance) => { setCompletedAttendanceId(attendance.id); toast('Đã ghi nhận buổi học. Buổi sẽ được trừ khi hội viên xác nhận (hoặc tự xác nhận sau 48 giờ). Bạn có thể đánh giá học viên.'); },
               onError: (error) => toast(parseApiError(error).message, 'error'),
             },
           )}
