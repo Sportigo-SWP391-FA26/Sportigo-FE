@@ -1,118 +1,195 @@
-import { useEffect, useState } from 'react'
-import { ArrowRight, CaretLeft, CaretRight, Check, Clock, EnvelopeSimple, FacebookLogo, InstagramLogo, MapPin, Phone, Sparkle, UsersThree, YoutubeLogo } from '@phosphor-icons/react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { ArrowRight, CaretLeft, CaretRight, Clock, EnvelopeSimple, FacebookLogo, InstagramLogo, MapPin, Phone, UsersThree, YoutubeLogo } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { BrandLogo } from '../../../components/brand/BrandLogo'
-
-const heroSlides = [
-  { name: 'Bơi lội', image: '/images/landing/hero/swimming.webp' },
-  { name: 'Gym', image: '/images/landing/hero/gym.webp' },
-  { name: 'Yoga', image: '/images/landing/hero/yoga.webp' },
-  { name: 'Cầu lông', image: '/images/landing/hero/badminton.webp' },
-]
-const facilities = [
-  ['Hồ bơi Olympic', 'Bể bơi nước ấm tiêu chuẩn 50m', heroSlides[0].image],
-  ['Gym & Thể lực', 'Không gian tập luyện hiện đại', heroSlides[1].image],
-  ['Yoga Studio', 'Không gian cân bằng và phục hồi', heroSlides[2].image],
-  ['Cầu lông trong nhà', 'Mặt sân chuyên dụng, ánh sáng chuẩn', heroSlides[3].image],
-]
-const classes = [
-  { time: '06:00', name: 'Swimming Endurance', sport: 'Bơi lội', coach: 'HLV Linh Nguyễn', room: 'Hồ bơi Olympic', capacity: '12/20', image: heroSlides[0].image },
-  { time: '08:30', name: 'Functional Strength', sport: 'Gym', coach: 'HLV Minh Trần', room: 'Studio Strength', capacity: '16/18', image: heroSlides[1].image },
-  { time: '17:30', name: 'Badminton Foundation', sport: 'Cầu lông', coach: 'HLV Huy Lê', room: 'Sân cầu lông 02', capacity: '8/12', image: heroSlides[3].image },
-  { time: '19:00', name: 'Yoga Recovery', sport: 'Yoga', coach: 'HLV An Phạm', room: 'Mind & Body', capacity: '14/20', image: heroSlides[2].image },
-]
-// Dữ liệu HLV minh họa cho giao diện, không đại diện cho người thật.
-const coaches = [
-  { name: 'Linh Nguyễn', sport: 'Bơi lội', credential: 'ASCA Level 2 · Kỹ thuật đường dài', image: '/images/landing/coaches/linh-nguyen.webp' },
-  { name: 'Minh Trần', sport: 'Gym & Thể lực', credential: 'NSCA-CPT · Strength & Conditioning', image: '/images/landing/coaches/minh-tran.webp' },
-  { name: 'An Phạm', sport: 'Yoga', credential: 'RYT 500 · Mobility & Recovery', image: '/images/landing/coaches/an-pham.webp' },
-  { name: 'Huy Lê', sport: 'Cầu lông', credential: 'BWF Level 1 · Kỹ thuật thi đấu', image: '/images/landing/coaches/huy-le.webp' },
-  { name: 'Mai Võ', sport: 'Functional Fitness', credential: 'NASM-CPT · Functional Training', image: '/images/landing/coaches/mai-vo.webp' },
-  { name: 'Quốc Bùi', sport: 'Aquatics & Mobility', credential: 'AUSTSWIM · Mobility Coaching', image: '/images/landing/coaches/quoc-bui.webp' },
-]
-const plans = [
-  { name: 'Sportigo Active', price: '1.350.000đ', note: 'Dành cho nhịp sống năng động', items: ['Gym không giới hạn', 'Hồ bơi 12 lượt/tháng', '2 lớp nhóm/tuần'] },
-  { name: 'Sportigo Elite Pro', price: '2.450.000đ', note: 'Lựa chọn được yêu thích nhất', featured: true, items: ['Toàn bộ 4 bộ môn', 'Lớp nhóm không giới hạn', 'Đo InBody định kỳ'] },
-  { name: 'Diamond Privilege', price: '4.800.000đ', note: 'Huấn luyện và phục hồi riêng', items: ['HLV cá nhân 1:1', 'Hydrotherapy chuyên sâu', 'Ưu tiên đặt lịch'] },
-]
-const partners = [
-  { name: 'Nike', logo: '/brands/nike.svg', wordmark: 'NIKE', slug: 'nike' },
-  { name: 'Adidas', logo: '/brands/adidas.svg', wordmark: 'adidas', slug: 'adidas' },
-  { name: 'Puma', logo: '/brands/puma.svg', wordmark: 'PUMA', slug: 'puma' },
-  { name: 'Under Armour', logo: '/brands/underarmour.svg', wordmark: 'UNDER ARMOUR', slug: 'under-armour' },
-  { name: 'ASICS', logo: '/brands/asics.svg', slug: 'asics' },
-  { name: 'New Balance', logo: '/brands/newbalance.svg', wordmark: 'new balance', slug: 'new-balance' },
-  { name: 'Reebok', logo: '/brands/reebok.svg', wordmark: 'Reebok', slug: 'reebok' },
-]
-const days = ['Thứ 2 · Hôm nay', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
+import { useNewsletter, usePublicLanding } from '../../content/hooks'
+import { isClassBookable } from '../../member/bookingEligibility'
 
 function useAutoAdvance(length: number, delay = 6000) {
   const [index, setIndex] = useState(0)
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % length), delay)
     return () => window.clearInterval(timer)
   }, [delay, length])
-  return [index, setIndex] as const
+  return [length ? index % length : 0, setIndex] as const
+}
+
+function formatTime(value?: string) {
+  if (!value) return 'Chưa xếp lịch'
+  return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+}
+
+function formatMoney(value: string | number) {
+  return `${Number(value).toLocaleString('vi-VN')}đ`
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join('').toUpperCase()
+}
+
+function LandingInitialShell() {
+  return <main className="landing-page landing-initial" aria-busy="true">
+    <section className="landing-hero">
+      <div className="landing-hero__slides" aria-hidden="true"><div className="landing-hero__slide is-active" style={{ backgroundImage: 'url(/images/landing/hero/swimming.webp)' }} /></div>
+      <div className="landing-hero__overlay" />
+      <header className="landing-nav">
+        <BrandLogo className="landing-logo" />
+        <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></nav>
+        <div className="landing-nav__actions"><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
+      </header>
+      <div className="landing-hero__body"><div className="landing-hero__copy">
+        <span className="landing-location"><MapPin /> Sportigo Athletic Club</span>
+        <h1>Bứt phá giới hạn.<br />Cùng Sportigo.</h1>
+        <p>Tổ hợp thể thao đa môn, nơi mỗi buổi tập là một bước tiến đến phiên bản tốt hơn của bạn.</p>
+        <div className="landing-hero__buttons"><Link className="button button--primary" to="/register">Đăng ký tài khoản <ArrowRight /></Link><a className="button button--glass" href="#facilities">Khám phá không gian</a></div>
+        <div className="landing-initial__progress" role="status"><span />Đang cập nhật lịch học mới nhất…</div>
+      </div></div>
+      <div className="hero-stats landing-initial__stats" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <span key={index}><b /><i /></span>)}</div>
+    </section>
+    <section className="landing-initial__below" aria-hidden="true"><span /><span /><span /></section>
+  </main>
 }
 
 export function LandingPage() {
-  const [heroIndex, setHeroIndex] = useAutoAdvance(heroSlides.length)
-  const [coachGroup, setCoachGroup] = useAutoAdvance(2)
-  const [activeDay, setActiveDay] = useState(0)
-  const visibleCoaches = coaches.slice(coachGroup * 3, coachGroup * 3 + 3)
-  const toggleCoachGroup = () => setCoachGroup(coachGroup === 0 ? 1 : 0)
+  const landing = usePublicLanding()
+  const newsletter = useNewsletter()
+  const [heroIndex] = useAutoAdvance(landing.data?.heroSlides.length ?? 0)
+  const coachGroups = Math.max(1, Math.ceil((landing.data?.coaches.length ?? 0) / 3))
+  const [coachGroup, setCoachGroup] = useAutoAdvance(coachGroups)
+  const [navScrolled, setNavScrolled] = useState(false)
+  const [navHidden, setNavHidden] = useState(false)
+  const [email, setEmail] = useState('')
+  const previousScrollY = useRef(0)
+
+  useEffect(() => {
+    const updateNavigation = () => {
+      const currentScrollY = window.scrollY
+      const heroHeight = document.querySelector<HTMLElement>('.landing-hero')?.offsetHeight ?? 780
+      setNavScrolled(currentScrollY >= heroHeight - 88)
+      setNavHidden(currentScrollY > 120 && currentScrollY > previousScrollY.current)
+      previousScrollY.current = currentScrollY
+    }
+    updateNavigation()
+    window.addEventListener('scroll', updateNavigation, { passive: true })
+    return () => window.removeEventListener('scroll', updateNavigation)
+  }, [])
+
+  const featured = useMemo(() => {
+    if (!landing.data) return []
+    const classes = landing.data.featured.groupClasses.filter((item) => isClassBookable(item)).map((item) => ({
+      id: `group-${item.id}`, name: item.name, sport: item.sport.name, image: item.sport.imageUrl,
+      coach: item.coach.user.displayName, time: formatTime(item.sessions[0]?.startsAt),
+      room: item.sessions[0]?.room.name ?? 'Chưa xếp phòng', capacity: `${item._count.registrations}/${item.capacity}`,
+      href: `/member/classes/${item.id}`, type: 'Lớp nhóm',
+    }))
+    const privateCourses = landing.data.featured.privateCourses.map((item) => ({
+      id: `private-${item.id}`, name: item.name, sport: item.sport.name, image: item.sport.imageUrl,
+      coach: item.coaches.map((entry) => entry.coach.user.displayName).join(', ') || 'Đang cập nhật Coach',
+      time: `${item.totalSessions} buổi`, room: 'Lịch cố định theo tuần', capacity: '1:1',
+      href: `/member/private-courses/${item.id}`, type: 'Khóa 1–1',
+    }))
+    return [...classes, ...privateCourses].slice(0, 4)
+  }, [landing.data])
+
+  const activeServices = useMemo(() => {
+    if (!landing.data) return { groupClasses: [], privateCourses: [] }
+    const groupClasses = landing.data.featured.groupClasses.filter((item) => isClassBookable(item)).map((item) => ({
+      id: `active-group-${item.id}`,
+      type: 'Lớp nhóm', name: item.name, sport: item.sport.name, image: item.sport.imageUrl,
+      coach: item.coach.user.displayName, price: formatMoney(item.tuitionFee),
+      detail: `${item._count.registrations}/${item.capacity} học viên · ${item.sessions.length ? formatTime(item.sessions[0].startsAt) : 'Chưa xếp lịch'}`,
+      href: `/member/classes/${item.id}`,
+    }))
+    const privateCourses = landing.data.featured.privateCourses.map((item) => ({
+      id: `active-private-${item.id}`,
+      type: 'Khóa 1–1', name: item.name, sport: item.sport.name, image: item.sport.imageUrl,
+      coach: item.coaches.map((entry) => entry.coach.user.displayName).join(', ') || 'Đang cập nhật Coach',
+      price: formatMoney(item.price), detail: `${item.totalSessions} buổi · Lịch tuần cố định`,
+      href: `/member/private-courses/${item.id}`,
+    }))
+    return { groupClasses, privateCourses }
+  }, [landing.data])
+
+  if (landing.isPending) return <LandingInitialShell />
+  if (landing.isError) return <main className="public-state"><h1>Chưa thể tải trang</h1><p>Vui lòng kiểm tra kết nối và thử lại.</p><button type="button" onClick={() => landing.refetch()}>Thử lại</button></main>
+
+  const data = landing.data
+  const settings = data.settings
+  const visibleCoaches = data.coaches.slice(coachGroup * 3, coachGroup * 3 + 3)
+  const submitNewsletter = (event: FormEvent) => {
+    event.preventDefault()
+    newsletter.mutate(email, { onSuccess: () => setEmail('') })
+  }
+
   return (
-    <div className="landing-page">
+    <main className="landing-page">
       <section className="landing-hero">
-        <div className="landing-hero__slides" aria-hidden="true">{heroSlides.map((slide, index) => <div className={`landing-hero__slide ${index === heroIndex ? 'is-active' : ''}`} style={{ backgroundImage: `url(${slide.image})` }} key={slide.name} />)}</div>
+        <div className="landing-hero__slides" aria-hidden="true">{data.heroSlides.map((slide, index) => <div className={`landing-hero__slide ${index === heroIndex ? 'is-active' : ''}`} style={{ backgroundImage: `url(${slide.imageUrl})` }} key={slide.id} />)}</div>
         <div className="landing-hero__overlay" />
-        <header className="landing-nav">
+        <header className={`landing-nav ${navScrolled ? 'landing-nav--scrolled' : ''} ${navHidden ? 'landing-nav--hidden' : ''}`}>
           <BrandLogo className="landing-logo" />
-          <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Hạng thẻ</a><a href="#coaches">Huấn luyện viên</a></nav>
-          <div className="landing-nav__actions"><a href="tel:19006868"><Phone />1900 6868</a><Link to="/login">Đăng nhập</Link></div>
+          <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></nav>
+          <div className="landing-nav__actions"><a className="landing-nav__phone" href={`tel:${settings?.hotline.replace(/\s/g, '') ?? ''}`}><Phone />{settings?.hotline ?? 'Liên hệ'}</a><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
         </header>
         <div className="landing-hero__body"><div className="landing-hero__copy">
-          <span className="landing-location"><MapPin /> Sportigo Athletic Club · TP.HCM</span>
+          <span className="landing-location"><MapPin /> Sportigo Athletic Club · {settings?.location ?? 'Đang cập nhật'}</span>
           <h1>Bứt phá giới hạn.<br />Cùng Sportigo.</h1>
-          <p>Trải nghiệm tổ hợp thể thao đa môn chuẩn quốc tế, nơi mỗi buổi tập là một bước tiến đến phiên bản tốt hơn của bạn.</p>
-          <div className="landing-hero__buttons"><Link className="button button--primary" to="/register">Đăng ký tập thử <ArrowRight /></Link><a className="button button--glass" href="#facilities">Khám phá không gian</a></div>
-          <div className="hero-controls" role="group" aria-label="Chọn ảnh giới thiệu">{heroSlides.map((slide, index) => <button type="button" className={index === heroIndex ? 'active' : ''} aria-pressed={index === heroIndex} onClick={() => setHeroIndex(index)} key={slide.name}><span>{String(index + 1).padStart(2, '0')}</span>{slide.name}</button>)}</div>
+          <p>{settings?.brandDescription ?? 'Thông tin thương hiệu đang được cập nhật.'}</p>
+          <div className="landing-hero__buttons"><Link className="button button--primary" to="/register">Đăng ký tài khoản <ArrowRight /></Link><a className="button button--glass" href="#facilities">Khám phá không gian</a></div>
         </div></div>
-        <div className="hero-stats"><span><b>15.000+</b>Hội viên tin chọn</span><span><b>350+</b>Lớp mỗi tuần</span><span><b>10.000m²</b>Không gian luyện tập</span><span><b>04</b>Bộ môn chuyên biệt</span></div>
+        <div className="hero-stats"><span><b>{data.stats.activeMembers.toLocaleString('vi-VN')}</b>Hội viên hoạt động</span><span><b>{data.stats.sessionsThisWeek.toLocaleString('vi-VN')}</b>Buổi học tuần này</span><span><b>{data.stats.activeCoaches.toLocaleString('vi-VN')}</b>Coach đang hoạt động</span><span><b>{data.stats.activeSports.toLocaleString('vi-VN')}</b>Bộ môn đang mở</span></div>
       </section>
 
       <section className="section section--white section--overflow" id="facilities">
-        <div className="section-heading"><div><h2>Không Gian Thể Thao Đỉnh Cao</h2></div><span>Chuẩn thi đấu quốc tế · Thiết bị thế hệ mới · Vận hành an toàn</span></div>
-        <div className="facility-marquee"><div className="facility-track">{[...facilities, ...facilities].map(([title, desc, image], index) => <article className="facility-card" key={`${title}-${index}`}><img src={image} alt={index < facilities.length ? title : ''} loading="lazy" /><div><span>SPORTIGO</span><h3>{title}</h3><p>{desc}</p></div></article>)}</div></div>
+        <div className="section-heading"><div><h2>Không Gian Thể Thao Sportigo</h2></div></div>
+        {data.facilities.length ? <div className="facility-marquee"><div className="facility-track">{[...data.facilities, ...data.facilities].map((item, index) => <article className="facility-card" key={`${item.id}-${index}`}><img src={item.imageUrl} alt={index < data.facilities.length ? item.name : ''} loading="lazy" /><div><span>SPORTIGO</span><h3>{item.name}</h3><p>{item.description}</p></div></article>)}</div></div> : <p className="landing-empty">Thông tin không gian đang được cập nhật.</p>}
       </section>
 
       <section className="section" id="schedule">
-        <div className="schedule-heading"><div><h2>Chọn lớp phù hợp với nhịp sống của bạn</h2><p>Từ buổi sáng tràn năng lượng đến những lớp phục hồi cuối ngày.</p></div><Link to="/register">Xem toàn bộ lịch <ArrowRight /></Link></div>
-        <div className="schedule-days" role="tablist" aria-label="Chọn ngày tập">{days.map((day, index) => <button type="button" role="tab" aria-selected={index === activeDay} className={index === activeDay ? 'active' : ''} onClick={() => setActiveDay(index)} key={day}>{day}</button>)}</div>
-        <div className="schedule-showcase">
-          <article className="schedule-featured"><img src={classes[0].image} alt={`Lớp ${classes[0].sport}`} loading="lazy" /><div className="schedule-featured__shade" /><div className="schedule-featured__content"><div><span>{classes[0].sport}</span><time>{classes[0].time}</time></div><h3>{classes[0].name}</h3><p>{classes[0].coach} · <MapPin /> {classes[0].room}</p><div><span><UsersThree /> {classes[0].capacity} chỗ</span><Link to="/register">Đặt lớp <ArrowRight /></Link></div></div></article>
-          <div className="schedule-compact">{classes.slice(1).map((item) => <article key={item.name}><img src={item.image} alt={`Lớp ${item.sport}`} loading="lazy" /><div><span>{item.sport}</span><h3>{item.name}</h3><p>{item.coach}</p><small><time>{item.time}</time> · {item.room} · {item.capacity} chỗ</small></div><Link to="/register" aria-label={`Đặt lớp ${item.name}`}><ArrowRight /></Link></article>)}</div>
+        <div className="schedule-heading"><div><h2>Lớp nhóm & Khóa 1–1 nổi bật</h2></div><Link to="/member/classes">Xem toàn bộ lịch <ArrowRight /></Link></div>
+        {featured.length ? <div className="schedule-showcase">
+          <article className="schedule-featured"><img src={featured[0].image ?? data.heroSlides[0]?.imageUrl} alt={featured[0].sport} loading="lazy" /><div className="schedule-featured__shade" /><div className="schedule-featured__content"><div><span>{featured[0].type} · {featured[0].sport}</span><time>{featured[0].time}</time></div><h3>{featured[0].name}</h3><p>{featured[0].coach} · <MapPin /> {featured[0].room}</p><div><span><UsersThree /> {featured[0].capacity}</span><Link to={featured[0].href}>Xem chi tiết <ArrowRight /></Link></div></div></article>
+          <div className="schedule-compact">{featured.slice(1).map((item) => <article key={item.id}><img src={item.image ?? data.heroSlides[0]?.imageUrl} alt={item.sport} loading="lazy" /><div><span>{item.type} · {item.sport}</span><h3>{item.name}</h3><p>{item.coach}</p><small><time>{item.time}</time> · {item.room} · {item.capacity}</small></div><Link to={item.href} aria-label={`Xem ${item.name}`}><ArrowRight /></Link></article>)}</div>
+        </div> : <p className="landing-empty">Chưa có lớp nhóm hoặc khóa 1–1 đang mở.</p>}
+      </section>
+
+      <section className="section section--white" id="memberships">
+        <div className="section-heading section-heading--center"><div><h2>Chọn hình thức tập luyện phù hợp</h2><span>Lớp nhóm theo lịch chung hoặc khóa cá nhân đồng hành riêng cùng Coach</span></div></div>
+        <div className="active-service-group">
+          <div className="active-service-group__header"><div><h3>Lớp nhóm đang mở</h3><p>Luyện tập theo lịch lớp, số lượng học viên và chỉ tiêu đăng ký.</p></div><Link to="/member/classes">Xem toàn bộ lớp <ArrowRight /></Link></div>
+          {activeServices.groupClasses.length ? <div className="active-service-grid">{activeServices.groupClasses.map((service) => <article className="active-service-card" key={service.id}>
+            <Link className="active-service-card__image" to={service.href} aria-label={`Xem ${service.name}`}><img src={service.image ?? data.heroSlides[0]?.imageUrl} alt={`Lớp nhóm ${service.sport}`} loading="lazy" /><span>Lớp nhóm</span></Link>
+            <div className="active-service-card__body"><div><span>{service.sport}</span><strong>{service.price}</strong></div><h3>{service.name}</h3><p>Coach {service.coach}</p><small>{service.detail}</small><Link to={service.href}>Xem chi tiết <ArrowRight /></Link></div>
+          </article>)}</div> : <p className="landing-empty">Chưa có lớp nhóm đang mở.</p>}
+        </div>
+        <div className="active-service-group active-service-group--private">
+          <div className="active-service-group__header"><div><h3>Khóa cá nhân 1–1</h3><p>Học nhiều buổi với Coach riêng và lịch tuần cố định.</p></div><Link to="/member/private-courses">Xem toàn bộ khóa <ArrowRight /></Link></div>
+          {activeServices.privateCourses.length ? <div className="active-service-grid">{activeServices.privateCourses.map((service) => <article className="active-service-card" key={service.id}>
+            <Link className="active-service-card__image" to={service.href} aria-label={`Xem ${service.name}`}><img src={service.image ?? data.heroSlides[0]?.imageUrl} alt={`Khóa cá nhân ${service.sport}`} loading="lazy" /><span>Khóa cá nhân 1–1</span></Link>
+            <div className="active-service-card__body"><div><span>{service.sport}</span><strong>{service.price}</strong></div><h3>{service.name}</h3><p>Coach {service.coach}</p><small>{service.detail}</small><Link to={service.href}>Xem chi tiết <ArrowRight /></Link></div>
+          </article>)}</div> : <p className="landing-empty">Chưa có khóa cá nhân đang hoạt động.</p>}
         </div>
       </section>
 
-      <section className="section section--white" id="memberships"><div className="section-heading section-heading--center"><div><p>CHỌN HÀNH TRÌNH CỦA BẠN</p><h2>Hạng Thẻ Hội Viên Sportigo</h2></div></div><div className="plan-grid">{plans.map((plan) => <article className={`plan ${plan.featured ? 'plan--featured' : ''}`} key={plan.name}>{plan.featured && <span className="plan__badge"><Sparkle /> PHỔ BIẾN NHẤT</span>}<h3>{plan.name}</h3><p>{plan.note}</p><strong>{plan.price}<small>/ tháng</small></strong><ul>{plan.items.map((item) => <li key={item}><Check />{item}</li>)}</ul><Link to="/register">Chọn hạng thẻ <ArrowRight /></Link></article>)}</div></section>
-
       <section className="section coaches" id="coaches">
-        <div className="section-heading"><div><p>ĐỘI NGŨ CHUYÊN GIA</p><h2>Huấn luyện đúng phương pháp</h2></div><span>Hồ sơ và hình ảnh minh họa</span></div>
-        <div className="coach-carousel" aria-live="polite">{visibleCoaches.map((coach, index) => <article className={`coach-card ${index === 1 ? 'coach-card--featured' : ''}`} key={coach.name}><img src={coach.image} alt={`${coach.name}, huấn luyện viên ${coach.sport}`} loading="lazy" /><div><span>{coach.sport}</span><h3>{coach.name}</h3><p>{coach.credential}</p></div></article>)}</div>
-        <div className="coach-controls"><button type="button" aria-label="Nhóm huấn luyện viên trước" onClick={toggleCoachGroup}><CaretLeft /></button><div>{[0, 1].map((group) => <button type="button" aria-label={`Xem nhóm huấn luyện viên ${group + 1}`} aria-pressed={group === coachGroup} className={group === coachGroup ? 'active' : ''} onClick={() => setCoachGroup(group)} key={group} />)}</div><button type="button" aria-label="Nhóm huấn luyện viên tiếp theo" onClick={toggleCoachGroup}><CaretRight /></button></div>
+        <div className="section-heading"><div><p>ĐỘI NGŨ CHUYÊN GIA</p><h2>Coach đang hoạt động tại Sportigo</h2></div></div>
+        {visibleCoaches.length ? <><div className="coach-carousel-shell">
+          {coachGroups > 1 && <button className="coach-carousel-arrow coach-carousel-arrow--previous" type="button" aria-label="Xem 3 Coach trước" onClick={() => setCoachGroup((coachGroup - 1 + coachGroups) % coachGroups)}><CaretLeft /></button>}
+          <div className="coach-carousel" aria-live="polite" aria-atomic="true">{visibleCoaches.map((coach, index) => <article className={`coach-card ${index === 1 ? 'coach-card--featured' : ''}`} key={coach.userId}>{coach.user.avatarUrl ? <img src={coach.user.avatarUrl} alt={`${coach.user.displayName}, Coach Sportigo`} loading="lazy" /> : <div className="coach-card__initials" aria-hidden="true">{initials(coach.user.displayName)}</div>}<div><span>{coach.coachSports.map((item) => item.sport.name).join(' · ') || 'Đang cập nhật chuyên môn'}</span><h3>{coach.user.displayName}</h3><p>{coach.bio || 'Hồ sơ chuyên môn đang được cập nhật.'}</p></div></article>)}</div>
+          {coachGroups > 1 && <button className="coach-carousel-arrow coach-carousel-arrow--next" type="button" aria-label="Xem 3 Coach tiếp theo" onClick={() => setCoachGroup((coachGroup + 1) % coachGroups)}><CaretRight /></button>}
+        </div>{coachGroups > 1 && <div className="coach-controls" role="group" aria-label="Chọn nhóm Coach">{Array.from({ length: coachGroups }, (_, group) => <button type="button" aria-label={`Xem nhóm Coach ${group + 1}`} aria-pressed={group === coachGroup} className={group === coachGroup ? 'active' : ''} onClick={() => setCoachGroup(group)} key={group} />)}</div>}</> : <p className="landing-empty">Chưa có Coach hoạt động để hiển thị.</p>}
       </section>
 
-      <section className="partner-marquee" aria-label="Các thương hiệu thể thao nổi bật"><p>Thương hiệu được tin chọn trong thể thao</p><div className="partner-marquee__viewport"><div className="partner-marquee__track">{[...partners, ...partners].map((partner, index) => <div className={`partner-logo partner-logo--${partner.slug}`} role={index < partners.length ? 'img' : undefined} aria-label={index < partners.length ? `Logo ${partner.name}` : undefined} aria-hidden={index >= partners.length} key={`${partner.name}-${index}`}><img src={partner.logo} alt="" loading="lazy" />{'wordmark' in partner && partner.wordmark && <span aria-hidden="true">{partner.wordmark}</span>}</div>)}</div></div></section>
+      <section className="partner-marquee" aria-label="Các thương hiệu thể thao nổi bật"><p>Thương hiệu đồng hành cùng Sportigo</p>{data.partners.length ? <div className="partner-marquee__viewport"><div className="partner-marquee__track">{[...data.partners, ...data.partners].map((partner, index) => <div className="partner-logo" role={index < data.partners.length ? 'img' : undefined} aria-label={index < data.partners.length ? `Logo ${partner.name}` : undefined} aria-hidden={index >= data.partners.length} key={`${partner.id}-${index}`}><img src={partner.logoUrl} alt="" loading="lazy" /></div>)}</div></div> : <p className="landing-empty">Danh sách đối tác đang được cập nhật.</p>}</section>
 
       <footer className="landing-footer">
-        <div className="footer-brand"><BrandLogo className="footer-logo" /><p>More than a workout. Nơi thể thao trở thành phong cách sống.</p><div className="footer-social"><a href="#instagram" aria-label="Instagram"><InstagramLogo /></a><a href="#facebook" aria-label="Facebook"><FacebookLogo /></a><a href="#youtube" aria-label="YouTube"><YoutubeLogo /></a></div></div>
-        <div className="footer-column"><h3>Khám phá</h3><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Hạng thẻ</a><a href="#coaches">Huấn luyện viên</a></div>
-        <div className="footer-column"><h3>Liên hệ</h3><a href="tel:19006868"><Phone />1900 6868</a><span><Clock />05:30 – 22:30</span><span><MapPin />TP. Hồ Chí Minh</span></div>
-        <form className="footer-newsletter" onSubmit={(event) => event.preventDefault()}><h3>Nhận tin từ Sportigo</h3><p>Lịch lớp mới và ưu đãi dành riêng cho hội viên.</p><label><span className="sr-only">Địa chỉ email</span><input type="email" placeholder="Email của bạn" aria-label="Địa chỉ email" /><button type="submit" aria-label="Đăng ký nhận tin"><EnvelopeSimple /></button></label></form>
+        <div className="footer-brand"><BrandLogo className="footer-logo" /><p>{settings?.brandDescription}</p><div className="footer-social"><a href="#instagram" aria-label="Instagram"><InstagramLogo /></a><a href="#facebook" aria-label="Facebook"><FacebookLogo /></a><a href="#youtube" aria-label="YouTube"><YoutubeLogo /></a></div></div>
+        <div className="footer-column"><h3>Khám phá</h3><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></div>
+        <div className="footer-column"><h3>Liên hệ</h3><a href={`tel:${settings?.hotline.replace(/\s/g, '') ?? ''}`}><Phone />{settings?.hotline}</a><span><Clock />{settings?.openingHours}</span><span><MapPin />{settings?.location}</span></div>
+        <form className="footer-newsletter" onSubmit={submitNewsletter}><h3>Nhận tin từ Sportigo</h3><p>Nhận cập nhật lớp học mới từ hệ thống.</p><label><span className="sr-only">Địa chỉ email</span><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email của bạn" aria-label="Địa chỉ email" /><button type="submit" disabled={newsletter.isPending} aria-label="Đăng ký nhận tin"><EnvelopeSimple /></button></label>{newsletter.isSuccess && <small>{newsletter.data.alreadySubscribed ? 'Email này đã đăng ký nhận tin.' : 'Đăng ký nhận tin thành công.'}</small>}{newsletter.isError && <small>Chưa thể đăng ký. Vui lòng thử lại.</small>}</form>
         <div className="footer-bottom"><small>© 2026 Sportigo Athletic Facility.</small><div><a href="#privacy">Chính sách bảo mật</a><a href="#terms">Điều khoản sử dụng</a></div></div>
       </footer>
-    </div>
+    </main>
   )
 }

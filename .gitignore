@@ -1,11 +1,16 @@
 node_modules
 dist
+.build-check/
 coverage
 playwright-report
 test-results
 .env
 *.local
 *.tsbuildinfo
+*.log
 .stitch-reference/
 .playwright-cli/
 output/
+
+.vercel
+.env*
