@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { axiosError } from '../../training/testing/axiosError';
 import { renderWithProviders } from '../../training/testing/renderWithProviders';
 import * as api from '../api';
 import type { SessionCoachItem, StaffShift } from '../types';
@@ -87,15 +86,11 @@ describe('FR-66 Dạy thay & coach vắng', () => {
     expect(screen.getByRole('button', { name: 'Giao dạy thay' })).toBeDisabled();
   });
 
-  test('lỗi từ backend hiển thị trong hộp thoại báo vắng', async () => {
+  test('không còn thao tác báo vắng trực tiếp từ trang dạy thay', async () => {
     vi.mocked(api.listSessionCoaches).mockResolvedValue([session]);
-    vi.mocked(api.markCoachAbsent).mockRejectedValue(axiosError(409, { code: 'SESSION_COACH_LOCKED', message: 'Không thể đổi coach của buổi này: Buổi học đã bị hủy.' }));
     renderWithProviders(<SessionCoachesPage />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Báo coach vắng' }));
-    const dialog = await screen.findByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText(/Lý do vắng/), { target: { value: 'Ốm đột xuất' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Ghi nhận vắng' }));
-    expect(await within(dialog).findByText(/Buổi học đã bị hủy/)).toBeInTheDocument();
+    expect(await screen.findByText('Yoga sáng')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Báo coach vắng' })).not.toBeInTheDocument();
   });
 });
 

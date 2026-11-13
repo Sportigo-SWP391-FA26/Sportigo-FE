@@ -9,8 +9,8 @@ import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../comp
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { parseApiError } from '../../training/errors';
 import { formatDate, formatTime, formatWeekday, todayInCenter, weekRange } from '../../training/format';
-import { ReasonDialog, WeekNav } from '../components';
-import { useAssignSubstitute, useMarkCoachAbsent, useResetSessionCoach, useSessionCoaches, useSubstituteCandidates } from '../hooks';
+import { WeekNav } from '../components';
+import { useAssignSubstitute, useResetSessionCoach, useSessionCoaches, useSubstituteCandidates } from '../hooks';
 import { shiftRange } from '../labels';
 import type { SessionCoachItem } from '../types';
 
@@ -19,10 +19,8 @@ export function SessionCoachesPage() {
   const [range, setRange] = useState(() => weekRange(todayInCenter()));
   const [changedOnly, setChangedOnly] = useState(false);
   const [substituteFor, setSubstituteFor] = useState<SessionCoachItem | null>(null);
-  const [absentFor, setAbsentFor] = useState<SessionCoachItem | null>(null);
   const [resetFor, setResetFor] = useState<SessionCoachItem | null>(null);
   const sessions = useSessionCoaches({ ...range, changedOnly });
-  const markAbsent = useMarkCoachAbsent();
   const reset = useResetSessionCoach();
   const items = sessions.data ?? [];
 
@@ -91,9 +89,6 @@ export function SessionCoachesPage() {
                       Hoàn tác
                     </Button>
                   )}
-                  <Button size="sm" variant="secondary" disabled={!session.canChange} onClick={() => setAbsentFor(session)}>
-                    Báo coach vắng
-                  </Button>
                   <Button size="sm" disabled={!session.canChange} onClick={() => setSubstituteFor(session)}>
                     Giao dạy thay
                   </Button>
@@ -105,16 +100,6 @@ export function SessionCoachesPage() {
       )}
 
       <SubstituteDialog session={substituteFor} onClose={() => setSubstituteFor(null)} />
-      <ReasonDialog
-        open={absentFor !== null}
-        title="Báo coach vắng, không có người thay"
-        description="Buổi vẫn ghi cho coach chính nhưng đánh dấu vắng: không tính tiền buổi. Nếu cần hoàn tiền cho học viên, hãy hủy buổi ở trang lớp."
-        label="Lý do vắng"
-        confirmLabel="Ghi nhận vắng"
-        tone="danger"
-        onClose={() => setAbsentFor(null)}
-        onSubmit={(reason) => markAbsent.mutateAsync({ sessionId: absentFor!.id, reason })}
-      />
       <ConfirmDialog
         open={resetFor !== null}
         title="Hoàn tác về coach chính?"

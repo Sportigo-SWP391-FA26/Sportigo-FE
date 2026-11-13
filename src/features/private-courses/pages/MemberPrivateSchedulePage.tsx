@@ -1,3 +1,4 @@
+import { PendingSessionConfirmations } from '../components/PendingSessionConfirmations';
 import { ArrowRight, CalendarBlank, CalendarCheck, Clock, CurrencyCircleDollar, Receipt, ShieldCheck } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { toast } from '../../../components/feedback/toast';
@@ -62,6 +63,15 @@ function nextOccurrences(enrollment: PrivateEnrollment, schedule: PrivateSchedul
     }
     if (count > 550) break;
   }
+  for (const change of schedule.exceptions ?? []) {
+    const originalDate = change.sessionDate.slice(0, 10);
+    if (change.action !== 'RESCHEDULED' || !change.rescheduledStartsAt ||
+        new Date(change.rescheduledStartsAt).getTime() <= now ||
+        occurrences.some((item) => item.originalDate === originalDate)) continue;
+    occurrences.push({ enrollment, schedule, originalDate,
+      startsAt: makeIso(originalDate, hour(schedule.startTime)),
+      endsAt: makeIso(originalDate, hour(schedule.endTime)), action: 'SCHEDULED' });
+  }
   return occurrences;
 }
 
@@ -101,7 +111,8 @@ export function MemberPrivateSchedulePage() {
   const rawOccurrences = enrollments.data.flatMap((enrollment) => enrollment.schedules.flatMap((schedule) => nextOccurrences(enrollment, schedule, now)));
   const occurrences = rawOccurrences
     .map((occurrence) => {
-      const saved = changes[occurrenceKey(occurrence.schedule.id, occurrence.originalDate)];
+      const saved = changes[occurrenceKey(occurrence.schedule.id, occurrence.originalDate)]
+        ?? occurrence.schedule.exceptions?.find((change) => change.sessionDate.slice(0, 10) === occurrence.originalDate);
       return saved ? applyChange(occurrence, saved) : occurrence;
     })
     .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
@@ -172,6 +183,7 @@ export function MemberPrivateSchedulePage() {
           <span><ShieldCheck />Đổi hoặc hủy 1–1 trước <b>24 giờ</b></span>
         </div>
       </section>
+      <PendingSessionConfirmations />
       <nav className="member-schedule-subnav" aria-label="Lịch của tôi"><ButtonLink to="/member/my-schedule/waitlist" variant="secondary"><span>Danh sách chờ & lời mời</span><ArrowRight aria-hidden="true" /></ButtonLink></nav>
       {(pendingRegistrations.length > 0 || pendingPrivateEnrollments.length > 0) && (
         <section className="schedule-action-zone" aria-labelledby="pending-payment-heading">
