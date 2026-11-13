@@ -24,7 +24,7 @@ const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Đổi 
 describe('Form đổi mật khẩu (FR-62)', () => {
   test('mật khẩu xác nhận không khớp thì báo lỗi, không gọi API', async () => {
     renderWithProviders(<ChangePasswordForm />);
-    fill({ current: 'oldpass123', next: 'newpass123', confirm: 'newpass124' });
+    fill({ current: 'oldpass123', next: 'Newpass123', confirm: 'Newpass124' });
     submit();
     expect(await screen.findByText('Mật khẩu xác nhận không khớp')).toBeInTheDocument();
     expect(api.changePassword).not.toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('Form đổi mật khẩu (FR-62)', () => {
     renderWithProviders(<ChangePasswordForm />);
     fill({ current: 'oldpass123', next: 'short', confirm: 'short' });
     submit();
-    expect(await screen.findByText('Mật khẩu mới phải có ít nhất 8 ký tự')).toBeInTheDocument();
+    expect(await screen.findByText('Mật khẩu phải dài từ 8 đến 72 ký tự')).toBeInTheDocument();
 
     fill({ next: 'oldpass123', confirm: 'oldpass123' });
     submit();
@@ -47,7 +47,7 @@ describe('Form đổi mật khẩu (FR-62)', () => {
       axiosError(400, { code: 'INVALID_CURRENT_PASSWORD', message: 'Mật khẩu hiện tại không đúng' }),
     );
     renderWithProviders(<ChangePasswordForm />);
-    fill({ current: 'wrongpass1', next: 'newpass123', confirm: 'newpass123' });
+    fill({ current: 'wrongpass1', next: 'Newpass123', confirm: 'Newpass123' });
     submit();
 
     expect(await screen.findByText('Mật khẩu hiện tại không đúng')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('Form đổi mật khẩu (FR-62)', () => {
       axiosError(400, { code: 'SAME_AS_CURRENT_PASSWORD', message: 'Mật khẩu mới phải khác mật khẩu hiện tại' }),
     );
     renderWithProviders(<ChangePasswordForm />);
-    fill({ current: 'oldpass123', next: 'newpass123', confirm: 'newpass123' });
+    fill({ current: 'oldpass123', next: 'Newpass123', confirm: 'Newpass123' });
     submit();
 
     expect(await screen.findByText('Mật khẩu mới phải khác mật khẩu hiện tại')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('Form đổi mật khẩu (FR-62)', () => {
       }),
     );
     renderWithProviders(<ChangePasswordForm />);
-    fill({ current: 'oldpass123', next: 'newpass123', confirm: 'newpass123' });
+    fill({ current: 'oldpass123', next: 'Newpass123', confirm: 'Newpass123' });
     submit();
 
     expect(await screen.findByText('Mật khẩu phải có ít nhất 8 ký tự')).toBeInTheDocument();
@@ -86,14 +86,14 @@ describe('Form đổi mật khẩu (FR-62)', () => {
   test('thành công: gửi đúng body, reset 3 ô và hiện toast', async () => {
     vi.mocked(api.changePassword).mockResolvedValue({ message: 'Đổi mật khẩu thành công.', accessToken: 'new-token' });
     renderWithProviders(<ChangePasswordForm />);
-    fill({ current: 'oldpass123', next: 'newpass123', confirm: 'newpass123' });
+    fill({ current: 'oldpass123', next: 'Newpass123', confirm: 'Newpass123' });
     submit();
 
     await waitFor(() =>
       expect(api.changePassword).toHaveBeenCalledWith({
         currentPassword: 'oldpass123',
-        newPassword: 'newpass123',
-        confirmPassword: 'newpass123',
+        newPassword: 'Newpass123',
+        confirmPassword: 'Newpass123',
       }),
     );
     await waitFor(() => expect(screen.getByLabelText(/Mật khẩu hiện tại/)).toHaveValue(''));

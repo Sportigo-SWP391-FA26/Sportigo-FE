@@ -1,3 +1,4 @@
+import { strongPasswordSchema } from '../../auth/password';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState } from 'react';
 import { useForm, useWatch, type Path } from 'react-hook-form';
@@ -34,7 +35,7 @@ const baseSchema = z.object({
 // note: email và mật khẩu chỉ bắt buộc khi tạo mới; khi sửa backend không cho đổi
 const createSchema = baseSchema.extend({
   email: z.string().trim().toLowerCase().email('Email không hợp lệ'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').max(72, 'Mật khẩu tối đa 72 ký tự'),
+  password: strongPasswordSchema,
 });
 
 const editSchema = baseSchema.extend({

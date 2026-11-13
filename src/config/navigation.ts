@@ -37,7 +37,6 @@ export const centerManagerNavigation: NavigationEntry[] = [
     label: 'Tài chính & báo cáo',
     items: [
       { label: 'Check-in phòng tập', path: '/app/check-in' },
-      { label: 'Thu tiền tại quầy', path: '/app/cashier' },
       { label: 'Gói membership', path: '/app/memberships' },
       { label: 'Khuyến mãi', path: '/app/promotions' },
       { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },

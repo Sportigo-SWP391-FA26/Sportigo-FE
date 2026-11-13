@@ -1,3 +1,4 @@
+import { strongPasswordSchema } from '../auth/password';
 import { z } from 'zod';
 import type { Gender, MyProfile, ProfileKind, UpdateProfileInput } from './types';
 
@@ -78,7 +79,7 @@ export function toFormValues(profile: MyProfile): ProfileFormValues {
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
-    newPassword: z.string().min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự').max(72, 'Mật khẩu mới tối đa 72 ký tự'),
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
   })
   .strict()

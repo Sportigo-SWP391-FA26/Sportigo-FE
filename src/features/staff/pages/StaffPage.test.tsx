@@ -86,7 +86,7 @@ describe('Quản lý nhân sự (FR-07)', () => {
     fill(dialog, /Họ tên/, 'Ngô Huy');
     fill(dialog, /Email/, 'Huy@Sportigo.vn');
     fill(dialog, /Số điện thoại/, '0912345678');
-    fill(dialog, /Mật khẩu ban đầu/, 'matkhau123');
+    fill(dialog, /Mật khẩu ban đầu/, 'Matkhau123');
     fill(dialog, /Giới thiệu/, 'HLV bơi');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo tài khoản' }));
 
@@ -97,7 +97,7 @@ describe('Quản lý nhân sự (FR-07)', () => {
         displayName: 'Ngô Huy',
         email: 'huy@sportigo.vn',
         phone: '0912345678',
-        password: 'matkhau123',
+        password: 'Matkhau123',
         bio: 'HLV bơi',
       }),
     );
@@ -119,7 +119,7 @@ describe('Quản lý nhân sự (FR-07)', () => {
     fill(dialog, /Họ tên/, 'Ngô Huy');
     fill(dialog, /Email/, 'lan@sportigo.vn');
     fill(dialog, /Số điện thoại/, '0912345678');
-    fill(dialog, /Mật khẩu ban đầu/, 'matkhau123');
+    fill(dialog, /Mật khẩu ban đầu/, 'Matkhau123');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo tài khoản' }));
 
     expect(await within(dialog).findByText('Email đã được sử dụng')).toBeInTheDocument();

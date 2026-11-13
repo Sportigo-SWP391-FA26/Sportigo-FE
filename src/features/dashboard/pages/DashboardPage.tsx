@@ -36,7 +36,7 @@ export function DashboardPage() {
   const actionItems = [
     { label: 'Yêu cầu hoàn tiền', count: data.pendingRefunds, path: '/app/refunds', icon: <Receipt /> },
     { label: 'Yêu cầu hỗ trợ', count: data.openSupportRequests, path: '/app/support', icon: <Lifebuoy /> },
-    { label: 'Đơn chờ thanh toán', count: data.pendingOrders, path: '/app/cashier', icon: <Clock /> },
+    { label: 'Đơn chờ thanh toán', count: data.pendingOrders, path: '/app/revenue', icon: <Clock /> },
   ];
 
   return (
