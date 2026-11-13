@@ -18,6 +18,9 @@ export const centerManagerNavigation: NavigationEntry[] = [
       { label: 'Người dùng', path: '/app/users' },
       { label: 'Hội viên', path: '/app/members' },
       { label: 'Nhân sự', path: '/app/staff' },
+      // note: FR-66/67
+      { label: 'Dạy thay & coach vắng', path: '/app/session-coaches' },
+      { label: 'Ca làm lễ tân', path: '/app/staff-shifts' },
       { label: 'Coach', path: '/app/coaches' },
       { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
     ],
@@ -58,6 +61,8 @@ export const centerManagerNavigation: NavigationEntry[] = [
 // FR-09: trước đây Receptionist dùng chung menu Manager nên thấy cả mục không có quyền
 export const receptionistNavigation: NavigationItem[] = [
   { label: 'Check-in phòng tập', path: '/app/check-in' },
+  // note: FR-67 ca làm và chấm công
+  { label: 'Ca làm của tôi', path: '/app/my-shifts' },
   { label: 'Tra cứu Hội viên', path: '/app/users' },
   { label: 'Đăng ký lớp cho Hội viên', path: '/app/class-bookings' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
