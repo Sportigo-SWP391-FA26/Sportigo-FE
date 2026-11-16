@@ -1,4 +1,4 @@
-import { CalendarBlank, ChalkboardTeacher, Clock, UserCircle } from '@phosphor-icons/react';
+import { ArrowLeft, CalendarBlank, ChalkboardTeacher, Clock, UserCircle } from '@phosphor-icons/react';
 import { useId, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PlanItemList } from '../components/PlanItemList';
@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, ListSkeleton, Skeleton } from '../../../compone
 import { cardClass } from '../../../components/ui/styles';
 import { formatDate } from '../format';
 import { useMyTraining } from '../hooks/useMemberTraining';
+import { isDesktopViewport } from '../motion';
 import { assignmentStatusLabels, levelLabel } from '../labels';
 import { currentPlanWeek, groupPlanItems, planWeekNumbers } from '../planStructure';
 import type { MemberPlanAssignment } from '../types';
@@ -44,12 +45,21 @@ export function MemberTrainingPlanPage() {
       ) : !selected ? (
         <EmptyState title="Chưa có giáo án" description={NO_PLAN_MESSAGE} />
       ) : (
-        <div className="space-y-5">
-          {assignments.length > 1 && <nav aria-label="Giáo án của bạn" className="flex flex-wrap gap-4">
+        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+          {/* Hai cột: danh sách giáo án bên trái, chi tiết bên phải. Mobile: đang xem chi tiết thì ẩn danh sách */}
+          <nav aria-label="Giáo án của bạn" className={requested ? 'hidden lg:block' : ''}>
             <AssignmentGroup title="Đang áp dụng" assignments={assignments.filter((item) => item.status === 'ACTIVE')} selectedId={selected.id} />
             <AssignmentGroup title="Đã kết thúc" assignments={assignments.filter((item) => item.status !== 'ACTIVE')} selectedId={selected.id} />
-          </nav>}
-          <div className="min-w-0">
+          </nav>
+          <div className={requested ? 'min-w-0' : 'hidden min-w-0 lg:block'}>
+            {requested && (
+              <Link
+                to="/member/training-plan"
+                className="mb-3 inline-flex min-h-11 items-center gap-2 rounded-control text-sm font-bold text-primary-deep hover:underline lg:hidden"
+              >
+                <ArrowLeft aria-hidden="true" /> Tất cả giáo án
+              </Link>
+            )}
             <AssignmentDetail key={selected.id} assignment={selected} initialWeek={requestedWeek} />
           </div>
         </div>
@@ -62,19 +72,23 @@ function AssignmentGroup({ title, assignments, selectedId }: { title: string; as
   const headingId = useId();
   if (assignments.length === 0) return null;
   return (
-    <section aria-labelledby={headingId} className="min-w-0 flex-1">
+    <section aria-labelledby={headingId} className="mb-5 last:mb-0">
       <h2 id={headingId} className="mb-2 text-[11px] font-extrabold tracking-[.08em] text-muted uppercase">
         {title} · {assignments.length}
       </h2>
-      <ul className="flex flex-wrap gap-2.5">
+      <ul className="space-y-2.5">
         {assignments.map((assignment) => {
           const selected = assignment.id === selectedId;
           return (
-            <li key={assignment.id} className="min-w-[220px] flex-1 sm:max-w-[300px]">
+            <li key={assignment.id}>
               <Link
                 to={`?assignment=${assignment.id}`}
                 aria-current={selected ? 'true' : undefined}
-                className={`block h-full rounded-2xl border p-3 transition-[border-color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                onClick={() => {
+                  // Mobile: chọn giáo án thì cuộn lên đầu để thấy chi tiết
+                  if (!isDesktopViewport()) window.scrollTo({ top: 0 });
+                }}
+                className={`block rounded-2xl border p-4 transition-[border-color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   selected ? 'border-primary bg-surface shadow-raised' : 'border-line bg-surface hover:border-primary/40'
                 }`}
               >

@@ -1,4 +1,4 @@
-import { ArrowRight, Student } from '@phosphor-icons/react';
+import { ArrowRight, Funnel, Student } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, PageHeader } from '../../../components/ui/Card';
@@ -55,9 +55,13 @@ export function PrivateEnrollmentsPage() {
         <EmptyState icon={<Student />} title="Chưa có khóa 1-1" description="Bạn chưa phụ trách khóa 1-1 nào." />
       ) : (
         <>
-        <div className="mb-3 flex justify-end">
+        {/* Thẻ bộ lọc phủ toàn chiều ngang: nhãn bên trái, nút sắp xếp bên phải */}
+        <Card className="mb-3 flex flex-wrap items-center justify-between gap-3 p-3 sm:px-4">
+          <p className="inline-flex items-center gap-2 text-sm font-bold text-ink">
+            <Funnel className="text-muted" aria-hidden="true" /> Lọc
+          </p>
           <DateSortButton order={sortOrder} onChange={setSortOrder} />
-        </div>
+        </Card>
         <Card className="overflow-hidden">
           {/* Hàng tự có khoảng đệm để vùng hover phủ kín thẻ (overflow-hidden cắt theo góc bo) */}
           <ul className="divide-y divide-line">

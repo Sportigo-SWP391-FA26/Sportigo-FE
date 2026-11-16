@@ -784,11 +784,11 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
 
     await Promise.all([
       page.waitForResponse((response) => response.url().includes(`/api/progress-assessments?`) && response.url().includes(`memberId=${SEED.member1.id}`)),
-      page.getByRole('button', { name: `Chỉ xem ${SEED.member1.name}` }).first().click(),
+      page.getByRole('combobox', { name: 'Lọc theo học viên' }).selectOption(String(SEED.member1.id)),
     ]);
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await expect(page).toHaveURL(new RegExp(`memberId=${SEED.member1.id}`));
-    await expect(page.getByText(`Học viên: ${SEED.member1.name}`)).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Lọc theo học viên' })).toHaveValue(String(SEED.member1.id));
     for (const text of await page.locator('ol > li article').allTextContents()) expect(text).toContain(SEED.member1.name);
   });
 

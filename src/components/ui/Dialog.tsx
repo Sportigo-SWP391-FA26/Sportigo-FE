@@ -1,7 +1,6 @@
 import { X } from '@phosphor-icons/react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button } from './Button';
-import { iconButtonClass } from './styles';
 
 type DialogProps = {
   open: boolean;
@@ -12,6 +11,8 @@ type DialogProps = {
   footer?: ReactNode;
   /** sm: hộp xác nhận nổi giữa màn hình; md/lg: form, toàn màn hình trên điện thoại */
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** false: bỏ đường kẻ dưới tiêu đề và trên nút (hộp xác nhận ngắn) */
+  dividers?: boolean;
 };
 
 // Dùng <dialog> gốc của trình duyệt: có focus trap, phím Esc và nền mờ sẵn.
@@ -22,7 +23,7 @@ const sizeClasses = {
   xl: 'm-0 h-dvh max-h-none w-full max-w-none sm:m-auto sm:h-fit sm:max-h-[min(92dvh,920px)] sm:max-w-5xl sm:rounded-card sm:shadow-raised',
 };
 
-export function Dialog({ open, onClose, title, description, children, footer, size = 'md' }: DialogProps) {
+export function Dialog({ open, onClose, title, description, children, footer, size = 'md', dividers = true }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -48,22 +49,32 @@ export function Dialog({ open, onClose, title, description, children, footer, si
     >
       {open && (
         <>
-          <header className="border-b border-line px-5 py-4">
+          {/* Không có đường kẻ (hộp xác nhận) thì tiêu đề sát nội dung hơn */}
+          <header className={`px-5 ${dividers ? 'border-b border-line py-4' : 'pt-4 pb-2'}`}>
             {/* Nút X căn giữa theo dòng tiêu đề; -my-2 để nút 44px không làm header cao thêm */}
             <div className="flex items-center justify-between gap-3">
               <h2 id={titleId} className="min-w-0 text-lg font-extrabold tracking-[-.015em]">
                 {title}
               </h2>
-              <button type="button" className={`${iconButtonClass} -my-2 -mr-2`} onClick={onClose} aria-label="Đóng">
-                <X aria-hidden="true" />
+              {/* Vùng bấm vẫn 44px, nhưng nền hover/focus chỉ 32px để nút trông gọn */}
+              <button
+                type="button"
+                className="group -my-2 -mr-2 inline-grid size-11 shrink-0 place-items-center rounded-control text-lg text-muted focus-visible:outline-none"
+                onClick={onClose}
+                aria-label="Đóng"
+              >
+                <span className="grid size-8 place-items-center rounded-lg transition-colors group-hover:bg-primary/8 group-hover:text-primary-deep group-focus-visible:outline-2 group-focus-visible:outline-primary">
+                  <X aria-hidden="true" />
+                </span>
               </button>
             </div>
             {description && <div className="mt-1 text-[13px] leading-relaxed text-muted">{description}</div>}
           </header>
           {/* min-h-0: cho phần thân co lại trong flex để chỉ phần này cuộn, tránh 2 thanh cuộn */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+          {/* Không có đường kẻ thì thân sát tiêu đề hơn để khoảng cách không bị hở */}
+          <div className={`min-h-0 flex-1 overflow-y-auto px-5 ${dividers ? 'py-5' : 'py-1'}`}>{children}</div>
           {footer && (
-            <footer className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+            <footer className={`flex flex-col-reverse gap-2 px-5 py-4 sm:flex-row sm:justify-end ${dividers ? 'border-t border-line' : ''}`}>
               {footer}
             </footer>
           )}
@@ -104,6 +115,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       title={title}
       size="sm"
+      dividers={false}
       footer={
         <>
           <Button variant="secondary" onClick={onCancel} disabled={loading}>

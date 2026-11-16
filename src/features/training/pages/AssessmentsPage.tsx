@@ -1,19 +1,25 @@
-import { ChartLineUp, Funnel, Plus, X } from '@phosphor-icons/react';
+import { ChartLineUp, Funnel, Plus } from '@phosphor-icons/react';
+import { useId } from 'react';
 import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
 import { AssessmentCard } from '../components/AssessmentCard';
 import { NewAssessmentDialog } from '../components/NewAssessmentDialog';
+import { SelectInput } from '../components/SelectInput';
 import { Button, ButtonLink } from '../../../components/ui/Button';
-import { PageHeader } from '../../../components/ui/Card';
+import { Card, PageHeader } from '../../../components/ui/Card';
 import { Pagination } from '../../../components/ui/Pagination';
 import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/States';
 import { useAssessments } from '../hooks/useAssessments';
+import { useCoachMembers } from '../hooks/usePendingApis';
+import { traineeLabel } from '../labels';
 
 const PAGE_SIZE = 10;
 
 // FR-52 · /coach/assessments: đánh giá do chính Coach ghi, mới nhất trước.
 // /coach/assessments/new hiển thị cùng trang với dialog Ghi đánh giá đang mở (giữ được link cũ và nút Back).
 export function AssessmentsPage() {
+  const filterId = useId();
   const [params, setParams] = useSearchParams();
+  const members = useCoachMembers();
   const navigate = useNavigate();
   const { search } = useLocation();
   const creating = useMatch('/coach/assessments/new') !== null;
@@ -23,6 +29,11 @@ export function AssessmentsPage() {
   const assessments = useAssessments({ page, pageSize: PAGE_SIZE, memberId });
   const items = assessments.data?.items ?? [];
   const memberName = items.find((item) => item.member.id === memberId)?.member.displayName;
+  // Học viên Coach phụ trách (có tên); học viên đang lọc mà không có trong danh sách thì vẫn thêm vào để ô chọn hiển thị đúng
+  const memberOptions = (members.data ?? []).map((member) => ({ id: member.id, label: traineeLabel(member) }));
+  if (memberId && !memberOptions.some((option) => option.id === memberId)) {
+    memberOptions.unshift({ id: memberId, label: memberName ?? `Học viên #${memberId}` });
+  }
 
   const setFilter = (next: { memberId?: number; page?: number }) => {
     const search = new URLSearchParams();
@@ -46,26 +57,27 @@ export function AssessmentsPage() {
 
       <NewAssessmentDialog open={creating} onClose={() => navigate({ pathname: '/coach/assessments', search })} />
 
-      {memberId ? (
-        <p className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-          <span className="inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/10 pr-1 pl-3.5 text-[13px] font-bold text-primary-deep">
-            Học viên: {memberName ?? `#${memberId}`}
-            <button
-              type="button"
-              onClick={() => setFilter({})}
-              aria-label="Bỏ lọc học viên"
-              className="grid size-7 place-items-center rounded-full hover:bg-primary/15"
-            >
-              <X aria-hidden="true" />
-            </button>
-          </span>
-        </p>
-      ) : (
-        <p className="mb-4 flex items-start gap-2 text-xs text-muted">
-          <Funnel className="mt-0.5 shrink-0" aria-hidden="true" />
-          Bấm "Chỉ xem …" dưới một thẻ để lọc theo học viên.
-        </p>
-      )}
+      {/* Thẻ lọc phủ toàn chiều ngang: nhãn bên trái, ô chọn học viên bên phải */}
+      <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-3 sm:px-4">
+        <label htmlFor={filterId} className="inline-flex items-center gap-2 text-sm font-bold text-ink">
+          <Funnel className="text-muted" aria-hidden="true" /> Lọc theo học viên
+        </label>
+        <div className="w-full sm:w-80">
+          <SelectInput
+            id={filterId}
+            value={memberId ?? ''}
+            disabled={members.isPending && !memberId}
+            onChange={(event) => setFilter({ memberId: Number(event.target.value) || undefined })}
+          >
+            <option value="">{members.isPending ? 'Đang tải học viên…' : 'Tất cả học viên'}</option>
+            {memberOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </SelectInput>
+        </div>
+      </Card>
 
       {assessments.isPending ? (
         <ListSkeleton rows={3} label="Đang tải đánh giá…" />
@@ -94,11 +106,6 @@ export function AssessmentsPage() {
             {items.map((assessment) => (
               <li key={assessment.id}>
                 <AssessmentCard assessment={assessment} showMember />
-                {!memberId && (
-                  <Button size="sm" variant="ghost" className="mt-1" onClick={() => setFilter({ memberId: assessment.member.id })}>
-                    Chỉ xem {assessment.member.displayName}
-                  </Button>
-                )}
               </li>
             ))}
           </ol>

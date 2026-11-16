@@ -28,7 +28,7 @@ export function WorkoutPlanDetailPage() {
   const plan = useWorkoutPlan(planId);
 
   return (
-    <div className="mx-auto w-full max-w-[1100px]">
+    <div className="mx-auto w-full max-w-[1240px]">
       <Link
         to="/coach/workout-plans"
         className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-control text-sm font-bold text-primary-deep hover:underline"
@@ -105,7 +105,8 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
   return (
     <div className="space-y-6">
       <Card className="p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        {/* Màn hình rộng: thông tin bên trái, nhóm nút ở góc phải trên; màn hình hẹp: nút xuống dưới */}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
             <div className="flex flex-wrap gap-1.5">
               <Chip tone="primary">{plan.sport.name}</Chip>
@@ -122,7 +123,7 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
               {formatDateTime(plan.updatedAt)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             <Button variant="secondary" icon={<NotePencil aria-hidden="true" />} onClick={() => setEditingPlan(true)}>
               Sửa thông tin
             </Button>
@@ -194,9 +195,11 @@ function PlanDetail({ plan }: { plan: WorkoutPlanDetail }) {
                   <h3 id={`session-${session.sessionNumber}`} className="text-[11px] font-extrabold tracking-[.08em] text-primary-deep uppercase">
                     Buổi {session.sessionNumber} · {session.items.length} mục
                   </h3>
+                  {/* -my-3: giữ vùng bấm 44px nhưng không làm hàng tiêu đề cao hơn, để đệm trên/dưới thẻ đều nhau */}
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="-my-3"
                     icon={<Plus aria-hidden="true" />}
                     onClick={() => setItemTarget({ draft: { weekNumber: selectedWeek, sessionNumber: session.sessionNumber } })}
                   >

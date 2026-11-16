@@ -294,7 +294,7 @@ function LatestAssessment({ assessment }: { assessment: ProgressAssessment }) {
         <ContextChip context={assessment.context} />
         {score !== null && <Chip tone="success">Điểm {formatNumber(score)}</Chip>}
       </div>
-      <blockquote className="mt-4 border-l-4 border-primary/40 pl-4 text-[15px] leading-relaxed text-ink">{assessment.coachComment}</blockquote>
+      <blockquote className="mt-4 rounded-xl border-l-4 border-primary/40 bg-canvas px-4 py-3 text-[15px] leading-relaxed text-ink">{assessment.coachComment}</blockquote>
       {assessment.recommendation && (
         <p className="mt-4 rounded-xl bg-canvas px-4 py-3 text-[13px] leading-relaxed text-ink/90">
           <span className="font-bold text-ink">Khuyến nghị: </span>
@@ -323,8 +323,8 @@ function AssessmentHistory({ assessments }: { assessments: ProgressAssessment[] 
         ))}
       </ol>
       {visible < assessments.length && (
-        <div className="mt-4 text-center">
-          <Button variant="secondary" onClick={() => setVisible((value) => value + ASSESSMENTS_PER_PAGE)}>
+        <div className="mt-4">
+          <Button variant="secondary" className="w-full" onClick={() => setVisible((value) => value + ASSESSMENTS_PER_PAGE)}>
             Xem thêm ({assessments.length - visible} đánh giá)
           </Button>
         </div>

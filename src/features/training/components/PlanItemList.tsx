@@ -37,20 +37,21 @@ export function PlanItemList({ items, compact = false, renderActions, completion
                       {intensityLabel(item.intensity)}
                     </Chip>
                   )}
+                  {/* Thông số (phút, hiệp, lần) nằm cùng hàng với cường độ */}
+                  {specs.length > 0 && (
+                    <ul className="flex flex-wrap gap-1.5" aria-label="Thông số">
+                      {specs.map((spec) => (
+                        <li key={spec}>
+                          <Chip tone="primary">{spec}</Chip>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {completionByItemId && <Chip tone={completion ? 'success' : 'neutral'} dot>{completion ? 'Đã hoàn thành' : 'Chưa thực hiện'}</Chip>}
                 </div>
                 <p className={`mt-1 text-[13px] leading-relaxed whitespace-pre-line text-muted ${compact ? 'line-clamp-2' : ''}`}>
                   {item.content}
                 </p>
-                {specs.length > 0 && (
-                  <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Thông số">
-                    {specs.map((spec) => (
-                      <li key={spec}>
-                        <Chip tone="primary">{spec}</Chip>
-                      </li>
-                    ))}
-                  </ul>
-                )}
                 {item.note && !compact && (
                   <p className="mt-2 text-xs leading-relaxed text-muted">
                     <span className="font-bold text-ink/80">Ghi chú: </span>

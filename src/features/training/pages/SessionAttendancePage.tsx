@@ -1,4 +1,4 @@
-import { ArrowClockwise, ArrowLeft, CheckSquare, LockKey, NotePencil, Users } from '@phosphor-icons/react';
+import { ArrowClockwise, ArrowLeft, CheckSquare, NotePencil, Users } from '@phosphor-icons/react';
 import { useEffect, useId, useState } from 'react';
 import { Link, useBlocker, useParams } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
@@ -236,7 +236,8 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
               </Button>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              <p className="text-[13px] text-muted" aria-live="polite">
+              {/* Trạng thái lưu dạng nhãn bo tròn, nhỏ gọn, căn giữa theo nút Lưu */}
+              <p className="inline-flex items-center rounded-full border border-line bg-canvas px-3 py-1 text-[13px] text-muted" aria-live="polite">
                 {dirty ? (unmarked.length > 0 ? `Còn ${unmarked.length} học viên chưa chọn` : 'Có thay đổi chưa lưu') : 'Không có thay đổi'}
               </p>
               <Button onClick={requestSave} loading={mark.isPending} disabled={!dirty || unmarked.length === students.length}>
@@ -250,9 +251,7 @@ function AttendanceSheet({ sessionId, roster, onReload, reloading }: SheetProps)
       {locked && (
         <div className="mt-4">
           <InlineAlert tone="warning">
-            <span className="inline-flex items-center gap-1.5 font-bold">
-              <LockKey aria-hidden="true" /> Chỉ xem
-            </span>
+            <span className="font-bold">Chỉ xem</span>
             <span className="block">{lockedMessage}</span>
           </InlineAlert>
         </div>
@@ -340,6 +339,8 @@ function StudentRow({ name, code, registrationId, draft, invalid, disabled, read
   const errorId = `${noteId}-row-error`;
   const note = draft?.note ?? '';
 
+  const showNote = !readOnly || Boolean(note);
+
   return (
     <li className={`${cardClass} p-4 ${invalid ? 'ring-2 ring-danger' : ''}`} aria-describedby={invalid ? errorId : undefined}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -373,16 +374,18 @@ function StudentRow({ name, code, registrationId, draft, invalid, disabled, read
         </p>
       )}
 
+      {(canAssess || showNote) && (
       <div className="mt-2">
         {canAssess && (
           <Link
             to={assessmentPath}
-            className="mr-3 inline-flex min-h-11 items-center gap-1.5 rounded-control px-1 text-[13px] font-bold text-primary-deep hover:underline"
+            // Link cao 44px để dễ bấm; khi là phần tử cuối thẻ thì -mb-3 để đệm dưới bằng đệm trên
+            className={`mr-3 inline-flex min-h-11 items-center gap-1.5 rounded-control px-1 text-[13px] font-bold text-primary-deep hover:underline ${showNote ? '' : '-mb-3'}`}
           >
             <NotePencil aria-hidden="true" /> Đánh giá sau buổi học
           </Link>
         )}
-        {(!readOnly || note) && (
+        {showNote && (
           <div className="mt-2">
             <label htmlFor={noteId} className="mb-1.5 block text-xs font-bold text-ink">
               Ghi chú cho {name}
@@ -403,6 +406,7 @@ function StudentRow({ name, code, registrationId, draft, invalid, disabled, read
           </div>
         )}
       </div>
+      )}
     </li>
   );
 }

@@ -17,7 +17,7 @@ export function NewAssessmentDialog({ open, onClose }: Props) {
       onClose={onClose}
       size="lg"
       title="Ghi đánh giá tiến độ"
-      description="Chỉ đánh giá được học viên thuộc lớp nhóm hoặc khóa 1-1 bạn đang phụ trách. Không dùng ngôn ngữ chẩn đoán y khoa."
+      description="Chỉ đánh giá được học viên thuộc lớp nhóm hoặc khóa 1-1 bạn đang phụ trách."
     >
       <NewAssessmentBody onClose={onClose} />
     </Dialog>

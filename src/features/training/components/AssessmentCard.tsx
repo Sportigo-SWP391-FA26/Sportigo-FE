@@ -47,7 +47,10 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
         </div>
       </header>
 
-      <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-ink/90">{assessment.coachComment}</p>
+      {/* Nhận xét của Coach: ô nền nhạt có vạch trái, cùng kiểu thẻ "Nhận xét gần nhất" */}
+      <blockquote className="mt-3 rounded-xl border-l-4 border-primary/40 bg-canvas px-4 py-3 text-sm leading-relaxed whitespace-pre-line text-ink/90">
+        {assessment.coachComment}
+      </blockquote>
 
       {metrics.length > 0 && (
         <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
