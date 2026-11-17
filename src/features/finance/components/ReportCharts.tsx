@@ -1,10 +1,27 @@
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { ClassReportRow, Revenue } from '../api';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { ClassReportRow, Revenue, RevenueAnalytics, RevenuePeriod } from '../api';
 
 const palette = ['#2563eb', '#38bdf8', '#84cc16', '#f97316'];
 const currency = (value: number) => `${value.toLocaleString('vi-VN')} ₫`;
 const channelName: Record<string, string> = { ONLINE: 'VNPay', COUNTER: 'Tại quầy', WALLET: 'Ví Sportigo' };
 const serviceName: Record<string, string> = { GROUP_CLASS: 'Lớp nhóm', PRIVATE_COURSE: 'Khóa 1–1', MEMBERSHIP: 'Gói membership' };
+
+function trendLabel(day: string, period: RevenuePeriod) {
+  const [year, month] = day.split('-').map(Number);
+  return period === 'YEAR' ? String(year) : period === 'QUARTER' ? `Q${Math.ceil(month / 3)}/${year}` : `${String(month).padStart(2, '0')}/${year}`;
+}
+
+export function RevenueTrend({ data }: { data: RevenueAnalytics }) {
+  const rows = data.trend.map((item) => ({ ...item, label: trendLabel(item.periodStart, data.period) }));
+  const strongest = [...rows].sort((a, b) => b.net - a.net)[0];
+  const weakest = [...rows].sort((a, b) => a.net - b.net)[0];
+  return <section className="report-chart-panel" aria-label="Xu hướng doanh thu thuần">
+    <div className="report-chart-heading"><h2>Xu hướng doanh thu thuần</h2><p>{data.period === 'MONTH' ? '12 tháng' : data.period === 'QUARTER' ? '8 quý' : '5 năm'} gần kỳ đang xem · nạp ví không tính doanh thu</p></div>
+    <div className="h-[310px] w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows} margin={{ top: 10, right: 18, left: 4, bottom: 8 }}><CartesianGrid stroke="#e2e8f0" vertical={false} /><XAxis dataKey="label" tick={{ fontSize: 11 }} /><YAxis tickFormatter={(value: number) => `${Math.round(value / 1_000_000)}tr`} tick={{ fontSize: 11 }} /><Tooltip content={({ active, payload }) => { const row = payload?.[0]?.payload as typeof rows[number] | undefined; return active && row ? <div className="rounded-xl border border-line bg-white p-3 text-xs shadow-lg"><strong>{row.label}</strong><p>Gộp: {currency(row.gross)}</p><p>Hoàn: {currency(row.refunds)}</p><p>Thuần: {currency(row.net)}</p></div> : null; }} /><Line type="monotone" dataKey="net" name="Doanh thu thuần" stroke="#2563eb" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} /></LineChart></ResponsiveContainer></div>
+    {strongest && weakest && <p className="mt-2 text-xs text-muted">Cao nhất: <strong>{strongest.label}</strong> ({currency(strongest.net)}) · Thấp nhất: <strong>{weakest.label}</strong> ({currency(weakest.net)})</p>}
+    <div className="mt-5 overflow-x-auto"><table className="manager-table w-full min-w-[600px]"><thead><tr><th>Kỳ</th><th>Doanh thu gộp</th><th>Hoàn tiền</th><th>Doanh thu thuần</th><th>Giao dịch</th></tr></thead><tbody>{rows.map((row) => <tr key={row.periodStart}><td>{row.label}</td><td>{currency(row.gross)}</td><td>{currency(row.refunds)}</td><td className="font-bold">{currency(row.net)}</td><td>{row.transactions}</td></tr>)}</tbody></table></div>
+  </section>;
+}
 
 export function RevenueCharts({ data }: { data: Revenue }) {
   const channels = Object.entries(data.byChannel).map(([key, value]) => ({ name: channelName[key] ?? key, value }));

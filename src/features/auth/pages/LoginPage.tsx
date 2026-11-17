@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowRight, EnvelopeSimple, Eye, EyeSlash, LockKey } from '@phosphor-icons/react'
+import { EnvelopeSimple, Eye, EyeSlash, LockKey } from '@phosphor-icons/react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../../../components/brand/BrandLogo'
 import { AuthShell } from '../components/AuthShell'
 import { login } from '../api'
@@ -13,11 +13,13 @@ import { roleHomePath, type AppRole } from '../../../components/auth/session'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = new URLSearchParams(location.search).get('returnTo')
   const [showPassword, setShowPassword] = useState(false)
   const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema) })
   const mutation = useMutation({
     mutationFn: login,
-    onSuccess: ({ user }) => navigate(roleHomePath[user.role as AppRole] ?? '/'),
+    onSuccess: ({ user }) => navigate(user.role === 'MEMBER' && returnTo === '/member/membership' ? returnTo : roleHomePath[user.role as AppRole] ?? '/'),
   })
   return (
     <AuthShell variant="login">
@@ -32,7 +34,6 @@ export function LoginPage() {
       </form>
       <div className="auth-divider"><span>HOẶC TIẾP TỤC VỚI</span></div>
       <div className="auth-social auth-social--single"><GoogleSignInButton /></div>
-      <div className="auth-offer"><div><b>ĐẶC QUYỀN HỘI VIÊN MỚI</b><p>Trải nghiệm <strong>07 ngày miễn phí</strong> kèm 1 buổi cùng HLV cá nhân.</p></div><Link to="/register">Đăng ký ngay <ArrowRight /></Link></div>
     </AuthShell>
   )
 }

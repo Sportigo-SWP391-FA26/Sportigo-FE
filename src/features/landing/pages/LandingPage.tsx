@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, CaretLeft, CaretRight, Clock, EnvelopeSimple, FacebookLogo, InstagramLogo, MapPin, Phone, UsersThree, YoutubeLogo } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { BrandLogo } from '../../../components/brand/BrandLogo'
 import { useNewsletter, usePublicLanding } from '../../content/hooks'
 import { isClassBookable } from '../../member/bookingEligibility'
+import { membershipApi } from '../../membership/api'
+import { MembershipShowcase } from '../../membership/components/MembershipShowcase'
 
 function useAutoAdvance(length: number, delay = 6000) {
   const [index, setIndex] = useState(0)
@@ -35,7 +38,7 @@ function LandingInitialShell() {
       <div className="landing-hero__overlay" />
       <header className="landing-nav">
         <BrandLogo className="landing-logo" />
-        <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></nav>
+        <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#programs">Lớp & khóa 1–1</a><a href="#memberships">Gói tập</a><a href="#coaches">Huấn luyện viên</a></nav>
         <div className="landing-nav__actions"><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
       </header>
       <div className="landing-hero__body"><div className="landing-hero__copy">
@@ -53,6 +56,7 @@ function LandingInitialShell() {
 
 export function LandingPage() {
   const landing = usePublicLanding()
+  const membershipPlans = useQuery({ queryKey: ['membership-plans'], queryFn: membershipApi.plans })
   const newsletter = useNewsletter()
   const [heroIndex] = useAutoAdvance(landing.data?.heroSlides.length ?? 0)
   const coachGroups = Math.max(1, Math.ceil((landing.data?.coaches.length ?? 0) / 3))
@@ -129,7 +133,7 @@ export function LandingPage() {
         <div className="landing-hero__overlay" />
         <header className={`landing-nav ${navScrolled ? 'landing-nav--scrolled' : ''} ${navHidden ? 'landing-nav--hidden' : ''}`}>
           <BrandLogo className="landing-logo" />
-          <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></nav>
+          <nav aria-label="Điều hướng chính"><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#programs">Lớp & khóa 1–1</a><a href="#memberships">Gói tập</a><a href="#coaches">Huấn luyện viên</a></nav>
           <div className="landing-nav__actions"><a className="landing-nav__phone" href={`tel:${settings?.hotline.replace(/\s/g, '') ?? ''}`}><Phone />{settings?.hotline ?? 'Liên hệ'}</a><Link className="landing-nav__login" to="/login">Đăng nhập</Link><Link className="landing-nav__register" to="/register">Đăng ký</Link></div>
         </header>
         <div className="landing-hero__body"><div className="landing-hero__copy">
@@ -154,7 +158,7 @@ export function LandingPage() {
         </div> : <p className="landing-empty">Chưa có lớp nhóm hoặc khóa 1–1 đang mở.</p>}
       </section>
 
-      <section className="section section--white" id="memberships">
+      <section className="section section--white" id="programs">
         <div className="section-heading section-heading--center"><div><h2>Chọn hình thức tập luyện phù hợp</h2><span>Lớp nhóm theo lịch chung hoặc khóa cá nhân đồng hành riêng cùng Coach</span></div></div>
         <div className="active-service-group">
           <div className="active-service-group__header"><div><h3>Lớp nhóm đang mở</h3><p>Luyện tập theo lịch lớp, số lượng học viên và chỉ tiêu đăng ký.</p></div><Link to="/member/classes">Xem toàn bộ lớp <ArrowRight /></Link></div>
@@ -172,6 +176,8 @@ export function LandingPage() {
         </div>
       </section>
 
+      <div id="memberships" className="membership-showcase-shell">{membershipPlans.isSuccess && membershipPlans.data.length > 0 && <MembershipShowcase plans={membershipPlans.data} href="/login?returnTo=%2Fmember%2Fmembership" headingId="landing-membership-heading" />}</div>
+
       <section className="section coaches" id="coaches">
         <div className="section-heading"><div><p>ĐỘI NGŨ CHUYÊN GIA</p><h2>Coach đang hoạt động tại Sportigo</h2></div></div>
         {visibleCoaches.length ? <><div className="coach-carousel-shell">
@@ -185,7 +191,7 @@ export function LandingPage() {
 
       <footer className="landing-footer">
         <div className="footer-brand"><BrandLogo className="footer-logo" /><p>{settings?.brandDescription}</p><div className="footer-social"><a href="#instagram" aria-label="Instagram"><InstagramLogo /></a><a href="#facebook" aria-label="Facebook"><FacebookLogo /></a><a href="#youtube" aria-label="YouTube"><YoutubeLogo /></a></div></div>
-        <div className="footer-column"><h3>Khám phá</h3><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#memberships">Lớp & khóa 1–1</a><a href="#coaches">Huấn luyện viên</a></div>
+        <div className="footer-column"><h3>Khám phá</h3><a href="#facilities">Không gian</a><a href="#schedule">Lịch tập</a><a href="#programs">Lớp & khóa 1–1</a><a href="#memberships">Gói tập</a><a href="#coaches">Huấn luyện viên</a></div>
         <div className="footer-column"><h3>Liên hệ</h3><a href={`tel:${settings?.hotline.replace(/\s/g, '') ?? ''}`}><Phone />{settings?.hotline}</a><span><Clock />{settings?.openingHours}</span><span><MapPin />{settings?.location}</span></div>
         <form className="footer-newsletter" onSubmit={submitNewsletter}><h3>Nhận tin từ Sportigo</h3><p>Nhận cập nhật lớp học mới từ hệ thống.</p><label><span className="sr-only">Địa chỉ email</span><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email của bạn" aria-label="Địa chỉ email" /><button type="submit" disabled={newsletter.isPending} aria-label="Đăng ký nhận tin"><EnvelopeSimple /></button></label>{newsletter.isSuccess && <small>{newsletter.data.alreadySubscribed ? 'Email này đã đăng ký nhận tin.' : 'Đăng ký nhận tin thành công.'}</small>}{newsletter.isError && <small>Chưa thể đăng ký. Vui lòng thử lại.</small>}</form>
         <div className="footer-bottom"><small>© 2026 Sportigo Athletic Facility.</small><div><a href="#privacy">Chính sách bảo mật</a><a href="#terms">Điều khoản sử dụng</a></div></div>

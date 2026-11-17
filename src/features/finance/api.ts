@@ -32,6 +32,16 @@ export type Revenue = {
   byService: Record<string, { orders: number; transactions: number; gross: number; discount: number; refunds: number; net: number }>;
   bySport?: { sportId: number | null; name: string; orders: number; transactions: number; gross: number; discount: number; refunds: number; net: number }[];
 };
+export type RevenuePeriod = 'MONTH' | 'QUARTER' | 'YEAR';
+export type RevenueMetrics = { gross: number; refunds: number; net: number; transactions: number; averageTransaction: number; refundRate: number };
+export type RevenueAnalytics = {
+  period: RevenuePeriod; anchor: string; range: { from: string; to: string };
+  current: RevenueMetrics;
+  previous: RevenueMetrics & { from: string };
+  yearAgo: RevenueMetrics & { from: string };
+  change: { previous: number | null; yearAgo: number | null };
+  trend: Array<RevenueMetrics & { periodStart: string }>;
+};
 export type AuditLogItem = {
   id: number;
   action: string;
@@ -67,6 +77,7 @@ export const financeApi = {
   reviewRefund: (id: number, decision: string, note: string, approvedAmount?: number) => apiClient.patch(`/refund-requests/${id}/review`, { decision, note, approvedAmount }).then((r) => r.data),
   completeRefund: (id: number) => apiClient.post(`/refund-requests/${id}/complete`).then((r) => r.data),
   revenue: (params: RevenueFilters) => apiClient.get<Revenue>('/reports/revenue', { params }).then((r) => r.data),
+  revenueAnalytics: (params: { period: RevenuePeriod; anchor: string; channel?: RevenueFilters['channel']; itemType?: RevenueFilters['itemType'] }) => apiClient.get<RevenueAnalytics>('/reports/revenue/analytics', { params }).then((r) => r.data),
   audit: (params: AuditQuery) => apiClient.get<AuditPage>('/audit-logs', { params }).then((r) => r.data),
   auditExcel: (filters: AuditQuery) => apiClient.get<Blob>('/audit-logs/export', { params: { ...filters, page: undefined, limit: undefined }, responseType: 'blob' }).then((r) => r.data),
   classReport: () => apiClient.get<ClassReportRow[]>('/reports/classes').then((r) => r.data),

@@ -50,7 +50,9 @@ export function MemberMembershipPage() {
       {plans.data.length === 0 ? <EmptyState title="Chưa có gói mở bán" description="Vui lòng quay lại sau hoặc liên hệ lễ tân." /> : (
         <div className="grid gap-4 md:grid-cols-3">
           {plans.data.map((plan) => (
-            <Card key={plan.id} className="flex flex-col p-5 sm:p-6">
+            <Card key={plan.id} className="flex flex-col overflow-hidden p-0">
+              {plan.imageUrl && <img src={plan.imageUrl} alt={`Không gian tập luyện cho ${plan.name}`} className="h-48 w-full object-cover" loading="lazy" />}
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
               <h2 className="text-lg font-extrabold text-ink">{plan.name}</h2>
               <p className="mt-1 text-sm text-muted">{plan.durationMonths} tháng</p>
               <p className="mt-4 text-2xl font-extrabold text-primary-deep">{money(plan.price)}</p>
@@ -59,6 +61,7 @@ export function MemberMembershipPage() {
                 <Button className="w-full" disabled={Boolean(pendingOrder)} loading={buy.isPending && buy.variables === plan.id} onClick={() => buy.mutate(plan.id)}>
                   {current || upcoming.length ? 'Mua nối tiếp' : 'Mua gói'}
                 </Button>
+              </div>
               </div>
             </Card>
           ))}

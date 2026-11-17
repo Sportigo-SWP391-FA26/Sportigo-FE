@@ -1,6 +1,6 @@
 import { apiClient } from '../../api/client';
 
-export type UploadPurpose = 'avatar' | 'sport' | 'content';
+export type UploadPurpose = 'avatar' | 'sport' | 'content' | 'membership';
 export type ImageUploadResult = {
   secureUrl: string;
   publicId: string;
