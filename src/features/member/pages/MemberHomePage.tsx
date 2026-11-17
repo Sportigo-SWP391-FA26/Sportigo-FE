@@ -1,15 +1,19 @@
 import { ArrowRight, CalendarDots, CaretLeft, CaretRight, Clock, CreditCard, MapPin, User, UsersThree } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { SportLoading } from '../../../components/feedback/SportLoading';
 import { useMemberHome } from '../../content/hooks';
 import { sportImageUrl } from '../sportImages';
+import { membershipApi } from '../../membership/api';
+import { MembershipShowcase } from '../../membership/components/MembershipShowcase';
 
 const date = (value: string) => new Intl.DateTimeFormat('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(value));
 const time = (value: string) => new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 
 export function MemberHomePage() {
   const home = useMemberHome();
+  const membershipPlans = useQuery({ queryKey: ['membership-plans'], queryFn: membershipApi.plans });
   const [recommendationGroup, setRecommendationGroup] = useState(0);
 
   const recommendationCount = (home.data?.recommendations.length ?? 0) + (home.data?.privateRecommendations?.length ?? 0);
@@ -76,15 +80,15 @@ export function MemberHomePage() {
         <div><h1>Xin chào, {profile.displayName}</h1><p>Bạn chưa có buổi học sắp tới. Khám phá các lớp đang mở để bắt đầu.</p><Link to="/member/classes">Khám phá lịch lớp <ArrowRight /></Link></div>
       </section>}
 
-      <section className="member-week-rail" aria-labelledby="member-week-heading">
-        <header><div><h2 id="member-week-heading">Tuần này của bạn</h2><p>{weekSchedule.length ? `${weekSchedule.length} buổi học đã được xác nhận.` : 'Chưa có buổi học trong 7 ngày tới.'}</p></div><Link to="/member/my-schedule">Mở lịch của tôi <ArrowRight /></Link></header>
-        {weekSchedule.length ? <div className="member-week-rail__items">{weekSchedule.slice(0, 3).map((item) => (
+      {weekSchedule.length > 0 && <section className="member-week-rail" aria-labelledby="member-week-heading">
+        <header><div><h2 id="member-week-heading">Tuần này của bạn</h2><p>{weekSchedule.length} buổi học đã được xác nhận.</p></div><Link to="/member/my-schedule">Mở lịch của tôi <ArrowRight /></Link></header>
+        <div className="member-week-rail__items">{weekSchedule.slice(0, 3).map((item) => (
           <article key={item.sessionId}>
             <time dateTime={item.startsAt}><span>{new Intl.DateTimeFormat('vi-VN', { weekday: 'short' }).format(new Date(item.startsAt))}</span><b>{new Date(item.startsAt).getDate()}</b></time>
             <div><span>{item.sport.name}</span><h3>{item.className}</h3><p>{time(item.startsAt)} – {time(item.endsAt)} · {item.room.name}</p></div>
           </article>
-        ))}</div> : <div className="member-inline-empty">Không có lịch học nào trong tuần này.</div>}
-      </section>
+        ))}</div>
+      </section>}
 
       <section className="member-home-showcase" aria-labelledby="discovery-heading">
         <header><div><h2 id="discovery-heading">Lớp & khóa 1–1 đang mở</h2><p>Khám phá lớp nhóm và chương trình cá nhân đang nhận đăng ký.</p></div><Link to="/member/classes">Xem toàn bộ chương trình <ArrowRight /></Link></header>
@@ -101,6 +105,8 @@ export function MemberHomePage() {
           {recommendationGroups > 1 && <button className="member-home-showcase__arrow member-home-showcase__arrow--next" type="button" aria-label="Xem các lớp tiếp theo" onClick={() => setRecommendationGroup((recommendationGroup + 1) % recommendationGroups)}><CaretRight /></button>}
         </div> : <div className="member-inline-empty">Chưa có lớp mới phù hợp để đề xuất.</div>}
       </section>
+
+      {membershipPlans.isSuccess && membershipPlans.data.length > 0 && <MembershipShowcase plans={membershipPlans.data} href="/member/membership" headingId="member-home-membership-heading" />}
 
       <section className="member-home-activity" aria-labelledby="activity-heading">
         <header><h2 id="activity-heading">Hoạt động gần đây</h2><p>Thông báo và giao dịch thực tế từ tài khoản của bạn.</p></header>

@@ -11,51 +11,55 @@ export type NavigationGroup = {
 export type NavigationEntry = NavigationItem | NavigationGroup;
 
 export const centerManagerNavigation: NavigationEntry[] = [
-  { label: 'Tổng quan', items: [{ label: 'Dashboard', path: '/app/dashboard' }] },
+  { label: 'Tổng quan', path: '/app/dashboard' },
   {
-    label: 'TÀI KHOẢN',
+    label: 'Hội viên',
     items: [
       { label: 'Người dùng', path: '/app/users' },
-      { label: 'Hội viên', path: '/app/members' },
-      { label: 'Nhân sự', path: '/app/staff' },
-      // note: FR-66/67
-      { label: 'Dạy thay & coach vắng', path: '/app/session-coaches' },
-      { label: 'Duyệt báo nghỉ & xếp bù', path: '/app/coach-absences' },
-      { label: 'Ca làm lễ tân', path: '/app/staff-shifts' },
-      { label: 'Coach', path: '/app/coaches' },
-      { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
+      { label: 'Danh sách hội viên', path: '/app/members' },
+      { label: 'Check-in phòng tập', path: '/app/check-in' },
+      { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
     ],
   },
   {
-    label: 'Lớp & cơ sở vật chất',
+    label: 'Coach & nhân sự',
+    items: [
+      { label: 'Nhân sự', path: '/app/staff' },
+      { label: 'Coach', path: '/app/coaches' },
+      { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
+      { label: 'Dạy thay & vắng', path: '/app/session-coaches' },
+      { label: 'Báo nghỉ & xếp bù', path: '/app/coach-absences' },
+      { label: 'Ca lễ tân', path: '/app/staff-shifts' },
+    ],
+  },
+  {
+    label: 'Lớp & lịch',
     items: [
       { label: 'Bộ môn', path: '/app/sports' },
       { label: 'Lớp nhóm', path: '/app/classes' },
-      { label: 'Khóa học 1–1', path: '/app/private-courses' },
-      { label: 'Khiếu nại buổi 1–1', path: '/app/private-session-disputes' },
+      { label: 'Khóa 1–1', path: '/app/private-courses' },
       { label: 'Waitlist', path: '/waitlist' },
-      { label: 'Lịch sử điểm danh', path: '/manager/attendance' },
+      { label: 'Điểm danh', path: '/manager/attendance' },
+      { label: 'Khiếu nại 1–1', path: '/app/private-session-disputes' },
       { label: 'Phòng tập', path: '/app/rooms' },
     ],
   },
   {
-    label: 'Tài chính & báo cáo',
+    label: 'Gói tập & tài chính',
     items: [
-      { label: 'Check-in phòng tập', path: '/app/check-in' },
-      { label: 'Gói membership', path: '/app/memberships' },
+      { label: 'Gói tập', path: '/app/memberships' },
       { label: 'Khuyến mãi', path: '/app/promotions' },
-      { label: 'Yêu cầu hoàn tiền', path: '/app/refunds' },
-      { label: 'Báo cáo doanh thu', path: '/app/revenue' },
-      { label: 'Báo cáo vận hành', path: '/app/operations-report' },
+      { label: 'Hoàn tiền', path: '/app/refunds' },
+      { label: 'Doanh thu', path: '/app/revenue' },
+      { label: 'Vận hành', path: '/app/operations-report' },
     ],
   },
   {
     label: 'Hệ thống',
     items: [
-      { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
       { label: 'Audit Log', path: '/app/audit-logs' },
-      { label: 'Nội dung Website', path: '/app/website-content' },
-      { label: 'Cấu hình trung tâm', path: '/app/center-settings' },
+      { label: 'Nội dung website', path: '/app/website-content' },
+      { label: 'Cấu hình', path: '/app/center-settings' },
     ],
   },
 ];

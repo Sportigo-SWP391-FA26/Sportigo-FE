@@ -35,6 +35,7 @@ export function Sidebar({ roleLabel, roleVariant, items, profilePath }: SidebarP
   const storageKey = `sportigo:sidebar:${roleVariant}`;
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
     const activeLabels = groups.filter((group) => group.items.some((item) => location.pathname.startsWith(item.path))).map((group) => group.label);
+    if (roleVariant === 'manager') return activeLabels;
     try {
       const saved = window.localStorage.getItem(storageKey);
       if (saved) return [...new Set([...(JSON.parse(saved) as string[]), ...activeLabels])];
@@ -53,7 +54,7 @@ export function Sidebar({ roleLabel, roleVariant, items, profilePath }: SidebarP
   }, [openGroups, storageKey]);
 
   const toggleGroup = (label: string) => {
-    setOpenGroups((current) => current.includes(label) ? current.filter((item) => item !== label) : [...current, label]);
+    setOpenGroups((current) => roleVariant === 'manager' ? current.includes(label) ? [] : [label] : current.includes(label) ? current.filter((item) => item !== label) : [...current, label]);
   };
 
   const renderLink = (item: NavigationItem, nested = false) => (
@@ -61,7 +62,7 @@ export function Sidebar({ roleLabel, roleVariant, items, profilePath }: SidebarP
       key={item.path}
       to={item.path}
       className={({ isActive }) =>
-        `block rounded-control px-3 py-2.5 text-sm font-semibold transition-colors ${nested ? 'ml-2 border-l border-line pl-4' : ''} ${
+        `block rounded-control text-sm font-semibold transition-colors ${roleVariant === 'manager' ? 'px-3 py-2' : 'px-3 py-2.5'} ${nested ? roleVariant === 'manager' ? 'ml-2 pl-3' : 'ml-2 border-l border-line pl-4' : ''} ${
           isActive ? activeClasses[roleVariant] : 'text-muted hover:bg-canvas hover:text-ink'
         }`
       }
@@ -80,7 +81,7 @@ export function Sidebar({ roleLabel, roleVariant, items, profilePath }: SidebarP
   };
 
   return (
-    <aside data-role-theme={roleVariant} className="flex min-h-screen flex-col border-r border-line bg-surface p-5">
+    <aside data-role-theme={roleVariant} className={`flex min-h-screen flex-col border-r border-line bg-surface ${roleVariant === 'manager' ? 'p-4' : 'p-5'}`}>
       <div className="flex items-center justify-between gap-2">
         <BrandLogo className="block h-12 w-36 [&_img]:h-full [&_img]:w-full [&_img]:object-contain" />
         {/* note(FR-54): Sidebar dùng cho Manager, Receptionist, Coach nên chuông luôn bật */}
@@ -89,24 +90,24 @@ export function Sidebar({ roleLabel, roleVariant, items, profilePath }: SidebarP
           buttonClassName="grid size-10 place-items-center rounded-full text-xl text-muted hover:bg-canvas focus-visible:outline-2 focus-visible:outline-primary"
         />
       </div>
-      <div className="mt-6 rounded-card bg-canvas px-3.5 py-3"><p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-muted">{roleLabels[roleVariant]}</p><p className="mt-1 text-sm font-bold text-ink">{roleLabel}</p></div>
-      <nav className="mt-3 flex-1 space-y-1 overflow-y-auto pr-1" aria-label={roleLabel}>
+      <div className={`${roleVariant === 'manager' ? 'mt-4 px-2 py-2' : 'mt-6 rounded-card bg-canvas px-3.5 py-3'}`}><p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-muted">{roleLabels[roleVariant]}</p><p className="mt-1 text-sm font-bold text-ink">{roleLabel}</p></div>
+      <nav className={`flex-1 overflow-y-auto pr-1 ${roleVariant === 'manager' ? 'mt-2 space-y-0.5' : 'mt-3 space-y-1'}`} aria-label={roleLabel}>
         {items.map((entry) => {
           if (!('items' in entry)) return renderLink(entry);
           const isOpen = openGroups.includes(entry.label);
           const containsActive = entry.items.some((item) => location.pathname.startsWith(item.path));
           return (
-            <div key={entry.label} className="py-0.5">
+            <div key={entry.label} className={roleVariant === 'manager' ? 'border-t border-line/70 pt-1.5 first:border-0' : 'py-0.5'}>
               <button
                 type="button"
-                className={`flex w-full items-center justify-between rounded-control px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[.08em] transition-colors ${containsActive ? 'text-primary-deep' : 'text-muted hover:bg-canvas hover:text-ink'}`}
+                className={`flex w-full items-center justify-between rounded-control px-3 text-left text-xs font-extrabold uppercase tracking-[.08em] transition-colors ${roleVariant === 'manager' ? 'py-2' : 'py-2.5'} ${containsActive ? 'text-primary-deep' : 'text-muted hover:bg-canvas hover:text-ink'}`}
                 aria-expanded={isOpen}
                 onClick={() => toggleGroup(entry.label)}
               >
                 <span>{entry.label}</span>
                 <CaretDown size={15} weight="bold" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </button>
-              {isOpen && <div className="space-y-1 py-1">{entry.items.map((item) => renderLink(item, true))}</div>}
+              {isOpen && <div className={roleVariant === 'manager' ? 'space-y-0.5 pb-1' : 'space-y-1 py-1'}>{entry.items.map((item) => renderLink(item, true))}</div>}
             </div>
           );
         })}

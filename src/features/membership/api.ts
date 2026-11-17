@@ -2,9 +2,9 @@ import { isAxiosError } from 'axios';
 import { apiClient } from '../../api/client';
 
 export type PlanStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-export type MembershipPlan = { id: number; name: string; durationMonths: number; price: string; description: string | null; status: PlanStatus };
+export type MembershipPlan = { id: number; name: string; durationMonths: number; price: string; description: string | null; imageUrl: string | null; status: PlanStatus };
 export type ManagedPlan = MembershipPlan & { _count: { subscriptions: number } };
-export type PlanInput = { name: string; durationMonths: number; price: number; description: string | null; status: PlanStatus };
+export type PlanInput = { name: string; durationMonths: number; price: number; description: string | null; imageUrl: string | null; status: PlanStatus };
 
 export type Subscription = { id: number; status: string; price: string; startDate: string | null; endDate: string | null; plan: MembershipPlan };
 export type MyMembership = {

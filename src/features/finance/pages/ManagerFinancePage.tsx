@@ -1,4 +1,4 @@
-import { ArrowCounterClockwise, ArrowDown, ArrowUp, ChartBar, CurrencyCircleDollar, FilePdf, FileXls, Gift, MagnifyingGlass, Receipt, Wallet } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, ArrowDown, ArrowUp, CaretLeft, CaretRight, ChartBar, CurrencyCircleDollar, FilePdf, FileXls, Gift, MagnifyingGlass, Receipt, Wallet } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useState, type FormEvent } from 'react';
 import { toast } from '../../../components/feedback/toast';
@@ -10,9 +10,9 @@ import { Field } from '../../../components/ui/Field';
 import { CurrencyInput, DateInput, DateTimeInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
-import { financeApi, saveBlob, type Promotion, type RefundRequest, type RevenueFilters } from '../api';
+import { financeApi, saveBlob, type Promotion, type RefundRequest, type RevenueAnalytics, type RevenueFilters, type RevenuePeriod } from '../api';
 import { AuditLogView } from '../components/AuditLogView';
-import { OperationsCharts, RevenueCharts } from '../components/ReportCharts';
+import { OperationsCharts, RevenueCharts, RevenueTrend } from '../components/ReportCharts';
 
 type View = 'revenue' | 'classes' | 'promotions' | 'refunds' | 'audit';
 const money = (value: number | string) => `${Number(value).toLocaleString('vi-VN')} ₫`;
@@ -27,7 +27,10 @@ const tone = (status?: string) => status === 'ACTIVE' || status === 'APPROVED' |
 
 export function ManagerFinancePage({ view }: { view: View }) {
   const [revenueFilters, setRevenueFilters] = useState<RevenueFilters>(currentMonthFilters);
+  const [periodMode, setPeriodMode] = useState<RevenuePeriod | 'CUSTOM'>('MONTH');
+  const [periodAnchor, setPeriodAnchor] = useState(() => currentMonthFilters().from);
   const revenue = useQuery({ queryKey: ['revenue', revenueFilters], queryFn: () => financeApi.revenue(toRevenueApiFilters(revenueFilters)), enabled: view === 'revenue' && revenueFilters.from <= revenueFilters.to, placeholderData: (previous) => previous });
+  const analytics = useQuery({ queryKey: ['revenue-analytics', periodMode, periodAnchor, revenueFilters.channel, revenueFilters.itemType], queryFn: () => financeApi.revenueAnalytics({ period: periodMode as RevenuePeriod, anchor: periodAnchor, channel: revenueFilters.channel, itemType: revenueFilters.itemType }), enabled: view === 'revenue' && periodMode !== 'CUSTOM' });
   const classes = useQuery({ queryKey: ['class-report'], queryFn: financeApi.classReport, enabled: view === 'classes' });
   const promotions = useQuery({ queryKey: ['promotions'], queryFn: financeApi.promotions, enabled: view === 'promotions' });
   const refunds = useQuery({ queryKey: ['refunds'], queryFn: financeApi.refunds, enabled: view === 'refunds' });
@@ -38,7 +41,7 @@ export function ManagerFinancePage({ view }: { view: View }) {
 
   return <div className="mx-auto w-full max-w-[1240px]">
     <PageHeader title={copy[view][0]} description={copy[view][1]} actions={view === 'promotions' ? <Button icon={<Gift />} onClick={() => setPromotionOpen(true)}>Tạo khuyến mãi</Button> : undefined} />
-    {view === 'revenue' && <RevenueView query={revenue} filters={revenueFilters} onFiltersChange={setRevenueFilters} />}
+    {view === 'revenue' && <RevenueView query={revenue} analytics={analytics} filters={revenueFilters} onFiltersChange={setRevenueFilters} periodMode={periodMode} anchor={periodAnchor} onPeriodChange={(mode, anchor) => { setPeriodMode(mode); setPeriodAnchor(anchor); setRevenueFilters((current) => ({ ...current, ...periodFilters(mode, anchor) })); }} onCustom={() => setPeriodMode('CUSTOM')} />}
     {view === 'classes' && <ClassReportView query={classes} />}
     {view === 'promotions' && <PromotionView query={promotions} items={filteredPromotions} search={search} onSearch={setSearch} />}
     {view === 'refunds' && <RefundView query={refunds} onReview={setReviewTarget} />}
@@ -48,7 +51,7 @@ export function ManagerFinancePage({ view }: { view: View }) {
   </div>;
 }
 
-function RevenueView({ query, filters, onFiltersChange }: { query: ReturnType<typeof useQuery<Awaited<ReturnType<typeof financeApi.revenue>>>>; filters: RevenueFilters; onFiltersChange: (filters: RevenueFilters) => void }) {
+function RevenueView({ query, analytics, filters, onFiltersChange, periodMode, anchor, onPeriodChange, onCustom }: { query: ReturnType<typeof useQuery<Awaited<ReturnType<typeof financeApi.revenue>>>>; analytics: ReturnType<typeof useQuery<RevenueAnalytics>>; filters: RevenueFilters; onFiltersChange: (filters: RevenueFilters) => void; periodMode: RevenuePeriod | 'CUSTOM'; anchor: string; onPeriodChange: (mode: RevenuePeriod, anchor: string) => void; onCustom: () => void }) {
   const exportExcel = useMutation({ mutationFn: () => financeApi.revenueExcel(toRevenueApiFilters(filters)) });
   const invalidRange = filters.from > filters.to;
   const downloadExcel = async () => {
@@ -62,15 +65,19 @@ function RevenueView({ query, filters, onFiltersChange }: { query: ReturnType<ty
     }
   };
   const updateFilter = <K extends keyof RevenueFilters>(key: K, value: RevenueFilters[K]) => onFiltersChange({ ...filters, [key]: value || undefined });
-  const resetFilters = () => onFiltersChange(currentMonthFilters());
+  const resetFilters = () => onPeriodChange('MONTH', currentMonthFilters().from);
   const filterPanel = <Card className="p-4 sm:p-5">
     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
       <div><h2 className="text-base font-extrabold text-ink">Kỳ báo cáo</h2><p className="mt-1 text-sm text-muted">Số liệu trên màn hình và file Excel luôn dùng cùng bộ lọc.</p></div>
       <Button size="sm" variant="secondary" icon={<ArrowCounterClockwise />} onClick={resetFilters}>Tháng hiện tại</Button>
     </div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+      <div className="flex flex-wrap gap-2">{(['MONTH', 'QUARTER', 'YEAR', 'CUSTOM'] as const).map((mode) => <Button key={mode} size="sm" variant={periodMode === mode ? 'primary' : 'secondary'} onClick={() => mode === 'CUSTOM' ? onCustom() : onPeriodChange(mode, currentMonthFilters().from)}>{mode === 'MONTH' ? 'Tháng' : mode === 'QUARTER' ? 'Quý' : mode === 'YEAR' ? 'Năm' : 'Tùy chọn'}</Button>)}</div>
+      {periodMode !== 'CUSTOM' && <div className="flex items-center gap-2"><Button size="sm" variant="secondary" onClick={() => onPeriodChange(periodMode, shiftAnchor(anchor, periodMode, -1))} aria-label="Kỳ trước"><CaretLeft /></Button><strong className="min-w-24 text-center text-sm text-ink">{periodLabel(anchor, periodMode)}</strong><Button size="sm" variant="secondary" disabled={shiftAnchor(anchor, periodMode, 1) > currentMonthFilters().to} onClick={() => onPeriodChange(periodMode, shiftAnchor(anchor, periodMode, 1))} aria-label="Kỳ sau"><CaretRight /></Button></div>}
+    </div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <Field id="revenue-from" label="Từ ngày"><DateInput id="revenue-from" className={inputClass} value={filters.from} onValueChange={(value) => updateFilter('from', value)} /></Field>
-      <Field id="revenue-to" label="Đến ngày"><DateInput id="revenue-to" className={inputClass} value={filters.to} onValueChange={(value) => updateFilter('to', value)} /></Field>
+      <Field id="revenue-from" label="Từ ngày"><DateInput id="revenue-from" className={inputClass} value={filters.from} onValueChange={(value) => { onCustom(); updateFilter('from', value); }} /></Field>
+      <Field id="revenue-to" label="Đến ngày"><DateInput id="revenue-to" className={inputClass} value={filters.to} onValueChange={(value) => { onCustom(); updateFilter('to', value); }} /></Field>
       <Field id="revenue-channel" label="Kênh thanh toán"><select id="revenue-channel" className={inputClass} value={filters.channel ?? ''} onChange={(event) => updateFilter('channel', event.target.value as RevenueFilters['channel'])}><option value="">Tất cả kênh</option><option value="ONLINE">VNPay</option><option value="COUNTER">Tiền mặt tại quầy</option><option value="WALLET">Ví Sportigo</option></select></Field>
       <Field id="revenue-service" label="Loại dịch vụ"><select id="revenue-service" className={inputClass} value={filters.itemType ?? ''} onChange={(event) => updateFilter('itemType', event.target.value as RevenueFilters['itemType'])}><option value="">Tất cả dịch vụ</option><option value="GROUP_CLASS">Lớp nhóm</option><option value="PRIVATE_COURSE">Khóa 1–1</option><option value="MEMBERSHIP">Gói membership</option></select></Field>
     </div>
@@ -88,6 +95,9 @@ function RevenueView({ query, filters, onFiltersChange }: { query: ReturnType<ty
       <StatTile label="Doanh thu thuần" value={money(data.net)} hint="Sau khi trừ hoàn tiền" icon={<ArrowUp />} tone="lime" />
       <StatTile label="Số giao dịch" value={data.transactions.toLocaleString('vi-VN')} hint="Tất cả kênh thanh toán" icon={<Receipt />} tone="sky" />
     </div>
+    {periodMode !== 'CUSTOM' && analytics.isSuccess && <><div className="grid gap-3 sm:grid-cols-2"><ComparisonCard label="So với kỳ liền trước" current={analytics.data.current.net} baseline={analytics.data.previous.net} change={analytics.data.change.previous} /><ComparisonCard label="So với cùng kỳ năm trước" current={analytics.data.current.net} baseline={analytics.data.yearAgo.net} change={analytics.data.change.yearAgo} /></div><div className="grid gap-4 sm:grid-cols-2"><StatTile label="Giá trị giao dịch trung bình" value={money(analytics.data.current.averageTransaction)} hint="Doanh thu gộp / giao dịch" icon={<Receipt />} tone="sky" /><StatTile label="Tỷ lệ hoàn tiền" value={`${(analytics.data.current.refundRate * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`} hint="Hoàn tiền / doanh thu gộp" icon={<ArrowDown />} tone="energy" /></div><RevenueTrend data={analytics.data} /></>}
+    {periodMode !== 'CUSTOM' && analytics.isPending && <ListSkeleton rows={3} label="Đang phân tích xu hướng doanh thu…" />}
+    {periodMode !== 'CUSTOM' && analytics.isError && <ErrorState error={analytics.error} onRetry={() => analytics.refetch()} retrying={analytics.isRefetching} />}
     <RevenueCharts data={data} />
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
       <Card className="p-5 sm:p-6"><SectionHeading title="Doanh thu theo kênh" description="Giá trị thanh toán thành công được phân bổ theo phương thức." />
@@ -96,6 +106,28 @@ function RevenueView({ query, filters, onFiltersChange }: { query: ReturnType<ty
       <Card className="p-5 sm:p-6"><SectionHeading title="Workbook tài chính" description="6 sheet đối soát, định dạng VND và sẵn sàng lọc trong Excel." /><div className="grid gap-3"><Button icon={<FileXls />} loading={exportExcel.isPending} disabled={invalidRange} onClick={downloadExcel}>Xuất báo cáo Excel</Button><Button variant="secondary" icon={<FilePdf />} disabled={invalidRange} onClick={async () => saveBlob(await financeApi.reportFile('revenue', 'pdf', toRevenueApiFilters(filters)), 'sportigo-revenue.pdf')}>Xuất PDF tóm tắt</Button></div>{exportExcel.isError && <div className="mt-3"><InlineAlert>Xuất file chưa thành công. Hãy thử lại sau.</InlineAlert></div>}</Card>
     </div>
   </div>;
+}
+
+function ComparisonCard({ label, current, baseline, change }: { label: string; current: number; baseline: number; change: number | null }) {
+  return <Card className="p-4 sm:p-5"><p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p><div className="mt-2 flex flex-wrap items-baseline gap-3"><strong className="text-xl font-extrabold text-ink">{money(current)}</strong><span className={`text-sm font-bold ${change === null ? 'text-muted' : change >= 0 ? 'text-success' : 'text-danger'}`}>{change === null ? 'Chưa có dữ liệu đối chiếu' : `${change >= 0 ? '+' : ''}${(change * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`}</span></div><p className="mt-1 text-xs text-muted">Kỳ đối chiếu: {money(baseline)}</p></Card>;
+}
+
+function shiftAnchor(anchor: string, period: RevenuePeriod, amount: number) {
+  const date = new Date(`${anchor}T00:00:00.000Z`);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + amount * (period === 'YEAR' ? 12 : period === 'QUARTER' ? 3 : 1), 1)).toISOString().slice(0, 10);
+}
+
+function periodFilters(period: RevenuePeriod, anchor: string): Pick<RevenueFilters, 'from' | 'to'> {
+  const date = new Date(`${anchor}T00:00:00.000Z`);
+  const year = date.getUTCFullYear();
+  const month = period === 'YEAR' ? 0 : period === 'QUARTER' ? Math.floor(date.getUTCMonth() / 3) * 3 : date.getUTCMonth();
+  const months = period === 'YEAR' ? 12 : period === 'QUARTER' ? 3 : 1;
+  return { from: new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10), to: new Date(Date.UTC(year, month + months, 0)).toISOString().slice(0, 10) };
+}
+
+function periodLabel(anchor: string, period: RevenuePeriod) {
+  const [year, month] = anchor.split('-').map(Number);
+  return period === 'YEAR' ? `Năm ${year}` : period === 'QUARTER' ? `Quý ${Math.ceil(month / 3)}/${year}` : `Tháng ${String(month).padStart(2, '0')}/${year}`;
 }
 
 function currentMonthFilters(): RevenueFilters {

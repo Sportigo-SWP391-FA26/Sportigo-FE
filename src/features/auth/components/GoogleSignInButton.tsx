@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { loginWithGoogle } from '../api'
 import { roleHomePath, type AppRole } from '../../../components/auth/session'
 
@@ -20,11 +20,13 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undef
 
 export function GoogleSignInButton() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = new URLSearchParams(location.search).get('returnTo')
   const container = useRef<HTMLDivElement>(null)
   const [loadError, setLoadError] = useState(!GOOGLE_CLIENT_ID)
   const mutation = useMutation({
     mutationFn: loginWithGoogle,
-    onSuccess: ({ user }) => navigate(roleHomePath[user.role as AppRole] ?? '/'),
+    onSuccess: ({ user }) => navigate(user.role === 'MEMBER' && returnTo === '/member/membership' ? returnTo : roleHomePath[user.role as AppRole] ?? '/'),
   })
   const submitCredential = mutation.mutate
 
