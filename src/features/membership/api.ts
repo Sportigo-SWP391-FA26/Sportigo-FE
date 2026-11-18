@@ -18,6 +18,7 @@ export type PurchaseResult = { orderId: number; orderNumber: string; amount: str
 
 export type MemberIdentity = { id: number; memberCode: string; displayName: string; avatarUrl: string | null };
 export type CheckIn = { id: number; method: 'QR' | 'MANUAL'; checkedInAt: string; checkedInBy: string; member: MemberIdentity; planName: string; endDate: string | null };
+export type CheckInHistory = { items: CheckIn[]; page: number; limit: number; total: number };
 export type CheckInResult = CheckIn & { alreadyCheckedIn: boolean; daysRemaining: number };
 export type CheckInFailure = { code: string; message: string; member?: MemberIdentity };
 
@@ -31,7 +32,8 @@ export const membershipApi = {
   purchase: (planId: number) => apiClient.post<PurchaseResult>('/memberships/purchase', { planId }).then((r) => r.data),
   sellToMember: (memberId: number, planId: number) => apiClient.post<PurchaseResult>(`/members/${memberId}/memberships`, { planId }).then((r) => r.data),
   checkIn: (memberCode: string, method: 'QR' | 'MANUAL') => apiClient.post<CheckInResult>('/check-ins', { memberCode, method }).then((r) => r.data),
-  recentCheckIns: () => apiClient.get<{ items: CheckIn[] }>('/check-ins', { params: { limit: 10 } }).then((r) => r.data.items),
+  checkInHistory: (page: number, limit = 10) => apiClient.get<CheckInHistory>('/check-ins', { params: { page, limit } }).then((r) => r.data),
+  myCheckInHistory: (page: number, limit = 10) => apiClient.get<CheckInHistory>('/members/me/check-ins', { params: { page, limit } }).then((r) => r.data),
 };
 
 export function toCheckInFailure(error: unknown): CheckInFailure {

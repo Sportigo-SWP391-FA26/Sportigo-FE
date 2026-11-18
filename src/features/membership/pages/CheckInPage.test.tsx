@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { CheckInPage } from './CheckInPage';
 
 const { api } = vi.hoisted(() => ({
-  api: { recentCheckIns: vi.fn(), checkIn: vi.fn(), plans: vi.fn(), sellToMember: vi.fn() },
+  api: { checkInHistory: vi.fn(), checkIn: vi.fn(), plans: vi.fn(), sellToMember: vi.fn() },
 }));
 
 vi.mock('../api', async (original) => ({
@@ -37,7 +37,7 @@ describe('CheckInPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    api.recentCheckIns.mockResolvedValue([]);
+    api.checkInHistory.mockResolvedValue({ items: [], page: 1, limit: 10, total: 0 });
     api.plans.mockResolvedValue([{ id: 1, name: 'Gói 1 tháng', durationMonths: 1, price: '300000', description: null, status: 'ACTIVE' }]);
   });
 
@@ -61,5 +61,18 @@ describe('CheckInPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Gói 1 tháng/ }));
     await waitFor(() => expect(api.sellToMember).toHaveBeenCalledWith(7, 1));
     expect(await screen.findByText(/Đã tạo đơn ORD-MB-5/)).toBeInTheDocument();
+  });
+
+  test('lịch sử phân trang và tự làm mới sau check-in', async () => {
+    const record = { id: 1, method: 'QR', checkedInAt: '2026-11-10T01:00:00.000Z', checkedInBy: 'Lễ tân', member, planName: 'Gói 3 tháng', endDate: '2027-02-09' };
+    api.checkInHistory.mockImplementation((page: number) => Promise.resolve({ items: [record], page, limit: 10, total: 11 }));
+    api.checkIn.mockResolvedValue({ ...record, alreadyCheckedIn: false, daysRemaining: 92 });
+    setup();
+
+    expect(await screen.findByText(/An Nguyễn/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+    await waitFor(() => expect(api.checkInHistory).toHaveBeenCalledWith(2, 10));
+    await submitCode();
+    await waitFor(() => expect(api.checkInHistory.mock.calls.length).toBeGreaterThan(2));
   });
 });

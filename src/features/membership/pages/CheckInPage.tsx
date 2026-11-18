@@ -8,6 +8,7 @@ import { Field } from '../../../components/ui/Field';
 import { InlineAlert } from '../../../components/ui/States';
 import { inputClass } from '../../../components/ui/styles';
 import { QrScannerPanel } from '../components/QrScannerPanel';
+import { CheckInHistoryPanel } from '../components/CheckInHistoryPanel';
 import { formatDay, membershipApi, money, toCheckInFailure, type CheckInFailure, type CheckInResult, type MemberIdentity, type PurchaseResult } from '../api';
 
 function MemberBadge({ member }: { member: MemberIdentity }) {
@@ -54,7 +55,6 @@ function SellPlans({ member }: { member: MemberIdentity }) {
 
 export function CheckInPage() {
   const queryClient = useQueryClient();
-  const recent = useQuery({ queryKey: ['check-ins'], queryFn: membershipApi.recentCheckIns });
   const [code, setCode] = useState('');
   const [success, setSuccess] = useState<CheckInResult | null>(null);
   const [failure, setFailure] = useState<CheckInFailure | null>(null);
@@ -117,21 +117,9 @@ export function CheckInPage() {
             )}
           </Card>
 
-          <Card className="p-5 sm:p-6">
-            <SectionHeading title="Lượt gần đây" />
-            {recent.data?.length ? (
-              <ul className="divide-y divide-line">
-                {recent.data.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                    <span><strong className="text-ink">{item.member.displayName}</strong> <span className="font-mono text-muted">{item.member.memberCode}</span></span>
-                    <time className="shrink-0 text-muted" dateTime={item.checkedInAt}>{new Date(item.checkedInAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</time>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="text-sm text-muted">Chưa có lượt check-in.</p>}
-          </Card>
         </div>
       </div>
+      <div className="mt-5"><CheckInHistoryPanel /></div>
     </div>
   );
 }

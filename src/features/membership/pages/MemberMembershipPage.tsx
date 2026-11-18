@@ -6,6 +6,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { RegistrationPayment } from '../../member/components/RegistrationPayment';
+import { CheckInHistoryPanel } from '../components/CheckInHistoryPanel';
 import { formatDay, membershipApi, money, toCheckInFailure } from '../api';
 
 export function MemberMembershipPage() {
@@ -46,6 +47,8 @@ export function MemberMembershipPage() {
           </div>
         )}
       </Card>
+
+      <div className="mb-5"><CheckInHistoryPanel memberOnly /></div>
 
       {plans.data.length === 0 ? <EmptyState title="Chưa có gói mở bán" description="Vui lòng quay lại sau hoặc liên hệ lễ tân." /> : (
         <div className="grid gap-4 md:grid-cols-3">
