@@ -1,7 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { retryServerErrors } from '../../training/errors';
 import { userKeys } from '../../users/hooks/useUsers';
-import { createStaff, listStaff, updateStaff } from '../api';
+import { createStaff, getStaffPerformance, listStaff, updateStaff } from '../api';
+import type { PerformanceRange } from '../performanceTypes';
 import type { CreateStaffInput, StaffListQuery, UpdateStaffInput } from '../types';
 
 export const staffKeys = {
@@ -17,6 +18,10 @@ export function useStaffList(query: StaffListQuery) {
     placeholderData: keepPreviousData,
     retry: retryServerErrors,
   });
+}
+
+export function useStaffPerformance(range: PerformanceRange) {
+  return useQuery({ queryKey: [...staffKeys.all, 'performance', range] as const, queryFn: () => getStaffPerformance(range), placeholderData: keepPreviousData, retry: retryServerErrors });
 }
 
 // note: invalidate cả userKeys.all để trang /app/users cũng thấy nhân sự mới

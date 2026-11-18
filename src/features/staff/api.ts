@@ -1,5 +1,6 @@
 import { apiClient } from '../../api/client';
 import type { CreateStaffInput, StaffListPage, StaffListQuery, StaffMember, UpdateStaffInput } from './types';
+import type { PerformanceRange, StaffPerformance } from './performanceTypes';
 
 // FR-07
 export async function listStaff(query: StaffListQuery) {
@@ -16,5 +17,10 @@ export async function createStaff(input: CreateStaffInput) {
 
 export async function updateStaff(id: number, input: UpdateStaffInput) {
   const { data } = await apiClient.patch<StaffMember>(`/staff/${id}`, input);
+  return data;
+}
+
+export async function getStaffPerformance(range: PerformanceRange) {
+  const { data } = await apiClient.get<StaffPerformance>('/staff/performance', { params: range });
   return data;
 }

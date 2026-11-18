@@ -14,6 +14,7 @@ import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { CurrencyInput, DateInput, DateTimeInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { Pagination } from '../../../components/ui/Pagination';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { addDays, fromCenterDateTimeInput, formatDate, todayInCenter } from '../../training/format';
 import { parseApiError, retryServerErrors } from '../../training/errors';
@@ -66,6 +67,10 @@ function classStatusTone(status: string): 'success' | 'danger' | 'warning' | 'ne
 
 export function GroupClassesPage() {
   const classes = useGroupClasses();
+  const [page, setPage] = useState(1);
+  const total = classes.data?.length ?? 0;
+  const pageSize = 6;
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)));
   const updateStatus = useUpdateGroupClassStatus();
   const remove = useDeleteGroupClass();
   const [creating, setCreating] = useState(false);
@@ -90,8 +95,9 @@ export function GroupClassesPage() {
       ) : classes.data.length === 0 ? (
         <EmptyState icon={<CalendarBlank />} title="Chưa có lớp nhóm" description="Chưa có lớp nào được tạo trong hệ thống." action={<Button onClick={() => setCreating(true)}>Tạo lớp nhóm</Button>} />
       ) : (
+        <div>
         <div className="grid gap-5 md:grid-cols-2">
-          {classes.data.map((groupClass) => (
+          {classes.data.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((groupClass) => (
             <Card key={groupClass.id} className="group flex min-w-0 flex-col overflow-hidden p-0">
               <div className="relative aspect-[16/8] overflow-hidden bg-primary/8">
                 {groupClass.sport.imageUrl ? (
@@ -143,6 +149,8 @@ export function GroupClassesPage() {
               </div>
             </Card>
           ))}
+        </div>
+        {total > pageSize && <Pagination page={currentPage} pageSize={pageSize} total={total} onChange={setPage} />}
         </div>
       )}
       {creating && <CreateGroupClassDialog onClose={() => setCreating(false)} />}

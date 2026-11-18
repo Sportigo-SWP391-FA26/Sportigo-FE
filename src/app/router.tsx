@@ -36,6 +36,9 @@ const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage').t
 const UsersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })));
 const MembersPage = lazy(() => import('../features/users/pages/UsersPage').then((module) => ({ default: module.MembersPage })));
 const StaffPage = lazy(() => import('../features/staff/pages/StaffPage').then((module) => ({ default: module.StaffPage })));
+const StaffPerformancePage = lazy(() => import('../features/staff/pages/StaffPerformancePage').then((module) => ({ default: module.StaffPerformancePage })));
+const PayrollPage = lazy(() => import('../features/staff/pages/PayrollPage').then((module) => ({ default: module.PayrollPage })));
+const MyPayslipsPage = lazy(() => import('../features/staff/pages/PayrollPage').then((module) => ({ default: module.MyPayslipsPage })));
 const MemberSupportPage = lazy(() => import('../features/support/pages/MemberSupportPage').then((module) => ({ default: module.MemberSupportPage })));
 const MemberSupportDetailPage = lazy(() => import('../features/support/pages/MemberSupportDetailPage').then((module) => ({ default: module.MemberSupportDetailPage })));
 const SupportQueuePage = lazy(() => import('../features/support/pages/SupportQueuePage').then((module) => ({ default: module.SupportQueuePage })));
@@ -114,6 +117,8 @@ export const router = createBrowserRouter([
               { path: 'center-settings', element: <CenterSettingsPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
+              { path: 'staff-performance', element: <StaffPerformancePage /> },
+              { path: 'payroll', element: <PayrollPage /> },
               // note: FR-66/67 chỉ Manager
               { path: 'session-coaches', element: <SessionCoachesPage /> },
               { path: 'coach-absences', element: <ManagerAbsencesPage /> },
@@ -157,7 +162,7 @@ export const router = createBrowserRouter([
           {
             // note: FR-67 chỉ lễ tân có ca làm của riêng mình
             element: <RequireRole roles={['RECEPTIONIST']} />,
-            children: [{ path: 'my-shifts', element: <MyShiftsPage /> }],
+            children: [{ path: 'my-shifts', element: <MyShiftsPage /> }, { path: 'my-payslips', element: <MyPayslipsPage /> }],
           },
         ],
       },
@@ -201,6 +206,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard', element: <CoachDashboardPage /> },
+          { path: 'my-payslips', element: <MyPayslipsPage /> },
           { path: 'attendance', element: <AttendanceHistoryPage scope="coach" /> },
           { path: 'schedule', element: <CoachOwnSchedulePage /> },
           { path: 'absences', element: <CoachAbsencesPage /> },

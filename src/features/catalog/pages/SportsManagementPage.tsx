@@ -10,6 +10,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { ImageUploadField } from '../../../components/ui/ImageUploadField';
+import { Pagination } from '../../../components/ui/Pagination';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { parseApiError } from '../../training/errors';
@@ -24,9 +25,13 @@ const schema = z.object({
   passingScore: z.string().refine((value) => value.trim() === '' || (Number(value) >= 0 && Number(value) <= 100), 'Ngưỡng điểm phải từ 0 đến 100.'),
 });
 type Values = z.infer<typeof schema>;
+const PAGE_SIZE = 8;
 
 export function SportsManagementPage() {
   const sports = useSports();
+  const [page, setPage] = useState(1);
+  const total = sports.data?.length ?? 0;
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(total / PAGE_SIZE)));
   const [formTarget, setFormTarget] = useState<Sport | null | undefined>();
   const [metricSport, setMetricSport] = useState<Sport>();
   const setActive = useSetSportActive();
@@ -48,11 +53,12 @@ export function SportsManagementPage() {
         ) : sports.data.length === 0 ? (
           <EmptyState icon={<Tag />} title="Chưa có bộ môn" description="Tạo môn thể thao đầu tiên cho trung tâm." />
         ) : (
+          <div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-left text-sm">
               <thead className="border-b border-line text-xs uppercase text-muted"><tr><th className="py-2 pr-3">Môn thể thao</th><th className="py-2 pr-3">Mô tả</th><th className="py-2 pr-3">Trạng thái</th><th className="py-2 text-right">Thao tác</th></tr></thead>
               <tbody className="divide-y divide-line">
-                {sports.data.map((sport) => (
+                {sports.data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((sport) => (
                   <tr key={sport.id}>
                     <td className="py-3 pr-3 font-bold"><div className="flex items-center gap-3">{sport.imageUrl ? <img src={sport.imageUrl} alt="" className="size-11 rounded-lg object-cover" /> : <div className="flex size-11 items-center justify-center rounded-lg bg-primary/8 text-primary"><Tag aria-hidden="true" /></div>}<span>{sport.name}</span></div></td>
                     <td className="py-3 pr-3 text-muted">{sport.description || '—'}</td>
@@ -72,6 +78,8 @@ export function SportsManagementPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          {total > PAGE_SIZE && <Pagination page={currentPage} pageSize={PAGE_SIZE} total={total} onChange={setPage} />}
           </div>
         )}
       </Card>

@@ -11,6 +11,7 @@ import { Dialog } from '../../../components/ui/Dialog';
 import { Field } from '../../../components/ui/Field';
 import { CurrencyInput } from '../../../components/ui/LocalizedInputs';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
+import { Pagination } from '../../../components/ui/Pagination';
 import { inputClass, textareaClass } from '../../../components/ui/styles';
 import { getSports } from '../../catalog/api';
 import { parseApiError, retryServerErrors } from '../../training/errors';
@@ -39,6 +40,10 @@ function PrivateCourseActions({ courseId, name, status }: { courseId: number; na
 
 export function PrivateCoursesPage() {
   const courses = usePrivateCourses();
+  const [page, setPage] = useState(1);
+  const total = courses.data?.length ?? 0;
+  const pageSize = 6;
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)));
   const isManager = getSessionRole() === 'CENTER_MANAGER';
   const [creating, setCreating] = useState(false);
   const basePath = isManager ? '/app/private-courses' : '/member/private-courses';
@@ -52,8 +57,9 @@ export function PrivateCoursesPage() {
       ) : courses.data.length === 0 ? (
         <EmptyState icon={<BookOpenText />} title="Chưa có khóa học đang mở" description="Hiện chưa có khóa học 1–1 nào khả dụng." action={isManager ? <Button onClick={() => setCreating(true)}>Tạo khóa 1–1</Button> : undefined} />
       ) : (
+        <div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {courses.data.map((course) => (
+          {courses.data.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((course) => (
             <Card key={course.id} className="group overflow-hidden p-0">
               <div className="relative aspect-[16/8] overflow-hidden bg-primary/8">
                 {course.sport.imageUrl ? <img src={course.sport.imageUrl} alt={`Khóa ${course.name}`} className="size-full object-cover transition duration-500 group-hover:scale-[1.03]" /> : <div className="grid size-full place-items-center text-primary"><BookOpenText size={42} /></div>}
@@ -74,6 +80,8 @@ export function PrivateCoursesPage() {
               </div>
             </Card>
           ))}
+        </div>
+        {total > pageSize && <Pagination page={currentPage} pageSize={pageSize} total={total} onChange={setPage} />}
         </div>
       )}
       {creating && <CreatePrivateCourseDialog onClose={() => setCreating(false)} />}

@@ -25,6 +25,8 @@ export const centerManagerNavigation: NavigationEntry[] = [
     label: 'Coach & nhân sự',
     items: [
       { label: 'Nhân sự', path: '/app/staff' },
+      { label: 'Hiệu suất', path: '/app/staff-performance' },
+      { label: 'Bảng lương', path: '/app/payroll' },
       { label: 'Coach', path: '/app/coaches' },
       { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
       { label: 'Dạy thay & vắng', path: '/app/session-coaches' },
@@ -69,6 +71,7 @@ export const receptionistNavigation: NavigationItem[] = [
   { label: 'Check-in phòng tập', path: '/app/check-in' },
   // note: FR-67 ca làm và chấm công
   { label: 'Ca làm của tôi', path: '/app/my-shifts' },
+  { label: 'Phiếu lương', path: '/app/my-payslips' },
   { label: 'Tra cứu Hội viên', path: '/app/users' },
   { label: 'Đăng ký lớp cho Hội viên', path: '/app/class-bookings' },
   { label: 'Thu tiền tại quầy', path: '/app/cashier' },
@@ -78,6 +81,7 @@ export const receptionistNavigation: NavigationItem[] = [
 
 export const coachNavigation: NavigationEntry[] = [
   { label: 'Tổng quan', path: '/coach/dashboard' },
+  { label: 'Phiếu lương', path: '/coach/my-payslips' },
   { label: 'Lịch & buổi học', items: [
     { label: 'Lịch dạy', path: '/coach/schedule' },
     { label: 'Báo nghỉ buổi học', path: '/coach/absences' },
