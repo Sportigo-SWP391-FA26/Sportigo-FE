@@ -25,8 +25,7 @@ export const centerManagerNavigation: NavigationEntry[] = [
     label: 'Coach & nhân sự',
     items: [
       { label: 'Nhân sự', path: '/app/staff' },
-      { label: 'Hiệu suất', path: '/app/staff-performance' },
-      { label: 'Bảng lương', path: '/app/payroll' },
+      { label: 'Hiệu suất & lương', path: '/app/staff-payroll' },
       { label: 'Coach', path: '/app/coaches' },
       { label: 'Duyệt lịch Coach', path: '/app/coach-availability' },
       { label: 'Dạy thay & vắng', path: '/app/session-coaches' },

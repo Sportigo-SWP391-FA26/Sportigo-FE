@@ -18,54 +18,45 @@ const input =
 const button =
   'rounded-lg bg-primary px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50';
 
-function EntryTable({ entries }: { entries: PayrollEntry[] }) {
+function EntryTable({ entries, approved }: { entries: PayrollEntry[]; approved: boolean }) {
+  const total = entries.reduce((sum, entry) => sum + Number(entry.netAmount), 0);
+  const needsReview = entries.filter((entry) => entry.reviewIssues.length > 0).length;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[780px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-line text-muted">
-            <th className="py-3">Nhân sự</th>
-            <th>Lương cơ bản</th>
-            <th>Ca dự kiến / vắng</th>
-            <th>Trừ vắng</th>
-            <th>Bù ca</th>
-            <th>Phụ cấp / khấu trừ</th>
-            <th>Thực nhận</th>
-            <th>Đối soát</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr key={entry.id} className="border-b border-line align-top">
-              <td className="py-3 font-semibold">
-                {entry.staffName}
-                <small className="block font-normal text-muted">
-                  {entry.staffCode ?? entry.role}
-                </small>
-              </td>
-              <td>{vnd(entry.baseSalary)}</td>
-              <td>
-                {entry.scheduledUnits} / {entry.absentUnits}
-              </td>
-              <td>{vnd(entry.absenceDeduction)}</td>
-              <td>{vnd(entry.makeupCredit)}</td>
-              <td>
-                {vnd(entry.allowanceTotal)} / {vnd(entry.deductionTotal)}
-              </td>
-              <td className="font-bold text-primary">{vnd(entry.netAmount)}</td>
-              <td
-                className={
-                  entry.reviewIssues.length ? 'text-red-600' : 'text-green-700'
-                }
-              >
-                {entry.reviewIssues.length
-                  ? entry.reviewIssues.join('; ')
-                  : 'Đã đủ căn cứ'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl bg-primary/10 p-4"><p className="text-xs font-bold uppercase tracking-wide text-muted">{approved ? 'Tổng thực nhận' : 'Quỹ lương dự tính'}</p><p className="mt-2 text-2xl font-extrabold tabular-nums text-primary-deep">{vnd(total)}</p></div>
+        <div className="rounded-xl bg-canvas p-4"><p className="text-xs font-bold uppercase tracking-wide text-muted">Nhân sự</p><p className="mt-2 text-2xl font-extrabold text-ink">{entries.length}</p></div>
+        <div className={`rounded-xl p-4 ${needsReview ? 'bg-accent-energy/10' : 'bg-accent-lime/10'}`}><p className="text-xs font-bold uppercase tracking-wide text-muted">Cần đối soát</p><p className="mt-2 text-2xl font-extrabold text-ink">{needsReview} <span className="text-sm font-semibold">nhân sự</span></p></div>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {entries.map((entry) => {
+          const adjustment = Number(entry.makeupCredit) + Number(entry.allowanceTotal) - Number(entry.absenceDeduction) - Number(entry.deductionTotal);
+          return (
+            <details key={entry.id} className="group rounded-xl border border-line bg-surface p-4 shadow-sm">
+              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="font-bold text-ink">{entry.staffName}</p><p className="mt-0.5 text-xs text-muted">{entry.staffCode ?? entry.role} · {entry.role === 'COACH' ? 'Coach' : 'Lễ tân'}</p></div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${entry.reviewIssues.length ? 'bg-accent-energy/15 text-amber-800' : 'bg-accent-lime/20 text-green-800'}`}>{entry.reviewIssues.length ? `${entry.reviewIssues.length} mục cần đối soát` : 'Đủ căn cứ'}</span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-line pt-3">
+                  <div><p className="text-xs text-muted">{approved ? 'Thực nhận' : 'Dự tính thực nhận'}</p><p className="text-xl font-extrabold tabular-nums text-primary-deep">{vnd(entry.netAmount)}</p></div>
+                  <span className="text-xs font-semibold text-primary group-open:underline">{entry.reviewIssues.length ? 'Xem đối soát' : 'Xem chi tiết'} ↓</span>
+                </div>
+              </summary>
+              <div className="mt-4 grid gap-2 border-t border-line pt-4 text-sm sm:grid-cols-2">
+                <p className="text-muted">Lương cơ bản <strong className="ml-1 text-ink">{vnd(entry.baseSalary)}</strong></p>
+                <p className="text-muted">Ca/buổi dự kiến · vắng <strong className="ml-1 text-ink">{entry.scheduledUnits} · {entry.absentUnits}</strong></p>
+                <p className="text-muted">Trừ vắng <strong className="ml-1 text-ink">{vnd(entry.absenceDeduction)}</strong></p>
+                <p className="text-muted">Bù ca <strong className="ml-1 text-ink">{vnd(entry.makeupCredit)}</strong></p>
+                <p className="text-muted">Phụ cấp <strong className="ml-1 text-ink">{vnd(entry.allowanceTotal)}</strong></p>
+                <p className="text-muted">Khấu trừ khác <strong className="ml-1 text-ink">{vnd(entry.deductionTotal)}</strong></p>
+                <p className="text-muted sm:col-span-2">Điều chỉnh ròng <strong className="ml-1 text-ink">{vnd(adjustment)}</strong></p>
+              </div>
+              {entry.reviewIssues.length > 0 && <div className="mt-4 rounded-lg bg-accent-energy/10 p-3 text-sm"><p className="font-bold text-ink">Cần kiểm tra trước khi duyệt</p><ul className="mt-2 list-disc space-y-1 pl-5 text-ink">{entry.reviewIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}
+            </details>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -89,6 +80,7 @@ export function PayrollPage() {
     queryFn: () => payrollApi.period(month),
     retry: false,
   });
+  const periods = useQuery({ queryKey: ['payroll-periods'], queryFn: payrollApi.periods });
   const performance = useQuery({
     queryKey: ['staff-performance-payroll'],
     queryFn: async () =>
@@ -118,6 +110,7 @@ export function PayrollPage() {
       await action();
       setMessage(success);
       await cache.invalidateQueries({ queryKey: ['payroll'] });
+      await cache.invalidateQueries({ queryKey: ['payroll-periods'] });
       await cache.invalidateQueries({ queryKey: ['compensation'] });
       await cache.invalidateQueries({ queryKey: ['recurring'] });
     } catch (error) {
@@ -132,6 +125,7 @@ export function PayrollPage() {
       (sum, entry) => sum + entry.reviewIssues.length,
       0,
     ) ?? 0;
+  const demoEntries = period.data?.entries.filter((entry) => entry.reviewIssues.some((issue) => issue.includes('DỮ LIỆU DEMO'))).length ?? 0;
   return (
     <div className="mx-auto max-w-7xl space-y-6 text-ink">
       <header>
@@ -148,6 +142,20 @@ export function PayrollPage() {
         <div role="status" className={card}>
           {message}
         </div>
+      )}
+      {periods.data && periods.data.length > 0 && (
+        <section className={card} aria-label="Các kỳ lương đã lập">
+          <h2 className="mb-3 text-lg font-bold">Các kỳ lương đã lập</h2>
+          <div className="flex flex-wrap gap-2">
+            {periods.data.map((item) => (
+              <button key={item.month} type="button" onClick={() => setMonth(item.month)}
+                aria-current={month === item.month ? 'true' : undefined}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold ${month === item.month ? 'border-primary bg-primary/10 text-primary-deep' : 'border-line bg-surface text-ink'}`}>
+                Tháng {item.month.slice(5)}/{item.month.slice(0, 4)} · {item.status === 'APPROVED' ? 'Đã duyệt' : 'Bản nháp'}
+              </button>
+            ))}
+          </div>
+        </section>
       )}
       <section className={`${card} grid gap-4 md:grid-cols-[180px_1fr]`}>
         <label className="text-sm font-semibold">
@@ -212,10 +220,11 @@ export function PayrollPage() {
         </div>
         {period.data ? (
           <>
+            {demoEntries > 0 && <div role="note" className="mb-4 rounded-xl border border-accent-energy/30 bg-accent-energy/10 p-4 text-sm text-ink"><strong>Dữ liệu minh họa: {demoEntries} nhân sự.</strong> Các khoản vắng và bù ca trong kỳ này chỉ dùng để trình diễn cách tính lương, chưa có chứng từ chấm công tương ứng và không thể duyệt kỳ lương.</div>}
             <p className="mb-4 text-sm text-muted">
               {period.data.entries.length} nhân sự · {issues} mục cần đối soát
             </p>
-            <EntryTable entries={period.data.entries} />
+            <EntryTable entries={period.data.entries} approved={locked} />
           </>
         ) : (
           <p className="text-muted">

@@ -20,6 +20,7 @@ type Tab = 'coach' | 'receptionist';
 
 // note: các khoảng chọn nhanh; mọi mốc tính theo ngày giờ trung tâm (Việt Nam)
 function presetRange(preset: string, today: string): PerformanceRange {
+  if (/^2026-(0[5-9]|10)$/.test(preset)) return monthRange(`${preset}-01`);
   if (preset === 'last-month') return monthRange(addDays(`${today.slice(0, 8)}01`, -1));
   if (preset === 'last-30') return { from: addDays(today, -29), to: today };
   return { from: `${today.slice(0, 8)}01`, to: today };
@@ -213,6 +214,9 @@ export function StaffPerformancePage() {
             <option value="this-month">Tháng này</option>
             <option value="last-month">Tháng trước</option>
             <option value="last-30">30 ngày qua</option>
+            {['2026-10', '2026-09', '2026-08', '2026-07', '2026-06', '2026-05'].map((month) => (
+              <option key={month} value={month}>Tháng {month.slice(5)}/{month.slice(0, 4)}</option>
+            ))}
           </select>
         </label>
         <label className="block">

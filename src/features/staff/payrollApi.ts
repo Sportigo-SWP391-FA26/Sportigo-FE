@@ -22,6 +22,7 @@ export type PayrollPeriod = {
   status: 'DRAFT' | 'APPROVED';
   entries: PayrollEntry[];
 };
+export type PayrollPeriodSummary = { month: string; status: 'DRAFT' | 'APPROVED'; _count: { entries: number } };
 export type PayrollCompensation = {
   id: number;
   baseSalary: string;
@@ -39,6 +40,7 @@ export type PayrollRecurringItem = {
 };
 
 export const payrollApi = {
+  periods: async () => (await apiClient.get<PayrollPeriodSummary[]>('/payroll/periods')).data,
   period: async (month: string) =>
     (await apiClient.get<PayrollPeriod>(`/payroll/periods/${month}`)).data,
   build: async (month: string) =>

@@ -84,6 +84,14 @@ describe('Hiệu suất nhân sự (FR-65)', () => {
     await waitFor(() => expect(api.getStaffPerformance).toHaveBeenLastCalledWith({ from: '2026-10-15', to: '2026-10-31' }));
   });
 
+  test('chọn nhanh tháng lịch sử lấy đúng khoảng tháng', async () => {
+    vi.mocked(api.getStaffPerformance).mockResolvedValue(data);
+    renderPage();
+    await screen.findByText('Coach Lan');
+    fireEvent.change(screen.getByLabelText('Khoảng thời gian'), { target: { value: '2026-05' } });
+    await waitFor(() => expect(api.getStaffPerformance).toHaveBeenLastCalledWith({ from: '2026-05-01', to: '2026-05-31' }));
+  });
+
   test('API báo lỗi thì hiện thông báo và nút Thử lại', async () => {
     // note: dùng lỗi 400 vì hook tự thử lại 1 lần với lỗi 5xx, làm test chờ lâu
     vi.mocked(api.getStaffPerformance).mockRejectedValue(axiosError(400, { code: 'VALIDATION_ERROR', message: 'Chỉ xem được tối đa 366 ngày' }));

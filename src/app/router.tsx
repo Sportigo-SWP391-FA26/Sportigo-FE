@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- route-level lazy modules are configuration, not Fast Refresh component exports */
 import { lazy } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { MemberLayout } from '../layouts/MemberLayout';
 import { RequireRole } from '../components/auth/RequireRole';
@@ -8,13 +8,19 @@ import { CoachLayout } from '../layouts/CoachLayout';
 import { RoleHomeRedirect } from '../components/auth/RoleHomeRedirect';
 import { getSessionRole } from '../components/auth/session';
 import { LandingPage } from '../features/landing/pages/LandingPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
+import { StaffPayHubPage } from '../features/staff/pages/StaffPayHubPage';
+
+function LegacyStaffRedirect({ page }: { page: 'performance' | 'payroll' }) {
+  const location = useLocation();
+  return <Navigate to={`/app/staff-payroll/${page}${location.search}`} replace />;
+}
 
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
 const VerifyEmailPage = lazy(() => import('../features/auth/pages/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })));
 const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })));
 const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
-const ComingSoonPage = lazy(() => import('../pages/ComingSoonPage').then((module) => ({ default: module.ComingSoonPage })));
 const MemberHomePage = lazy(() => import('../features/member/pages/MemberHomePage').then((module) => ({ default: module.MemberHomePage })));
 const WaitlistPage = lazy(() => import('../features/member/pages/WaitlistPage').then((module) => ({ default: module.WaitlistPage })));
 const ClassSchedulePage = lazy(() => import('../features/member/pages/ClassSchedulePage').then((module) => ({ default: module.ClassSchedulePage })));
@@ -117,8 +123,13 @@ export const router = createBrowserRouter([
               { path: 'center-settings', element: <CenterSettingsPage /> },
               // FR-07: chỉ Manager quản lý nhân sự
               { path: 'staff', element: <StaffPage /> },
-              { path: 'staff-performance', element: <StaffPerformancePage /> },
-              { path: 'payroll', element: <PayrollPage /> },
+              { path: 'staff-performance', element: <LegacyStaffRedirect page="performance" /> },
+              { path: 'payroll', element: <LegacyStaffRedirect page="payroll" /> },
+              { path: 'staff-payroll', element: <StaffPayHubPage />, children: [
+                { index: true, element: <Navigate to="performance" replace /> },
+                { path: 'performance', element: <StaffPerformancePage /> },
+                { path: 'payroll', element: <PayrollPage /> },
+              ] },
               // note: FR-66/67 chỉ Manager
               { path: 'session-coaches', element: <SessionCoachesPage /> },
               { path: 'coach-absences', element: <ManagerAbsencesPage /> },
@@ -134,7 +145,7 @@ export const router = createBrowserRouter([
               { path: 'private-courses', element: <PrivateCoursesPage /> },
               { path: 'private-courses/:courseId', element: <PrivateCourseDetailPage /> },
               { path: 'private-session-disputes', element: <SessionDisputesPage /> },
-              { path: ':section', element: <ComingSoonPage /> },
+              { path: ':section', element: <NotFoundPage /> },
             ],
           },
           {
@@ -192,7 +203,7 @@ export const router = createBrowserRouter([
           // FR-55: yêu cầu hỗ trợ của Member
           { path: 'support', element: <MemberSupportPage /> },
           { path: 'support/:requestId', element: <MemberSupportDetailPage /> },
-          { path: ':section', element: <ComingSoonPage /> },
+          { path: ':section', element: <NotFoundPage /> },
         ],
       },
     ],
@@ -237,4 +248,5 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/dashboard', element: <Navigate to="/app/dashboard" replace /> },
+  { path: '*', element: <NotFoundPage /> },
 ]);
