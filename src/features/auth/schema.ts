@@ -1,3 +1,4 @@
+import { strongPasswordSchema } from './password';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -11,7 +12,7 @@ export const registerSchema = z.object({
   displayName: z.string().trim().min(2, 'Họ tên phải có ít nhất 2 ký tự').max(80),
   email: z.string().trim().email('Email không hợp lệ'),
   phone: z.string().trim().regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không hợp lệ'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').max(72),
+  password: strongPasswordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Mật khẩu xác nhận không khớp',
@@ -19,3 +20,19 @@ export const registerSchema = z.object({
 })
 
 export type RegisterInput = z.infer<typeof registerSchema>
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('Email không hợp lệ'),
+})
+
+export const resetPasswordSchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, 'Mã OTP phải gồm đúng 6 chữ số'),
+  password: strongPasswordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Mật khẩu xác nhận không khớp',
+  path: ['confirmPassword'],
+})
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>

@@ -1,0 +1,90 @@
+import { formatDate, formatDateTime, formatNumber, toScore } from '../format';
+import type { AssessmentContext, ProgressAssessment } from '../types';
+import { Chip } from '../../../components/ui/Chip';
+import { cardClass } from '../../../components/ui/styles';
+
+export function ContextChip({ context }: { context: AssessmentContext | null }) {
+  if (!context) return <Chip>Không rõ ngữ cảnh</Chip>;
+  const label =
+    context.type === 'GROUP_CLASS' ? `Lớp nhóm · ${context.class.name}` : `Khóa 1-1 · ${context.course.name}`;
+  return (
+    <Chip tone={context.type === 'GROUP_CLASS' ? 'info' : 'primary'} title={label} className="max-w-[260px]">
+      {label}
+    </Chip>
+  );
+}
+
+export function AssessmentCard({ assessment, showMember = false }: { assessment: ProgressAssessment; showMember?: boolean }) {
+  const score = toScore(assessment.score);
+  const sport = assessment.context?.type === 'GROUP_CLASS' ? assessment.context.class.sport : assessment.context?.course.sport;
+  const passingScore = toScore(sport?.passingScore ?? null);
+  const metrics = Object.entries(assessment.metrics ?? {});
+
+  return (
+    <article className={`${cardClass} p-5`}>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold text-ink">
+            {formatDate(assessment.assessmentDate)}
+            {showMember && ` · ${assessment.member.displayName}`}
+          </p>
+          {/* Trang Coach chỉ có đánh giá của chính Coach nên không cần tên Coach; Member vẫn cần biết ai đánh giá */}
+          {!showMember && <p className="mt-0.5 text-xs text-muted">Coach {assessment.coach.displayName}</p>}
+          {/* Cùng một dòng: buổi học được đánh giá · thời điểm Coach lưu đánh giá (createdAt) */}
+          <p className="mt-1 text-xs">
+            {assessment.session && (
+              <>
+                <span className="font-semibold text-primary-deep">
+                  Sau buổi {formatDate(assessment.session.type === 'GROUP_CLASS' ? assessment.session.startsAt : assessment.session.sessionDate)}
+                </span>
+                <span className="text-muted"> · </span>
+              </>
+            )}
+            <span className="text-muted">Ghi nhận lúc {formatDateTime(assessment.createdAt)}</span>
+          </p>
+        </div>
+        <div className="flex min-w-0 flex-wrap gap-1.5">
+          <ContextChip context={assessment.context} />
+          {score !== null && <Chip tone="neutral">Điểm {formatNumber(score)}</Chip>}
+          {score !== null && passingScore !== null && (
+            <Chip tone={score >= passingScore ? 'success' : 'warning'} dot title={`Ngưỡng đạt: ${formatNumber(passingScore)} điểm`}>
+              {score >= passingScore ? 'Đạt' : 'Chưa đạt'}
+            </Chip>
+          )}
+        </div>
+      </header>
+
+      {/* Nhận xét của Coach: ô nền nhạt có vạch trái, cùng kiểu thẻ "Nhận xét gần nhất" */}
+      <blockquote className="mt-3 rounded-xl border-l-4 border-primary/40 bg-canvas px-4 py-3 text-sm leading-relaxed whitespace-pre-line text-ink/90">
+        {assessment.coachComment}
+      </blockquote>
+
+      {metrics.length > 0 && (
+        <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {metrics.map(([name, value]) => (
+            <div key={name} className="min-w-0 rounded-xl bg-canvas px-3 py-2">
+              <dt className="truncate text-xs text-muted" title={name}>
+                {name}
+              </dt>
+              <dd className="text-base font-extrabold text-ink">{formatNumber(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {(assessment.recommendation || assessment.nextAssessmentDate) && (
+        <div className="mt-4 space-y-1 border-t border-line pt-3 text-[13px] leading-relaxed">
+          {assessment.recommendation && (
+            <p className="text-ink/90">
+              <span className="font-bold text-ink">Khuyến nghị: </span>
+              {assessment.recommendation}
+            </p>
+          )}
+          {assessment.nextAssessmentDate && (
+            <p className="text-muted">Đánh giá tiếp theo: {formatDate(assessment.nextAssessmentDate)}</p>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
