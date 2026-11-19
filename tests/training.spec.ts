@@ -180,8 +180,8 @@ test.describe('A. Đăng nhập và phân quyền', () => {
     const cases: [Account, string, RegExp][] = [
       ['member1', '/coach/workout-plans', /\/member\/home$/],
       ['member1', '/manager/attendance', /\/member\/home$/],
-      ['coach', '/member/progress', /\/coach\/attendance$/],
-      ['coach', '/manager/attendance', /\/coach\/attendance$/],
+      ['coach', '/member/progress', /\/coach\/dashboard$/],
+      ['coach', '/manager/attendance', /\/coach\/dashboard$/],
       ['manager', '/coach/attendance', /\/app\/dashboard$/],
     ];
     for (const [account, path, expected] of cases) {
@@ -415,16 +415,16 @@ test.describe('C. Coach – điểm danh buổi học', () => {
     await page.goto(sessionPath);
     await chooseStatus(page, SEED.member1.name, 'Vắng');
 
-    await page.getByRole('link', { name: 'Giáo án', exact: true }).click();
+    await page.getByRole('link', { name: 'Tổng quan', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Rời trang khi chưa lưu?' });
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Hủy' }).click();
     await expect(page).toHaveURL(new RegExp(`${sessionPath}$`));
     await expect(attendanceGroup(page, SEED.member1.name).getByRole('radio', { name: 'Vắng' })).toBeChecked();
 
-    await page.getByRole('link', { name: 'Giáo án', exact: true }).click();
+    await page.getByRole('link', { name: 'Tổng quan', exact: true }).click();
     await page.getByRole('dialog', { name: 'Rời trang khi chưa lưu?' }).getByRole('button', { name: 'Rời trang' }).click();
-    await expect(page).toHaveURL(/\/coach\/workout-plans$/);
+    await expect(page).toHaveURL(/\/coach\/dashboard$/);
   });
 
   test('C5 · Buổi học không tồn tại báo không tìm thấy', async ({ page, request }) => {
@@ -791,14 +791,14 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     const members = await api<Paginated<{ id: number }>>(request, 'coach', 'GET', '/coaches/me/members?pageSize=100');
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    const member = page.getByRole('combobox', { name: 'Học viên' });
+    const member = page.getByRole('combobox', { name: 'Học viên', exact: true });
     await expect(member.locator('option', { hasText: SEED.member1.name })).toHaveCount(1, { timeout: 15_000 });
     const options = await member.locator('option:not([value=""])').evaluateAll((nodes) => nodes.map((node) => Number((node as HTMLOptionElement).value)));
     expect(options.sort()).toEqual(members.body.items.map((item) => item.id).sort());
 
     // Member 1 có mặt ở buổi đã kết thúc → có buổi để đánh giá
     await member.selectOption(String(SEED.member1.id));
-    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành' });
+    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành', exact: true });
     await expect(session.locator('option', { hasText: SEED.className })).toHaveCount(1, { timeout: 15_000 });
 
     // Member 2 vắng → không có buổi nào được đánh giá
@@ -810,8 +810,8 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     const comment = `Kiểm thử E2E ${Date.now()}: giữ nhịp thở đều.`;
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
-    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành' });
+    await page.getByRole('combobox', { name: 'Học viên', exact: true }).selectOption(String(SEED.member1.id));
+    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành', exact: true });
     const value = await session.locator('option', { hasText: SEED.className }).getAttribute('value', { timeout: 15_000 });
     await session.selectOption(value!);
     await page.getByLabel(/^Kỹ thuật \(điểm\)/).fill('7');
@@ -831,7 +831,7 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
 
     // Buổi đã được đánh giá thì không còn trong danh sách chọn
     await page.goto('/coach/assessments/new');
-    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
+    await page.getByRole('combobox', { name: 'Học viên', exact: true }).selectOption(String(SEED.member1.id));
     await expect(page.getByText(NO_ASSESSABLE_SESSION)).toBeVisible({ timeout: 15_000 });
   });
 
