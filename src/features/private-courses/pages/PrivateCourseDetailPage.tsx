@@ -18,6 +18,7 @@ import { formatDate } from '../../training/format';
 import { parseApiError } from '../../training/errors';
 import { usePrivateCourse, usePrivateCourseCoachAssignment, useUpdatePrivateCourse } from '../hooks/usePrivateCourses';
 import type { CourseAvailability, PrivateCourse } from '../types';
+import { PrivateBookingPanel } from '../components/PrivateBookingPanel';
 
 const clock = (value: string) => value.slice(11, 16);
 const weekDays = [1, 2, 3, 4, 5, 6, 0];
@@ -44,6 +45,7 @@ export function PrivateCourseDetailPage() {
   const courseId = Number(useParams().courseId);
   const course = usePrivateCourse(courseId);
   const isManager = getSessionRole() === 'CENTER_MANAGER';
+  const isMember = getSessionRole() === 'MEMBER';
   const basePath = isManager ? '/app/private-courses' : '/member/private-courses';
   const [editing, setEditing] = useState(false);
   const [selectedCoachId, setSelectedCoachId] = useState('');
@@ -114,6 +116,7 @@ export function PrivateCourseDetailPage() {
           </div>
         )}
       </Card>
+      {isMember && <PrivateBookingPanel course={item} />}
       {editing && <EditPrivateCourseDialog course={item} onClose={() => setEditing(false)} />}
     </div>
   );

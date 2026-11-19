@@ -1,15 +1,13 @@
-import { CalendarBlank, CaretLeft, CaretRight, Check, Clock, LockKey, PaperPlaneTilt, PencilSimpleLine } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, Check, Clock, LockKey, PaperPlaneTilt, PencilSimpleLine } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
+import { Card, PageHeader } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { Dialog } from '../../../components/ui/Dialog';
-import { EmptyState, ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
-import { inputClass } from '../../../components/ui/styles';
+import { ErrorState, InlineAlert, ListSkeleton } from '../../../components/ui/States';
 import { toast } from '../../../components/feedback/toast';
 import { parseApiError } from '../../training/errors';
-import { useCreateAvailabilityChangeRequest, useMyAvailabilityCalendar, useMyAvailabilityChangeRequests, useSaveMyAvailabilityDraft, useSubmitMyAvailability } from '../hooks/useCoachManagement';
-import type { AvailabilitySelection, AvailabilitySubmissionStatus } from '../types';
+import { useMyAvailabilityCalendar, useSaveMyAvailabilityDraft, useSubmitMyAvailability } from '../hooks/useCoachManagement';
+import type { AvailabilitySubmissionStatus } from '../types';
 
 const DAYS = [
   { value: 1, label: 'Thứ 2', short: 'T2' }, { value: 2, label: 'Thứ 3', short: 'T3' },
@@ -59,12 +57,8 @@ export function CoachAvailabilityPage() {
   const calendar = useMyAvailabilityCalendar(month);
   const saveDraft = useSaveMyAvailabilityDraft(month);
   const submit = useSubmitMyAvailability(month);
-  const changes = useMyAvailabilityChangeRequests();
   const [selected, setSelected] = useState<Cell[] | null>(null);
   const [activeDay, setActiveDay] = useState(1);
-  const [changeTarget, setChangeTarget] = useState<AvailabilitySelection | null>(null);
-  const [replacement, setReplacement] = useState({ dayOfWeek: 1, shiftCode: 'S1', reason: '' });
-  const createChange = useCreateAvailabilityChangeRequest(month);
 
   const serverSelections = useMemo(
     () => calendar.data?.submission.selections.map(({ dayOfWeek, shiftCode }) => ({ dayOfWeek, shiftCode })) ?? [],
@@ -96,8 +90,6 @@ export function CoachAvailabilityPage() {
     const key = `${cell.dayOfWeek}:${cell.shiftCode}`;
     const stored = selectionMap.get(key);
     if (stored?.isAssigned) {
-      setChangeTarget(stored);
-      setReplacement({ dayOfWeek: cell.dayOfWeek, shiftCode: cell.shiftCode, reason: '' });
       return;
     }
     if (!editable) return;
@@ -167,14 +159,6 @@ export function CoachAvailabilityPage() {
         ) : null}
       </Card>
 
-      <Card className="p-5 sm:p-6">
-        <SectionHeading title="Yêu cầu đổi ca" description="Các buổi trong vòng 7 ngày giữ nguyên; buổi xa hơn chỉ chuyển khi Coach, Member và phòng đều không xung đột." />
-        {changes.isPending ? <ListSkeleton rows={2} /> : changes.isError ? <ErrorState error={changes.error} onRetry={() => changes.refetch()} compact /> : changes.data?.length ? <div className="divide-y divide-line">{changes.data.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-bold text-ink">{DAYS.find((day) => day.value === item.oldDayOfWeek)?.label} {item.oldShiftCode} → {DAYS.find((day) => day.value === item.newDayOfWeek)?.label} {item.newShiftCode}</p><p className="mt-1 text-xs text-muted">{item.reason}</p></div><Chip tone={item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'danger' : 'warning'}>{item.status === 'SUBMITTED' ? 'Chờ duyệt' : item.status === 'APPROVED' ? 'Đã duyệt' : 'Bị từ chối'}</Chip></div>)}</div> : <EmptyState compact icon={<CalendarBlank />} title="Chưa có yêu cầu đổi ca" description="Nhấn vào ca đã phân công trên thời khóa biểu khi cần đề nghị đổi." />}
-      </Card>
-
-      <Dialog open={Boolean(changeTarget)} onClose={() => setChangeTarget(null)} title="Yêu cầu đổi ca đã phân công" description="Center Manager sẽ kiểm tra xung đột trước khi chuyển các buổi đủ điều kiện." footer={<><Button variant="secondary" onClick={() => setChangeTarget(null)}>Đóng</Button><Button loading={createChange.isPending} disabled={replacement.reason.trim().length < 10 || (replacement.dayOfWeek === changeTarget?.dayOfWeek && replacement.shiftCode === changeTarget.shiftCode)} onClick={async () => { if (!changeTarget) return; try { await createChange.mutateAsync({ month, oldDayOfWeek: changeTarget.dayOfWeek, oldShiftCode: changeTarget.shiftCode, newDayOfWeek: replacement.dayOfWeek, newShiftCode: replacement.shiftCode, reason: replacement.reason }); toast('Đã gửi yêu cầu đổi ca.'); setChangeTarget(null); } catch (error) { toast(parseApiError(error).message, 'error'); } }}>Gửi yêu cầu</Button></>}>
-        <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-bold text-ink">Ngày thay thế<select className={`${inputClass} mt-2`} value={replacement.dayOfWeek} onChange={(event) => setReplacement((value) => ({ ...value, dayOfWeek: Number(event.target.value) }))}>{DAYS.map((day) => <option key={day.value} value={day.value}>{day.label}</option>)}</select></label><label className="text-sm font-bold text-ink">Ca thay thế<select className={`${inputClass} mt-2`} value={replacement.shiftCode} onChange={(event) => setReplacement((value) => ({ ...value, shiftCode: event.target.value }))}>{calendar.data?.shifts.map((shift) => <option key={shift.code} value={shift.code}>{shift.startTime}–{shift.endTime}</option>)}</select></label><label className="text-sm font-bold text-ink sm:col-span-2">Lý do<textarea className={`${inputClass} mt-2 min-h-28 resize-y`} value={replacement.reason} onChange={(event) => setReplacement((value) => ({ ...value, reason: event.target.value }))} placeholder="Nêu rõ lý do cần đổi ca…" /></label></div>
-      </Dialog>
     </div>
   );
 }

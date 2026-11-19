@@ -9,6 +9,8 @@ const { api } = vi.hoisted(() => ({
   api: { checkInHistory: vi.fn(), checkIn: vi.fn(), plans: vi.fn(), sellToMember: vi.fn() },
 }));
 
+const { toastMock } = vi.hoisted(() => ({ toastMock: vi.fn() }));
+
 vi.mock('../api', async (original) => ({
   ...(await original<typeof import('../api')>()),
   membershipApi: api,
@@ -16,6 +18,7 @@ vi.mock('../api', async (original) => ({
 }));
 vi.mock('../components/QrScannerPanel', () => ({ QrScannerPanel: () => null }));
 vi.mock('../../../components/auth/session', () => ({ getSessionRole: () => 'RECEPTIONIST' }));
+vi.mock('../../../components/feedback/toast', () => ({ toast: toastMock }));
 
 const member = { id: 7, memberCode: 'SG7K2P9X', displayName: 'An Nguyễn', avatarUrl: null };
 
@@ -49,6 +52,16 @@ describe('CheckInPage', () => {
     expect(await screen.findByText('Check-in thành công')).toBeInTheDocument();
     expect(api.checkIn.mock.calls[0]).toEqual(['sg7k2p9x', 'MANUAL']);
     expect(screen.getByText(/09\/02\/2027 · còn 92 ngày/)).toBeInTheDocument();
+    expect(toastMock).toHaveBeenCalledWith('Nhập mã thành công: An Nguyễn.');
+  });
+
+  test('check-in thất bại thì hiện thông báo lỗi rõ ràng', async () => {
+    api.checkIn.mockRejectedValue({ code: 'MEMBER_NOT_FOUND', message: 'Không tìm thấy hội viên.' });
+    setup();
+    await submitCode();
+
+    expect(await screen.findByText('Không tìm thấy hội viên.')).toBeInTheDocument();
+    expect(toastMock).toHaveBeenCalledWith('Check-in thất bại: Không tìm thấy hội viên.', 'error');
   });
 
   test('chưa có gói thì báo lý do và cho bán gói tại quầy', async () => {

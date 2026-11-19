@@ -17,7 +17,6 @@ export const centerManagerNavigation: NavigationEntry[] = [
     items: [
       { label: 'Người dùng', path: '/app/users' },
       { label: 'Danh sách hội viên', path: '/app/members' },
-      { label: 'Check-in phòng tập', path: '/app/check-in' },
       { label: 'Yêu cầu hỗ trợ', path: '/app/support' },
     ],
   },

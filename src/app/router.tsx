@@ -151,12 +151,14 @@ export const router = createBrowserRouter([
           {
             // BR-35: chỉ lễ tân ghi nhận thanh toán tiền mặt
             element: <RequireRole roles={['RECEPTIONIST']} />,
-            children: [{ path: 'cashier', element: <CashierPage /> }],
+            children: [
+              { path: 'cashier', element: <CashierPage /> },
+              { path: 'check-in', element: <CheckInPage /> },
+            ],
           },
           {
             element: <RequireRole roles={['CENTER_MANAGER', 'RECEPTIONIST']} />,
             children: [
-              { path: 'check-in', element: <CheckInPage /> },
               { path: 'class-bookings', element: <ClassSchedulePage receptionistMode /> },
               { path: 'class-bookings/:classId', element: <GroupClassBookingDetailPage /> },
               // Đặt ở khối Manager + Receptionist: khối chỉ-Manager có ':section' sẽ chặn Receptionist

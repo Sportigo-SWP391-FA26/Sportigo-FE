@@ -40,6 +40,17 @@ export async function getMyPrivateEnrollments() {
   return data.data;
 }
 
+export type PrivateBookingInput = { coachId: number; startDate: string; schedules: { dayOfWeek: number; shiftCode: string }[] };
+export type PrivateBookingPreview = { coachId: number; startDate: string; expiryDate: string; price: string | number; totalSessions: number; occurrences: { startsAt: string; endsAt: string; roomId: number; shiftCode: string }[] };
+export async function previewPrivateBooking(courseId: number, input: PrivateBookingInput) {
+  const { data } = await apiClient.post<DataResponse<PrivateBookingPreview>>(`/private-courses/${courseId}/enroll/preview`, input);
+  return data.data;
+}
+export async function enrollPrivateBooking(courseId: number, input: PrivateBookingInput) {
+  const { data } = await apiClient.post<DataResponse<{ enrollment: { id: number }; order: { id: number } }>>(`/private-courses/${courseId}/enroll`, input);
+  return data.data;
+}
+
 export async function changePrivateOccurrence(
   enrollmentId: number,
   scheduleId: number,

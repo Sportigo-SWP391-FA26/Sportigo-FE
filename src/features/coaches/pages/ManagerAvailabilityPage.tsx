@@ -1,4 +1,4 @@
-import { ArrowsClockwise, CalendarCheck, CheckCircle, Funnel, XCircle } from '@phosphor-icons/react';
+import { CalendarCheck, CheckCircle, Funnel, XCircle } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
@@ -8,8 +8,8 @@ import { EmptyState, ErrorState, ListSkeleton } from '../../../components/ui/Sta
 import { inputClass } from '../../../components/ui/styles';
 import { toast } from '../../../components/feedback/toast';
 import { parseApiError } from '../../training/errors';
-import { useAvailabilityChangeRequests, useAvailabilitySubmissions, useReviewAvailabilityChangeRequest, useReviewAvailabilitySubmission } from '../hooks/useCoachManagement';
-import type { AvailabilityChangeRequest, AvailabilitySubmission } from '../types';
+import { useAvailabilitySubmissions, useReviewAvailabilitySubmission } from '../hooks/useCoachManagement';
+import type { AvailabilitySubmission } from '../types';
 
 const DAYS = [{ value: 1, label: 'Thứ 2' }, { value: 2, label: 'Thứ 3' }, { value: 3, label: 'Thứ 4' }, { value: 4, label: 'Thứ 5' }, { value: 5, label: 'Thứ 6' }, { value: 6, label: 'Thứ 7' }, { value: 0, label: 'Chủ nhật' }];
 const SHIFTS = [
@@ -27,11 +27,8 @@ export function ManagerAvailabilityPage() {
   const [status, setStatus] = useState('SUBMITTED');
   const submissions = useAvailabilitySubmissions(month, status || undefined);
   const review = useReviewAvailabilitySubmission(month, status || undefined);
-  const changes = useAvailabilityChangeRequests('SUBMITTED');
-  const reviewChange = useReviewAvailabilityChangeRequest('SUBMITTED');
   const [selected, setSelected] = useState<AvailabilitySubmission | null>(null);
   const [rejecting, setRejecting] = useState(false);
-  const [rejectingChange, setRejectingChange] = useState<AvailabilityChangeRequest | null>(null);
   const [reason, setReason] = useState('');
   const selectionKeys = useMemo(() => new Set(selected?.selections.map((item) => `${item.dayOfWeek}:${item.shiftCode}`) ?? []), [selected]);
 
@@ -53,15 +50,10 @@ export function ManagerAvailabilityPage() {
         <div className="flex items-center gap-2 text-sm text-muted sm:justify-end"><Funnel aria-hidden="true" /> Danh sách cập nhật theo bộ lọc</div>
       </Card>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div>
         <Card className="p-5 sm:p-6">
           <SectionHeading title="Lịch theo tháng" description={`${submissions.data?.length ?? 0} lịch phù hợp bộ lọc`} />
           {submissions.isPending ? <ListSkeleton /> : submissions.isError ? <ErrorState error={submissions.error} onRetry={() => submissions.refetch()} /> : submissions.data?.length ? <div className="divide-y divide-line">{submissions.data.map((item) => <button key={item.id} type="button" onClick={() => setSelected(item)} className="flex w-full items-center gap-4 py-4 text-left hover:bg-canvas/70 focus-visible:outline-2 focus-visible:outline-primary sm:px-3"><span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary/10 text-xl font-extrabold text-primary-deep">{item.coach?.user.avatarUrl ? <img src={item.coach.user.avatarUrl} alt="" className="size-full object-cover" /> : item.coach?.user.displayName.slice(0, 1)}</span><span className="min-w-0 flex-1"><span className="block truncate font-extrabold text-ink">{item.coach?.user.displayName}</span><span className="mt-1 block text-xs text-muted">Tháng {item.month.slice(0, 7)} · Lần gửi {item.revision} · {item.selections.length} ca</span></span><Chip tone={item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'danger' : item.status === 'SUBMITTED' ? 'warning' : 'neutral'}>{item.status === 'SUBMITTED' ? 'Chờ duyệt' : item.status === 'APPROVED' ? 'Đã duyệt' : item.status === 'REJECTED' ? 'Bị từ chối' : 'Bản nháp'}</Chip></button>)}</div> : <EmptyState icon={<CalendarCheck />} title="Không có lịch phù hợp" description="Thử chọn trạng thái hoặc tháng khác." />}
-        </Card>
-
-        <Card className="h-fit p-5 sm:p-6">
-          <SectionHeading title="Yêu cầu đổi ca" description="Chỉ duyệt khi Coach, Member và phòng cũ không xung đột ở giờ mới." />
-          {changes.isPending ? <ListSkeleton rows={2} /> : changes.isError ? <ErrorState error={changes.error} onRetry={() => changes.refetch()} compact /> : changes.data?.length ? <div className="space-y-3">{changes.data.map((item) => <article key={item.id} className="rounded-2xl bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-extrabold text-ink">{item.coach?.user.displayName}</p><p className="mt-1 text-xs font-semibold text-primary-deep">{DAYS.find((day) => day.value === item.oldDayOfWeek)?.label} {item.oldShiftCode} → {DAYS.find((day) => day.value === item.newDayOfWeek)?.label} {item.newShiftCode}</p></div><ArrowsClockwise className="text-xl text-primary" /></div><p className="mt-3 text-sm leading-relaxed text-muted">{item.reason}</p><div className="mt-4 grid grid-cols-2 gap-2"><Button size="sm" variant="secondary" onClick={() => { setReason(''); setRejectingChange(item); }}>Từ chối</Button><Button size="sm" onClick={async () => { try { await reviewChange.mutateAsync({ id: item.id, input: { decision: 'APPROVE' } }); toast('Đã duyệt và cập nhật các buổi đủ điều kiện.'); } catch (error) { toast(parseApiError(error).message, 'error'); } }}>Duyệt đổi ca</Button></div></article>)}</div> : <EmptyState compact icon={<ArrowsClockwise />} title="Không có yêu cầu chờ duyệt" />}
         </Card>
       </div>
 
@@ -70,8 +62,6 @@ export function ManagerAvailabilityPage() {
       </Dialog>
 
       <Dialog open={rejecting} onClose={() => setRejecting(false)} title="Từ chối lịch availability" description="Coach sẽ nhận lý do và được sửa, gửi lại đến hết ngày 28." footer={<><Button variant="secondary" onClick={() => setRejecting(false)}>Quay lại</Button><Button variant="danger" disabled={reason.trim().length < 5} loading={review.isPending} onClick={() => decide('REJECT')}>Xác nhận từ chối</Button></>}><label className="text-sm font-bold text-ink">Lý do bắt buộc<textarea className={`${inputClass} mt-2 min-h-32 resize-y`} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Nêu rõ phần Coach cần điều chỉnh…" /></label></Dialog>
-
-      <Dialog open={Boolean(rejectingChange)} onClose={() => { setRejectingChange(null); setReason(''); }} title="Từ chối yêu cầu đổi ca" description={rejectingChange ? `${rejectingChange.coach?.user.displayName}: ${rejectingChange.oldShiftCode} → ${rejectingChange.newShiftCode}` : undefined} footer={<><Button variant="secondary" onClick={() => { setRejectingChange(null); setReason(''); }}>Quay lại</Button><Button variant="danger" disabled={reason.trim().length < 5} loading={reviewChange.isPending} onClick={async () => { if (!rejectingChange) return; try { await reviewChange.mutateAsync({ id: rejectingChange.id, input: { decision: 'REJECT', reason: reason.trim() } }); toast('Đã từ chối yêu cầu đổi ca.'); setRejectingChange(null); setReason(''); } catch (error) { toast(parseApiError(error).message, 'error'); } }}>Xác nhận từ chối</Button></>}><label className="text-sm font-bold text-ink">Lý do bắt buộc<textarea className={`${inputClass} mt-2 min-h-32 resize-y`} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Nêu rõ xung đột hoặc phần Coach cần điều chỉnh…" /></label></Dialog>
     </div>
   );
 }

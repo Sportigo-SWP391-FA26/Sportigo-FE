@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { changePrivateOccurrence, getPrivateCourse } from './api';
+import { changePrivateOccurrence, enrollPrivateBooking, getPrivateCourse, previewPrivateBooking } from './api';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -26,5 +26,15 @@ describe('private course API', () => {
       input,
     );
     expect(input).not.toHaveProperty('newRoomId');
+  });
+
+  test('previews and creates a shift booking without asking the member for a room', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { success: true, data: { order: { id: 7 } } } });
+    const input = { coachId: 12, startDate: '2026-12-01', schedules: [{ dayOfWeek: 2, shiftCode: 'S2' }] };
+    await previewPrivateBooking(9, input);
+    await enrollPrivateBooking(9, input);
+    expect(post).toHaveBeenNthCalledWith(1, '/private-courses/9/enroll/preview', input);
+    expect(post).toHaveBeenNthCalledWith(2, '/private-courses/9/enroll', input);
+    expect(input.schedules[0]).not.toHaveProperty('roomId');
   });
 });

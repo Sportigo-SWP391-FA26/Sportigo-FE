@@ -2,6 +2,7 @@ import { CheckCircle, MagnifyingGlass, ShoppingCart, WarningCircle } from '@phos
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { getSessionRole } from '../../../components/auth/session';
+import { toast } from '../../../components/feedback/toast';
 import { Button, ButtonLink } from '../../../components/ui/Button';
 import { Card, PageHeader, SectionHeading } from '../../../components/ui/Card';
 import { Field } from '../../../components/ui/Field';
@@ -62,12 +63,19 @@ export function CheckInPage() {
   const checkIn = useMutation({
     mutationFn: ({ memberCode, method }: { memberCode: string; method: 'QR' | 'MANUAL' }) => membershipApi.checkIn(memberCode, method),
     onMutate: () => { setSuccess(null); setFailure(null); },
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       setSuccess(result);
       setCode('');
+      toast(result.alreadyCheckedIn
+        ? `${result.member.displayName} đã check-in trước đó ít phút.`
+        : `${variables.method === 'QR' ? 'Quét QR' : 'Nhập mã'} thành công: ${result.member.displayName}.`);
       void queryClient.invalidateQueries({ queryKey: ['check-ins'] });
     },
-    onError: (error) => setFailure(toCheckInFailure(error)),
+    onError: (error, variables) => {
+      const result = toCheckInFailure(error);
+      setFailure(result);
+      toast(`${variables.method === 'QR' ? 'Quét QR' : 'Check-in'} thất bại: ${result.message}`, 'error');
+    },
   });
 
   const submit = (event: FormEvent) => {
@@ -81,7 +89,7 @@ export function CheckInPage() {
       <PageHeader eyebrow="Tại quầy" title="Check-in phòng tập" description="Quét mã QR trong hồ sơ hội viên hoặc nhập mã thành viên." />
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="p-5 sm:p-6">
-          <QrScannerPanel onScan={(memberCode) => checkIn.mutate({ memberCode, method: 'QR' })} />
+          <QrScannerPanel disabled={checkIn.isPending} onScan={(memberCode) => checkIn.mutate({ memberCode, method: 'QR' })} />
           <form className="mt-5" onSubmit={submit}>
             <Field id="check-in-code" label="Mã thành viên">
               <div className="flex gap-2">
@@ -93,7 +101,7 @@ export function CheckInPage() {
         </Card>
 
         <div className="space-y-5">
-          <Card className="p-5 sm:p-6" aria-live="polite">
+          <Card className={`p-5 transition-colors sm:p-6 ${success ? 'border-success/40 bg-success/5' : failure ? 'border-danger/40 bg-danger/5' : ''}`} aria-live="assertive">
             <SectionHeading title="Kết quả" />
             {!success && !failure && <p className="text-sm text-muted">Chưa có lượt quét nào.</p>}
             {success && (

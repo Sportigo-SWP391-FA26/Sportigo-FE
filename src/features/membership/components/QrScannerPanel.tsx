@@ -5,7 +5,7 @@ import { InlineAlert } from '../../../components/ui/States';
 
 const REPEAT_IGNORE_MS = 4000;
 
-export function QrScannerPanel({ onScan }: { onScan: (code: string) => void }) {
+export function QrScannerPanel({ onScan, disabled = false }: { onScan: (code: string) => void; disabled?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onScanRef = useRef(onScan);
   const [enabled, setEnabled] = useState(false);
@@ -30,7 +30,7 @@ export function QrScannerPanel({ onScan }: { onScan: (code: string) => void }) {
           const now = Date.now();
           if (!code || (code === last.code && now - last.at < REPEAT_IGNORE_MS)) return;
           last = { code, at: now };
-          onScanRef.current(code);
+          if (!disabled) onScanRef.current(code);
         }, { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true });
         stop = () => scanner.destroy();
         await scanner.start();
@@ -42,7 +42,7 @@ export function QrScannerPanel({ onScan }: { onScan: (code: string) => void }) {
     })();
 
     return () => { cancelled = true; stop(); };
-  }, [enabled]);
+  }, [disabled, enabled]);
 
   return (
     <div>
@@ -52,7 +52,7 @@ export function QrScannerPanel({ onScan }: { onScan: (code: string) => void }) {
       </div>
       {error && <div className="mt-3"><InlineAlert>{error}</InlineAlert></div>}
       <div className="mt-3 flex justify-center">
-        <Button variant="secondary" icon={enabled ? <CameraSlash aria-hidden="true" /> : <Camera aria-hidden="true" />} onClick={() => { setError(''); setEnabled((value) => !value); }}>
+        <Button variant="secondary" disabled={disabled} icon={enabled ? <CameraSlash aria-hidden="true" /> : <Camera aria-hidden="true" />} onClick={() => { setError(''); setEnabled((value) => !value); }}>
           {enabled ? 'Tắt camera' : 'Bật camera'}
         </Button>
       </div>
