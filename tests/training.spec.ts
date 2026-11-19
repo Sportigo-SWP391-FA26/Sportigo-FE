@@ -210,13 +210,13 @@ test.describe('B. Member', () => {
     await expect(page.getByText('Tuần này').first()).toBeVisible();
     // Mở Tuần 1 bằng chip để xem nội dung, không giả định tuần hiện tại là tuần 1
     await page.getByRole('navigation', { name: 'Chọn tuần' }).getByRole('button', { name: /^Tuần 1/ }).click();
-    await expect(page.getByRole('button', { name: /^Tuần 1/, expanded: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Tuần 1' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Khởi động/, level: 4 })).toBeVisible();
     await expect(page.getByText('Buổi 2').first()).toBeVisible();
 
     // Bấm chip Tuần 2 → mở tuần 2 (giáo án demo chưa có nội dung tuần 2)
     await page.getByRole('navigation', { name: 'Chọn tuần' }).getByRole('button', { name: /^Tuần 2/ }).click();
-    await expect(page.getByRole('button', { name: /^Tuần 2/, expanded: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Tuần 2' })).toBeVisible();
     await expect(page.getByText('Coach chưa thêm nội dung cho tuần này.').first()).toBeVisible();
 
     // Chỉ đọc: không có nút sửa/xóa/thêm
@@ -299,8 +299,8 @@ test.describe('B. Member', () => {
     await page.getByRole('button', { name: 'Xóa bộ lọc' }).first().click();
     await expect(page).not.toHaveURL(/status=/);
 
-    await page.getByLabel('Từ ngày').fill('2026-10-20');
-    await page.getByLabel('Đến ngày').fill('2026-10-01');
+    await page.getByLabel('Từ ngày').fill('20/10/2026');
+    await page.getByLabel('Đến ngày').fill('01/10/2026');
     await expect(page.getByText('Đến ngày phải bằng hoặc sau Từ ngày.').first()).toBeVisible();
   });
 
