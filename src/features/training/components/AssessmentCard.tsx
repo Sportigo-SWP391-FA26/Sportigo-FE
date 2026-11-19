@@ -1,4 +1,4 @@
-import { formatDate, formatNumber, toScore } from '../format';
+import { formatDate, formatDateTime, formatNumber, toScore } from '../format';
 import type { AssessmentContext, ProgressAssessment } from '../types';
 import { Chip } from '../../../components/ui/Chip';
 import { cardClass } from '../../../components/ui/styles';
@@ -30,11 +30,18 @@ export function AssessmentCard({ assessment, showMember = false }: { assessment:
           </p>
           {/* Trang Coach chỉ có đánh giá của chính Coach nên không cần tên Coach; Member vẫn cần biết ai đánh giá */}
           {!showMember && <p className="mt-0.5 text-xs text-muted">Coach {assessment.coach.displayName}</p>}
-          {assessment.session && (
-            <p className="mt-1 text-xs font-semibold text-primary-deep">
-              Sau buổi {formatDate(assessment.session.type === 'GROUP_CLASS' ? assessment.session.startsAt : assessment.session.sessionDate)}
-            </p>
-          )}
+          {/* Cùng một dòng: buổi học được đánh giá · thời điểm Coach lưu đánh giá (createdAt) */}
+          <p className="mt-1 text-xs">
+            {assessment.session && (
+              <>
+                <span className="font-semibold text-primary-deep">
+                  Sau buổi {formatDate(assessment.session.type === 'GROUP_CLASS' ? assessment.session.startsAt : assessment.session.sessionDate)}
+                </span>
+                <span className="text-muted"> · </span>
+              </>
+            )}
+            <span className="text-muted">Ghi nhận lúc {formatDateTime(assessment.createdAt)}</span>
+          </p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           <ContextChip context={assessment.context} />
