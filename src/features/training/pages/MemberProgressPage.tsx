@@ -11,7 +11,7 @@ import { Field } from '../../../components/ui/Field';
 import { EmptyState, ErrorState, InlineAlert, ListSkeleton, Skeleton } from '../../../components/ui/States';
 import { tabPanelProps } from '../../../components/ui/styles';
 import { Tabs } from '../../../components/ui/Tabs';
-import { formatDate, formatNumber, formatPercent, monthRange, toScore, todayInCenter, weekRange } from '../format';
+import { formatDate, formatDateTime, formatNumber, formatPercent, monthRange, toScore, todayInCenter, weekRange } from '../format';
 import { useAttendanceSummary } from '../hooks/useAttendance';
 import { useMyTraining } from '../hooks/useMemberTraining';
 import type { ProgressAssessment } from '../types';
@@ -289,7 +289,7 @@ function LatestAssessment({ assessment }: { assessment: ProgressAssessment }) {
   const score = toScore(assessment.score);
   return (
     <Card className="p-5 sm:p-6">
-      <SectionHeading title="Nhận xét gần nhất" description={`${formatDate(assessment.assessmentDate)} · Coach ${assessment.coach.displayName}`} />
+      <SectionHeading title="Nhận xét gần nhất" description={`${formatDate(assessment.assessmentDate)} · Coach ${assessment.coach.displayName} · ghi nhận lúc ${formatDateTime(assessment.createdAt)}`} />
       <div className="flex flex-wrap gap-1.5">
         <ContextChip context={assessment.context} />
         {score !== null && <Chip tone="success">Điểm {formatNumber(score)}</Chip>}

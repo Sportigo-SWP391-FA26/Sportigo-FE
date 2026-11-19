@@ -760,14 +760,9 @@ test.describe('E–F. Coach – giáo án và gán cho khóa 1-1', () => {
 // G. Coach: đánh giá tiến độ (FR-52, BR-46)
 // =====================================================================
 
-// Giả lập RIÊNG danh sách khóa 1-1 của Coach (GET /api/private-courses/enrollments) để dựng ngữ cảnh sai.
-// Việc ghi đánh giá vẫn gọi backend thật.
-// Ngữ cảnh của form đánh giá lấy từ hồ sơ học viên (GET /api/members/:id)
-async function mockMemberContexts(page: Page, memberId: number, privateEnrollments: unknown[]) {
-  await page.route(`**/api/members/${memberId}`, (route) => route.fulfill({ json: { classRegistrations: [], privateEnrollments } }));
-}
-
-const swim = { id: SEED.sportId, name: 'Bơi lội' };
+// Seed E2E có một buổi lớp nhóm đã kết thúc 3 ngày trước: Member 1 có mặt, Member 2 vắng,
+// và chỉ số "Kỹ thuật (điểm)" 0–10 của môn Bơi lội do Manager cấu hình.
+const NO_ASSESSABLE_SESSION = 'Không có buổi đã hoàn thành, có điểm danh hợp lệ và chưa được đánh giá.';
 
 test.describe('G. Coach – đánh giá tiến độ', () => {
   test('G1 · FR-52: danh sách mới nhất trước và lọc theo học viên', async ({ page, request }) => {
@@ -792,53 +787,35 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
     for (const text of await page.locator('ol > li article').allTextContents()) expect(text).toContain(SEED.member1.name);
   });
 
-  test('G2 · FR-52: form liệt kê mọi học viên Coach phụ trách, có tên, và đủ ngữ cảnh lớp nhóm + khóa 1-1 (dữ liệu thật)', async ({ page, request }) => {
+  test('G2 · FR-52: form liệt kê học viên Coach phụ trách và chỉ buổi đã kết thúc có điểm danh hợp lệ', async ({ page, request }) => {
     const members = await api<Paginated<{ id: number }>>(request, 'coach', 'GET', '/coaches/me/members?pageSize=100');
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
-    const select = page.getByRole('combobox', { name: 'Học viên' });
-    await expect(select.locator('option', { hasText: SEED.member1.name })).toHaveCount(1, { timeout: 15_000 });
-    const options = await select.locator('option:not([value=""])').evaluateAll((nodes) => nodes.map((node) => Number((node as HTMLOptionElement).value)));
-    expect(options.sort()).toEqual(members.body.items.map((member) => member.id).sort());
+    const member = page.getByRole('combobox', { name: 'Học viên' });
+    await expect(member.locator('option', { hasText: SEED.member1.name })).toHaveCount(1, { timeout: 15_000 });
+    const options = await member.locator('option:not([value=""])').evaluateAll((nodes) => nodes.map((node) => Number((node as HTMLOptionElement).value)));
+    expect(options.sort()).toEqual(members.body.items.map((item) => item.id).sort());
 
-    await select.selectOption(String(SEED.member1.id));
-    await expect(page.getByRole('radio', { name: new RegExp(SEED.className) })).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('label', { hasText: 'Khóa 1-1' }).first()).toBeVisible();
+    // Member 1 có mặt ở buổi đã kết thúc → có buổi để đánh giá
+    await member.selectOption(String(SEED.member1.id));
+    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành' });
+    await expect(session.locator('option', { hasText: SEED.className })).toHaveCount(1, { timeout: 15_000 });
+
+    // Member 2 vắng → không có buổi nào được đánh giá
+    await member.selectOption(String(SEED.member2.id));
+    await expect(page.getByText(NO_ASSESSABLE_SESSION)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('G5 · FR-52: ghi đánh giá cho lớp nhóm (dữ liệu thật, lưu vào backend thật)', async ({ page, request }) => {
-    const comment = `Kiểm thử E2E lớp nhóm ${Date.now()}: giữ nhịp thở đều.`;
+  test('G3 · FR-52: ghi đánh giá sau buổi lớp nhóm theo chỉ số bộ môn, mỗi buổi chỉ một lần (dữ liệu thật)', async ({ page, request }) => {
+    const comment = `Kiểm thử E2E ${Date.now()}: giữ nhịp thở đều.`;
     await signIn(page, request, 'coach');
     await page.goto('/coach/assessments/new');
     await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
-    await page.getByRole('radio', { name: new RegExp(SEED.className) }).check();
-    await page.getByRole('textbox', { name: 'Nhận xét' }).fill(comment);
-    await page.getByRole('button', { name: 'Kỹ thuật (1–10)' }).click();
-    await page.getByLabel('Giá trị chỉ số 1').fill('6');
-    await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
-
-    await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible({ timeout: 15_000 });
-    const saved = await api<Paginated<{ coachComment: string; context: { type: string } }>>(
-      request,
-      'coach',
-      'GET',
-      `/progress-assessments?memberId=${SEED.member1.id}&pageSize=100`,
-    );
-    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('GROUP_CLASS');
-  });
-
-  test('G3 · FR-52: ghi đánh giá cho khóa 1-1 (dữ liệu thật, lưu vào backend thật)', async ({ page, request }) => {
-    const comment = `Kiểm thử E2E ${Date.now()}: phối hợp tay chân tốt hơn.`;
-    await signIn(page, request, 'coach');
-    await page.goto('/coach/assessments/new');
-
-    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
-    await page.locator('label', { hasText: 'Khóa 1-1' }).first().click();
-    const date = page.getByLabel(/^Ngày đánh giá\s*\*?$/);
-    await expect(date).toHaveAttribute('max', centerMonthRange().today);
-    await page.getByRole('textbox', { name: 'Nhận xét' }).fill(comment);
-    await page.getByRole('button', { name: 'Kỹ thuật (1–10)' }).click();
-    await page.getByLabel('Giá trị chỉ số 1').fill('7');
+    const session = page.getByRole('combobox', { name: 'Buổi đã hoàn thành' });
+    const value = await session.locator('option', { hasText: SEED.className }).getAttribute('value', { timeout: 15_000 });
+    await session.selectOption(value!);
+    await page.getByLabel(/^Kỹ thuật \(điểm\)/).fill('7');
+    await page.getByLabel(/^Nhận xét của Coach/).fill(comment);
     await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
 
     await expect(toast(page, `Đã lưu đánh giá cho ${SEED.member1.name}.`)).toBeVisible({ timeout: 15_000 });
@@ -850,22 +827,27 @@ test.describe('G. Coach – đánh giá tiến độ', () => {
       'GET',
       `/progress-assessments?memberId=${SEED.member1.id}&pageSize=100`,
     );
-    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('PRIVATE_COURSE');
+    expect(saved.body.items.find((item) => item.coachComment === comment)?.context.type).toBe('GROUP_CLASS');
+
+    // Buổi đã được đánh giá thì không còn trong danh sách chọn
+    await page.goto('/coach/assessments/new');
+    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member1.id));
+    await expect(page.getByText(NO_ASSESSABLE_SESSION)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('G4 · BR-46: đánh giá sai ngữ cảnh (khóa 1-1 không thuộc học viên) bị từ chối tại ô Ngữ cảnh', async ({ page, request }) => {
-    // Gắn khóa 1-1 của Member 1 vào hồ sơ Member 2 để backend phải từ chối
-    await mockMemberContexts(page, SEED.member2.id, [{ id: SEED.enrollmentId, status: 'ACTIVE', course: { id: 1, name: 'Bơi 1-1 – 12 buổi (demo)', sport: swim.name } }]);
-    await signIn(page, request, 'coach');
-    await page.goto('/coach/assessments/new');
-    await page.getByRole('combobox', { name: 'Học viên' }).selectOption(String(SEED.member2.id));
-    await page.locator('label', { hasText: 'Bơi 1-1' }).click();
-    await page.getByRole('textbox', { name: 'Nhận xét' }).fill('Phải bị từ chối');
-    await page.getByLabel('Tên chỉ số 1').fill('Sức bền (1–10)');
-    await page.getByLabel('Giá trị chỉ số 1').fill('5');
-    await page.getByRole('button', { name: 'Lưu đánh giá' }).click();
-    await expect(page.locator('[id$="-context-error"]')).toHaveText('Coach không phụ trách học viên hoặc ngữ cảnh đánh giá không hợp lệ.');
-    await expect(page).toHaveURL(/\/coach\/assessments\/new$/);
+  test('G4 · FR-52: backend từ chối đánh giá học viên vắng mặt hoặc buổi không tồn tại', async ({ request }) => {
+    const sessions = await api<{ id: number; type: string }[]>(request, 'coach', 'GET', `/coaches/me/assessable-sessions?memberId=${SEED.member2.id}`);
+    expect(sessions.status).toBe(200);
+    expect(sessions.body).toEqual([]);
+
+    const notFound = await api<{ code: string }>(request, 'coach', 'POST', '/progress-assessments', {
+      memberId: SEED.member2.id,
+      classSessionId: 999999,
+      metricValues: [{ definitionId: 1, value: 5 }],
+      coachComment: 'Phải bị từ chối',
+    });
+    expect(notFound.status).toBe(400);
+    expect(notFound.body.code).toBe('SESSION_NOT_ASSESSABLE');
   });
 });
 
