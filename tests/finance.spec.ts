@@ -4,7 +4,14 @@ import { useTestRole } from './helpers/auth';
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/members/me/wallet**', (route) => route.fulfill({ json: { balance: 250000, transactions: [], total: 0 } }));
   await page.route('**/api/payments**', (route) => route.fulfill({ json: { items: [{ id: 8, reference: 'WAL-8', amount: '150000', channel: 'WALLET', status: 'SUCCESS', createdAt: new Date().toISOString(), order: { id: 7, orderNumber: 'SO-7', items: [{ id: 1, itemNameSnapshot: 'Bơi cơ bản' }], invoice: { id: 3, invoiceNumber: 'INV-3' } }, paymentMethod: { name: 'Ví Sportigo' } }] } }));
-  await page.route('**/api/reports/revenue**', (route) => route.fulfill({ json: { gross: 1000000, refunds: 100000, net: 900000, transactions: 4, byChannel: { ONLINE: 900000 }, byService: {}, bySport: [] } }));
+  await page.route('**/api/reports/revenue**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.endsWith('/analytics')) {
+      const metrics = { gross: 1000000, refunds: 100000, net: 900000, transactions: 4, averageTransaction: 250000, refundRate: 0.1 };
+      return route.fulfill({ json: { period: 'MONTH', anchor: '2026-11-01', range: { from: '2026-11-01', to: '2026-11-30' }, current: metrics, previous: metrics, yearAgo: metrics, change: { previous: 0, yearAgo: 0 }, trend: [{ ...metrics, periodStart: '2026-11-01' }] } });
+    }
+    return route.fulfill({ json: { gross: 1000000, refunds: 100000, net: 900000, transactions: 4, byChannel: { ONLINE: 900000 }, byService: {}, bySport: [] } });
+  });
   await page.route('**/api/reports/classes**', (route) => route.fulfill({ json: [{ id: 1, name: 'Swimming Endurance', capacity: 20, confirmed: 15, waitlist: 2, occupancyRate: .75, attendanceRate: .9 }] }));
   await page.route('**/api/promotions**', (route) => route.fulfill({ json: [{ id: 1, code: 'SPORTIGO10', name: 'Ưu đãi khai trương', discountType: 'PERCENTAGE', discountValue: '10', status: 'ACTIVE' }] }));
   await page.route('**/api/refund-requests**', (route) => route.fulfill({ json: [{ id: 4, requestedAmount: '100000', reason: 'Dịch vụ đã hủy', status: 'REQUESTED', requestedAt: new Date().toISOString(), member: { user: { displayName: 'Nguyễn Văn A', email: 'member@test.local' } }, payment: { reference: 'PAY-4', order: { orderNumber: 'SO-4' } }, orderItem: { itemNameSnapshot: 'Bơi cơ bản', order: { orderNumber: 'SO-4' } } }] }));
