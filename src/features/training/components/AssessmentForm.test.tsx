@@ -29,6 +29,26 @@ async function selectSession(label: RegExp) {
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe('Form đánh giá theo buổi học Flow 4', () => {
+  test('mở từ màn điểm danh: chọn sẵn học viên và buổi học', async () => {
+    vi.mocked(api.getAssessableSessions).mockResolvedValue(sessions);
+    renderWithProviders(
+      <AssessmentForm members={members} initialMemberId={3} initialSession={{ type: 'GROUP_CLASS', id: 31 }} onCreated={vi.fn()} onCancel={vi.fn()} />,
+    );
+    expect(screen.getByLabelText(/Học viên/)).toHaveValue('3');
+    await waitFor(() => expect(screen.getByLabelText(/Buổi đã hoàn thành/)).toHaveValue('GROUP_CLASS:31'));
+    // Chọn sẵn buổi thì hiện luôn phần chỉ số của bộ môn
+    expect(screen.getByLabelText(/Kỹ thuật bơi/)).toBeInTheDocument();
+  });
+
+  test('buổi truyền sang không còn đánh giá được thì để Coach tự chọn', async () => {
+    vi.mocked(api.getAssessableSessions).mockResolvedValue(sessions);
+    renderWithProviders(
+      <AssessmentForm members={members} initialMemberId={3} initialSession={{ type: 'GROUP_CLASS', id: 999 }} onCreated={vi.fn()} onCancel={vi.fn()} />,
+    );
+    const select = await screen.findByLabelText(/Buổi đã hoàn thành/);
+    expect(select).toHaveValue('');
+  });
+
   test('chỉ hiển thị các buổi backend xác nhận đủ điều kiện', async () => {
     renderForm();
     await selectSession(/Lớp nhóm · Bơi cơ bản/);

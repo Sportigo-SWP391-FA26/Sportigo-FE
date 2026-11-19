@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { toast } from '../../../components/feedback/toast';
 import { AssessmentForm } from './AssessmentForm';
 import { Dialog } from '../../../components/ui/Dialog';
@@ -27,6 +28,16 @@ export function NewAssessmentDialog({ open, onClose }: Props) {
 // Tách riêng để danh sách học viên chỉ tải khi dialog mở
 function NewAssessmentBody({ onClose }: { onClose: () => void }) {
   const members = useCoachMembers();
+  // Link "Đánh giá sau buổi học" ở màn điểm danh truyền sẵn học viên và buổi học
+  const [params] = useSearchParams();
+  const initialMemberId = Number(params.get('memberId')) || undefined;
+  const classSessionId = Number(params.get('classSessionId')) || undefined;
+  const privateAttendanceId = Number(params.get('privateCourseAttendanceId')) || undefined;
+  const initialSession = classSessionId
+    ? ({ type: 'GROUP_CLASS', id: classSessionId } as const)
+    : privateAttendanceId
+      ? ({ type: 'PRIVATE_COURSE', id: privateAttendanceId } as const)
+      : undefined;
 
   if (members.isPending) return <ListSkeleton rows={3} label="Đang tải danh sách học viên…" />;
   if (members.isError) {
@@ -42,6 +53,8 @@ function NewAssessmentBody({ onClose }: { onClose: () => void }) {
   return (
     <AssessmentForm
       members={members.data}
+      initialMemberId={initialMemberId}
+      initialSession={initialSession}
       onCancel={onClose}
       onCreated={(assessment) => {
         toast(`Đã lưu đánh giá cho ${assessment.member.displayName}.`);

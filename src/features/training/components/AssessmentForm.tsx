@@ -12,10 +12,20 @@ import { traineeLabel } from '../labels';
 import { SelectInput } from './SelectInput';
 import type { ProgressAssessment, TraineeMember } from '../types';
 
-type Props = { members: TraineeMember[]; onCreated: (assessment: ProgressAssessment) => void; onCancel: () => void };
+type Props = {
+  members: TraineeMember[];
+  onCreated: (assessment: ProgressAssessment) => void;
+  onCancel: () => void;
+  /** Mở từ màn điểm danh ("Đánh giá sau buổi học"): chọn sẵn học viên và buổi học */
+  initialMemberId?: number;
+  initialSession?: { type: 'GROUP_CLASS' | 'PRIVATE_COURSE'; id: number };
+};
 
-export function AssessmentForm({ members, onCreated, onCancel }: Props) {
-  const [memberId, setMemberId] = useState<number>();
+export function AssessmentForm({ members, onCreated, onCancel, initialMemberId, initialSession }: Props) {
+  const [memberId, setMemberId] = useState<number | undefined>(
+    initialMemberId && members.some((member) => member.id === initialMemberId) ? initialMemberId : undefined,
+  );
+  const [prefillPending, setPrefillPending] = useState(Boolean(initialSession));
   const [sessionId, setSessionId] = useState('');
   const [metricValues, setMetricValues] = useState<Record<number, string>>({});
   const [completedItems, setCompletedItems] = useState<number[]>([]);
@@ -25,6 +35,17 @@ export function AssessmentForm({ members, onCreated, onCancel }: Props) {
   const [nextAssessmentDate, setNextAssessmentDate] = useState('');
   const [error, setError] = useState<string>();
   const sessions = useAssessableSessions(memberId);
+
+  // Chọn sẵn buổi học khi danh sách buổi của học viên tải xong (chỉ một lần; buổi đã đánh giá thì để Coach tự chọn).
+  // Điều chỉnh state ngay khi render thay vì dùng effect, theo hướng dẫn của React.
+  if (prefillPending && initialSession && sessions.data) {
+    const match = sessions.data.find((item) => item.type === initialSession.type && item.id === initialSession.id);
+    if (match) {
+      setSessionId(`${match.type}:${match.id}`);
+      setMetricValues(Object.fromEntries(match.metricDefinitions.map((metric) => [metric.id, ''])));
+    }
+    setPrefillPending(false);
+  }
   const create = useCreateAssessment();
   const selected = sessions.data?.find((item) => `${item.type}:${item.id}` === sessionId);
 
