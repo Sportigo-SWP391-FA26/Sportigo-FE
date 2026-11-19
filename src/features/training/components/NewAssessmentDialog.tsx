@@ -53,7 +53,8 @@ function NewAssessmentBody({ onClose }: { onClose: () => void }) {
   return (
     <AssessmentForm
       members={members.data}
-      initialMemberId={initialMemberId}
+      // Chỉ chọn sẵn học viên khi có buổi học truyền sang (link từ màn điểm danh); memberId đơn lẻ là bộ lọc danh sách
+      initialMemberId={initialSession ? initialMemberId : undefined}
       initialSession={initialSession}
       onCancel={onClose}
       onCreated={(assessment) => {

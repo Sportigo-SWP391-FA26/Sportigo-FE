@@ -13,6 +13,14 @@ import { useCoachMembers } from '../hooks/usePendingApis';
 import { traineeLabel } from '../labels';
 
 const PAGE_SIZE = 10;
+const PREFILL_KEYS = ['classSessionId', 'privateCourseAttendanceId', 'classRegistrationId', 'sessionDate'];
+
+function withoutPrefill(search: string) {
+  const params = new URLSearchParams(search);
+  for (const key of PREFILL_KEYS) params.delete(key);
+  const value = params.toString();
+  return value ? `?${value}` : '';
+}
 
 // FR-52 · /coach/assessments: đánh giá do chính Coach ghi, mới nhất trước.
 // /coach/assessments/new hiển thị cùng trang với dialog Ghi đánh giá đang mở (giữ được link cũ và nút Back).
@@ -22,8 +30,11 @@ export function AssessmentsPage() {
   const members = useCoachMembers();
   const navigate = useNavigate();
   const { search } = useLocation();
+  // Tham số chọn sẵn chỉ dành cho link "Đánh giá sau buổi học" ở màn điểm danh;
+  // nút "Ghi đánh giá" và đóng dialog chỉ giữ bộ lọc danh sách (memberId, page)
+  const listSearch = withoutPrefill(search);
   const creating = useMatch('/coach/assessments/new') !== null;
-  const newAssessmentPath = `/coach/assessments/new${search}`;
+  const newAssessmentPath = `/coach/assessments/new${listSearch}`;
   const memberId = Number(params.get('memberId')) || undefined;
   const page = Math.max(1, Number(params.get('page')) || 1);
   const assessments = useAssessments({ page, pageSize: PAGE_SIZE, memberId });
@@ -55,7 +66,7 @@ export function AssessmentsPage() {
         }
       />
 
-      <NewAssessmentDialog open={creating} onClose={() => navigate({ pathname: '/coach/assessments', search })} />
+      <NewAssessmentDialog open={creating} onClose={() => navigate({ pathname: '/coach/assessments', search: listSearch })} />
 
       {/* Thẻ lọc phủ toàn chiều ngang: nhãn bên trái, ô chọn học viên bên phải */}
       <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-3 sm:px-4">
